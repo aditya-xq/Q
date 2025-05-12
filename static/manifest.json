@@ -1,0 +1,30 @@
+{
+    "manifest_version": 3,
+    "name": "Q",
+    "version": "0.1",
+    "description": "An extension that converts your new tab into a quick todo app.",
+    "permissions": ["topSites"],
+    "chrome_url_overrides": {
+        "newtab": "index.html"
+    },
+    "icons": {
+        "16": "icons/icon16x16.png",
+        "32": "icons/icon32x32.png"
+    },
+    "action": {
+        "default_popup": "index.html",
+        "default_icon": "icons/icon32x32.png"
+    },
+    "background": {
+        "service_worker": "background.js"
+    },
+    "web_accessible_resources": [
+        {
+            "resources": ["*"],
+            "matches": ["<all_urls>"]
+        }
+    ],
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'"
+    }
+}
