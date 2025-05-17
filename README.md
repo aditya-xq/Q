@@ -19,10 +19,10 @@ Q is a simple yet powerful browser extension that transforms your new tab page i
 *(Coming soon)*
 
 ### Manual Installation
-1. Clone this repository or download it as a ZIP file
+1. Clone this repository and run `bun run build` to build the extension. This will create a `build` folder which you can unpack and install as an extension.
 2. Open Chrome and navigate to `chrome://extensions/`
 3. Enable "Developer mode" in the top-right corner
-4. Click "Load unpacked" and select the folder containing the extension files
+4. Click "Load unpacked" and select the build folder containing the extension files
 5. The extension should now be installed and will activate when you open a new tab
 
 ## Usage
@@ -41,9 +41,9 @@ Q is a simple yet powerful browser extension that transforms your new tab page i
 - `manifest.json` - Extension configuration file
 
 ### Building from Source
-1. Make your changes to the codebase
+1. Make your changes to the codebase and build the extension
 2. Test locally using the "Load unpacked" method described above
-3. For distribution, package the extension as a ZIP file
+3. For distribution, package the extension as a ZIP file if required
 
 ## Permissions
 
