@@ -45,12 +45,12 @@
             frequentSites = [
                 { url: 'https://github.com', title: 'GitHub' },
                 { url: 'https://youtube.com', title: 'YouTube' },
-                { url: 'https://twitter.com', title: 'Twitter' },
+                { url: 'https://x.com', title: 'X' },
                 { url: 'https://linkedin.com', title: 'LinkedIn' },
                 { url: 'https://reddit.com', title: 'Reddit' },
                 { url: 'https://chatgpt.com', title: 'ChatGPT' },
                 { url: 'https://medium.com', title: 'Medium' },
-                { url: 'https://techflix.xqbuilds.com', title: 'TechFlix' },
+                { url: 'https://techflix.club', title: 'TechFlix' },
             ]
         }
     })
