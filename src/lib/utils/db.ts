@@ -24,14 +24,14 @@ export interface QuickLink {
 export class MyAppDB extends Dexie {
     projects!: Table<Project, number>
     tasks!: Table<Task, number>
-    settings!: Table<QuickLink, number>
+    quicklinks!: Table<QuickLink, number>
 
     constructor() {
         super('MyAppDB')
         this.version(1).stores({
             projects: '++id, title, createdAt',
             tasks: '++id, projectId, text, completed, createdAt',
-            settings: '++id, category, name, url',
+            quicklinks: '++id, category, name, url',
         })
     }
 }
@@ -46,8 +46,7 @@ export async function initializeDatabase() {
     const quickTodoProject = await db.projects.get(QUICK_TODO_PROJECT_ID)
 
     if (!quickTodoProject) {
-        // Create the QuickTodo project if it doesn't exist
-        await db.projects.add({
+        await db.projects.put({
             id: QUICK_TODO_PROJECT_ID,
             title: 'Quick Todo',
             createdAt: new Date(),
