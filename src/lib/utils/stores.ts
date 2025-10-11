@@ -13,16 +13,16 @@ export const QUICK_TODO_PROJECT_ID = -1
 export async function ensureQuickTodoProject() {
     // Check if the QuickTodo project already exists
     const quickTodoProject = await db.projects.get(QUICK_TODO_PROJECT_ID)
-    
+
     if (!quickTodoProject) {
         // Create the QuickTodo project if it doesn't exist
         await db.projects.add({
             id: QUICK_TODO_PROJECT_ID,
-            title: "Quick Todo",
-            createdAt: new Date()
+            title: 'Quick Todo',
+            createdAt: new Date(),
         })
     }
-    
+
     return QUICK_TODO_PROJECT_ID
 }
 
@@ -30,14 +30,14 @@ export async function ensureQuickTodoProject() {
 // Excludes the special QuickTodo project
 export async function loadProjects() {
     // Get all projects except the QuickTodo project
-    const projects = await db.projects
-        .where('id')
-        .notEqual(QUICK_TODO_PROJECT_ID)
-        .toArray();
-    
+    const projects = await db.projects.where('id').notEqual(QUICK_TODO_PROJECT_ID).toArray()
+
     const projectsWithTasks: ProjectWithTasks[] = await Promise.all(
         projects.map(async (project) => {
-            const tasks = await db.tasks.where('projectId').equals(project.id as number).toArray()
+            const tasks = await db.tasks
+                .where('projectId')
+                .equals(project.id as number)
+                .toArray()
             return { ...project, tasks }
         })
     )

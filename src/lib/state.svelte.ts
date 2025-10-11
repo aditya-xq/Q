@@ -1,8 +1,9 @@
-import type { ProjectWithTasks } from "./utils/stores"
+import type { ProjectWithTasks } from './utils/stores'
 
 interface AppState {
     projectStore: ProjectWithTasks[]
     projectView: boolean
+    settingsView: boolean
 }
 
 interface Notification {
@@ -14,7 +15,8 @@ interface Notification {
 export const appState: AppState = $state({
     projectStore: [],
     projectView: false,
+    settingsView: false,
 })
 
 export const notifications: Notification[] = $state([])
-export const notificationId = $state({ value: 0})
+export const notificationId = $state({ value: 0 })

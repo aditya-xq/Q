@@ -1,4 +1,4 @@
-import { notificationId, notifications } from "$lib/state.svelte"
+import { notificationId, notifications } from '$lib/state.svelte'
 
 /**
  * Shows a notification with the given message and type
@@ -12,14 +12,14 @@ export function notify(message: string, type: 'success' | 'error' | 'warning' | 
     notificationId.value++
     const id = String(notificationId.value)
     notifications.push({ id, message, type })
-    
+
     // Auto-remove notification after duration
     if (duration > 0) {
         setTimeout(() => {
             removeNotification(id)
         }, duration)
     }
-    
+
     return id
 }
 
@@ -28,7 +28,7 @@ export function notify(message: string, type: 'success' | 'error' | 'warning' | 
  * @param id The ID of the notification to remove
  */
 export function removeNotification(id: string) {
-    const index = notifications.findIndex(n => n.id === id)
+    const index = notifications.findIndex((n) => n.id === id)
     if (index !== -1) {
         notifications.splice(index, 1)
     }
@@ -40,7 +40,7 @@ export function removeNotification(id: string) {
  * @returns CSS classes for the notification
  */
 export function getNotificationColor(type: string) {
-    switch(type) {
+    switch (type) {
         case 'success':
             return 'bg-green-100 border-green-500 text-green-800'
         case 'error':
@@ -60,5 +60,5 @@ export const toast = {
     success: (message: string, duration = 3000) => notify(message, 'success', duration),
     error: (message: string, duration = 3000) => notify(message, 'error', duration),
     warning: (message: string, duration = 3000) => notify(message, 'warning', duration),
-    info: (message: string, duration = 3000) => notify(message, 'info', duration)
+    info: (message: string, duration = 3000) => notify(message, 'info', duration),
 }
