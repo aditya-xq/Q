@@ -66,19 +66,26 @@
         await loadTasks()
     }
 
+    let handleKey: (e: KeyboardEvent) => void
+
     onMount(async () => {
         await ensureQuickTodoProject()
         await Promise.all([loadTasks(), loadProjects()])
 
-        const handleKey = (e: KeyboardEvent) => {
-            // Ctrl+ shortcuts
+        handleKey = (e: KeyboardEvent) => {
             if (e.altKey && e.key.toLowerCase() === 'q') togglePanel()
             else if (e.altKey && e.key.toLowerCase() === 'p') toggleProjectView()
             else if (e.altKey && e.key.toLowerCase() === 's') toggleSettingsView()
         }
 
         window.addEventListener('keydown', handleKey)
-        onDestroy(() => window.removeEventListener('keydown', handleKey))
+    })
+
+    // At top level
+    onDestroy(() => {
+        if (handleKey) {
+            window.removeEventListener('keydown', handleKey)
+        }
     })
 </script>
 
