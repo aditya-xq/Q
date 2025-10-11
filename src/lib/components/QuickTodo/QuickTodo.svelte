@@ -20,6 +20,7 @@
 
     function togglePanel() {
         if (appState.projectView) appState.projectView = false
+        if (appState.settingsView) appState.settingsView = false
         isPanelOpen = !isPanelOpen
     }
 
