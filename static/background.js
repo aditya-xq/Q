@@ -1,3 +1,2 @@
 // background.js
-console.log('Background service worker active.');
-
+console.log('Background service worker active.')
