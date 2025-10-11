@@ -1,198 +1,163 @@
 <script lang="ts">
-  import { onMount } from "svelte"
-  import { db } from "$lib/utils/db"
-  import type { Task, Project } from "$lib/utils/db"
-  import { ensureQuickTodoProject } from "$lib/utils/stores"
-  
-  // Import our components
-  import TaskList from "./TaskList.svelte"
-  import QuickAddInput from "./QuickAddInput.svelte"
-  
-  export let listTitle = "✅ Queue"
-  
-  // Static unique identifier for QuickTodo
-  const QUICK_TODO_ID = -1 // Using a negative ID to ensure it doesn't conflict with regular projects
-  
-  let tasks: Task[] = []
-  let projects: Project[] = []
-  let isLoading = true
-  
-  // Load tasks for the QuickTodo
-  async function loadTasks() {
-    isLoading = true
-    const allTasks = await db.tasks.where('projectId').equals(QUICK_TODO_ID).toArray()
-    // Sort tasks: incomplete tasks first, then completed tasks
-    tasks = allTasks.sort((a, b) => {
-      if (a.completed === b.completed) {
-        // If completion status is the same, sort by creation date (newest first)
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      }
-      // Incomplete tasks come first
-      return a.completed ? 1 : -1
+    import { onMount, onDestroy } from 'svelte'
+    import { slide } from 'svelte/transition'
+    import { cubicOut } from 'svelte/easing'
+    import { db } from '$lib/utils/db'
+    import type { Task, Project } from '$lib/utils/db'
+    import { ensureQuickTodoProject } from '$lib/utils/stores'
+    import { appState } from '$lib/state.svelte'
+
+    import TaskList from './TaskList.svelte'
+    import QuickAddInput from './QuickAddInput.svelte'
+
+    export let listTitle = '✅ Queue'
+
+    const QUICK_TODO_ID = -1
+    let isPanelOpen = false
+    let tasks: Task[] = []
+    let projects: Project[] = []
+    let isLoading = true
+
+    function togglePanel() {
+        if (appState.projectView) appState.projectView = false
+        isPanelOpen = !isPanelOpen
+    }
+
+    function toggleProjectView() {
+        if (appState.settingsView) appState.settingsView = false
+        isPanelOpen = false
+        appState.projectView = !appState.projectView
+    }
+
+    function toggleSettingsView() {
+        if (appState.projectView) appState.projectView = false
+        isPanelOpen = false
+        appState.settingsView = !appState.settingsView
+    }
+
+    async function loadTasks() {
+        isLoading = true
+        const allTasks = await db.tasks.where('projectId').equals(QUICK_TODO_ID).toArray()
+        tasks = allTasks.sort((a, b) => {
+            if (a.completed === b.completed) return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            return a.completed ? 1 : -1
+        })
+        isLoading = false
+    }
+
+    async function loadProjects() {
+        projects = (await db.projects.toArray()).filter((p) => p.id !== QUICK_TODO_ID)
+    }
+
+    async function addNewTask(text: string) {
+        if (!text.trim()) return
+        await db.tasks.add({ projectId: QUICK_TODO_ID, text, completed: false, createdAt: new Date() })
+        await loadTasks()
+    }
+
+    async function toggleComplete(taskId: number, text: string, completed: boolean) {
+        await db.tasks.update(taskId, { text, completed: !completed })
+        await loadTasks()
+    }
+
+    async function removeTask(taskId: number) {
+        await db.tasks.delete(taskId)
+        await loadTasks()
+    }
+
+    onMount(async () => {
+        await ensureQuickTodoProject()
+        await Promise.all([loadTasks(), loadProjects()])
+
+        const handleKey = (e: KeyboardEvent) => {
+            // Ctrl+ shortcuts
+            if (e.altKey && e.key.toLowerCase() === 'q') togglePanel()
+            else if (e.altKey && e.key.toLowerCase() === 'p') toggleProjectView()
+            else if (e.altKey && e.key.toLowerCase() === 's') toggleSettingsView()
+        }
+
+        window.addEventListener('keydown', handleKey)
+        onDestroy(() => window.removeEventListener('keydown', handleKey))
     })
-    isLoading = false
-  }
-  
-  // Load all projects
-  async function loadProjects() {
-    projects = await db.projects.toArray();
-    // Filter out the QuickTodo project if it exists in the regular projects list
-    projects = projects.filter(project => project.id !== QUICK_TODO_ID);
-  }
-  
-  // CRUD operations for tasks
-  async function addNewTask(text: string) {
-    if (!text.trim()) return;
-    const createdAt = new Date()
-    const task = { projectId: QUICK_TODO_ID, text, completed: false, createdAt }
-    await db.tasks.add(task)
-    await loadTasks()
-  }
-  
-  async function toggleComplete(taskId: number, text: string, completed: boolean) {
-    await db.tasks.update(taskId, { text, completed: !completed })
-    await loadTasks()
-  }
-  
-  async function removeTask(taskId: number) {
-    await db.tasks.delete(taskId)
-    await loadTasks()
-  }
-  
-  onMount(async () => {
-    // Ensure the QuickTodo project exists
-    await ensureQuickTodoProject()
-    await Promise.all([loadTasks(), loadProjects()])
-  })
 </script>
 
-{#if !isLoading}
-<!-- Fixed left side panel -->
-<div class="quick-todo-container">
-  <div class="panel-content">
-    <!-- Quick Todo Section -->
-    <div class="panel-section">
-      <!-- Header with static title -->
-      <div class="panel-header">
-        <h2 class="panel-title">{listTitle}</h2>
-      </div>
-      
-      <!-- Quick Add Input -->
-      <div class="quick-add-container">
-        <QuickAddInput onAddTask={addNewTask}/>
-      </div>
-      
-      <!-- Task List with scrollable container -->
-      <div class="tasks-container">
-        <TaskList 
-          {tasks} 
-          onToggleComplete={toggleComplete} 
-          onRemoveTask={removeTask} 
-        />
-      </div>
-    </div>
-  </div>
+<!-- ===== Floating Menu ===== -->
+<div class="fixed top-5 left-4 z-[1000] flex flex-col gap-3">
+    <!-- Quick Todo -->
+    <button
+        onclick={togglePanel}
+        aria-label="Quick Todo (Alt+Q)"
+        title="Quick Todo (Alt+Q)"
+        class="group rounded-lg p-2 border border-slate-200 dark:border-slate-700
+           bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
+           shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300
+           hover:scale-105 active:scale-95
+           data-[active=true]:bg-sky-100 dark:data-[active=true]:bg-sky-900/30
+           data-[active=true]:border-sky-400 data-[active=true]:text-sky-600 dark:data-[active=true]:text-sky-400"
+        data-active={isPanelOpen && !appState.projectView}
+    >
+        <span class="block md:text-sm transition-transform duration-300 group-hover:scale-110">✅</span>
+    </button>
+
+    <!-- Projects -->
+    <button
+        onclick={toggleProjectView}
+        aria-label="Projects (Alt+P)"
+        title="Projects (Alt+P)"
+        class="group rounded-lg p-2 border border-slate-200 dark:border-slate-700
+           bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
+           shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300
+           hover:scale-105 active:scale-95
+           data-[active=true]:bg-sky-100 dark:data-[active=true]:bg-sky-900/30
+           data-[active=true]:border-sky-400 data-[active=true]:text-sky-600 dark:data-[active=true]:text-sky-400"
+        data-active={appState.projectView}
+    >
+        <span class="block md:text-sm transition-transform duration-300 group-hover:scale-110">📋</span>
+    </button>
+
+    <!-- Settings -->
+    <button
+        onclick={toggleSettingsView}
+        aria-label="Settings (Alt+S)"
+        title="Settings (Alt+S)"
+        class="group rounded-lg p-2 border border-slate-200 dark:border-slate-700
+           bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
+           shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300
+           hover:scale-105 active:scale-95
+           data-[active=true]:bg-sky-100 dark:data-[active=true]:bg-sky-900/30
+           data-[active=true]:border-sky-400 data-[active=true]:text-sky-600 dark:data-[active=true]:text-sky-400"
+        data-active={appState.settingsView}
+    >
+        <span class="block md:text-sm transition-transform duration-300 group-hover:scale-110">⚙️</span>
+    </button>
 </div>
+
+<!-- ===== Quick Todo Panel ===== -->
+{#if isPanelOpen}
+    <div
+        class="fixed top-0 left-[4.5rem] sm:left-[5rem] h-full w-[18rem] sm:w-[20rem]
+           bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-700
+           shadow-xl rounded-r-2xl flex flex-col overflow-hidden z-[900]"
+        in:slide={{ axis: 'x', duration: 300, easing: cubicOut }}
+        out:slide={{ axis: 'x', duration: 250 }}
+    >
+        <header class="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+            <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100">{listTitle}</h2>
+            <button
+                onclick={() => (isPanelOpen = false)}
+                class="text-slate-500 hover:text-sky-500 dark:text-slate-400 dark:hover:text-sky-400 transition"
+                aria-label="Close Panel"
+            >
+                ✕
+            </button>
+        </header>
+
+        <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+            <QuickAddInput onAddTask={addNewTask} />
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-3 pb-4">
+            <TaskList {tasks} onToggleComplete={toggleComplete} onRemoveTask={removeTask} />
+        </div>
+    </div>
 {/if}
-
-<style>
-  /* Container styles */
-  .quick-todo-container {
-    height: 100%;
-    position: fixed;
-    left: 0;
-    top: 0;
-    z-index: 900;
-    display: flex;
-    opacity: 1;
-    transition: opacity 0.3s ease-in-out;
-  }
-
-  /* Panel content styles */
-  .panel-content {
-    height: 100%;
-    width: 20rem; /* 320px */
-    border-radius: 0 0.75rem 0.75rem 0;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    backdrop-filter: blur(8px);
-    background-color: rgba(248, 250, 252, 0.95);
-    border-right: 1px solid rgba(226, 232, 240, 0.5);
-    border-top: 1px solid rgba(226, 232, 240, 0.5);
-    border-bottom: 1px solid rgba(226, 232, 240, 0.5);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    position: relative;
-    z-index: 900;
-  }
-
-  /* Panel sections */
-  .panel-section {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  /* Dark mode support */
-  :global(.dark) .panel-content {
-    background-color: rgba(15, 23, 42, 0.95);
-    border-color: rgba(30, 41, 59, 0.5);
-  }
-
-  .panel-header {
-    padding: 1rem;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.7);
-    flex-shrink: 0;
-  }
-
-  .panel-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin: 0;
-  }
-
-  :global(.dark) .panel-header {
-    border-color: rgba(30, 41, 59, 0.7);
-  }
-
-  :global(.dark) .panel-title {
-    color: #e2e8f0;
-  }
-
-  .quick-add-container {
-    padding: 1rem;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.7);
-    flex-shrink: 0;
-  }
-
-  :global(.dark) .quick-add-container {
-    border-color: rgba(30, 41, 59, 0.7);
-  }
-  
-  /* Scrollable containers */
-  .tasks-container {
-    flex-grow: 1;
-    overflow-y: auto;
-    scrollbar-width: thin;
-  }
-  
-  /* Scrollbar styling */
-  .tasks-container::-webkit-scrollbar {
-    width: 4px;
-  }
-  
-  .tasks-container::-webkit-scrollbar-thumb {
-    background-color: rgba(100, 116, 139, 0.5);
-    border-radius: 4px;
-  }
-  
-  :global(.dark) .tasks-container::-webkit-scrollbar-thumb {
-    background-color: rgba(148, 163, 184, 0.5);
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-</style>
