@@ -9,7 +9,6 @@
 	const defaultLinks: QuickLink[] = [
 		{ category: 'Email', name: 'Gmail', url: 'https://mail.google.com' },
 		{ category: 'Messaging', name: 'WhatsApp', url: 'https://web.whatsapp.com' },
-		{ category: 'OTT Platform', name: 'Netflix', url: 'https://www.netflix.com' }
 	]
 
 	const icons: Record<string, string> = {
@@ -25,12 +24,6 @@
 			<circle cx="12" cy="10" r="1" fill="currentColor"/>
 			<circle cx="15" cy="10" r="1" fill="currentColor"/>
 		`,
-		'OTT Platform': `
-			<rect x="3" y="4" width="18" height="12" rx="2" ry="2" 
-			stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-			<polygon points="10,9 15,12 10,15" fill="currentColor"/>
-			<path d="M2 20h20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-		`
 	}
 
 	function getIcon(category: string): string {
@@ -85,7 +78,7 @@
 			const stored = await db.table('quicklinks').toArray()
 			if (stored.length > 0) {
 				const filtered = stored.filter(l =>
-					['Email', 'Messaging', 'OTT Platform'].includes(l.category)
+					['Email', 'Messaging'].includes(l.category)
 				)
 				return filtered.length ? filtered : defaultLinks
 			}
@@ -101,7 +94,7 @@
 	})
 
 	const renderedLinks = derived(quickLinksStore, $links => {
-		return ['Email', 'Messaging', 'OTT Platform'].map(category => {
+		return ['Email', 'Messaging'].map(category => {
 			const link = $links.find(l => l.category === category) || 
 			             defaultLinks.find(d => d.category === category)
 			

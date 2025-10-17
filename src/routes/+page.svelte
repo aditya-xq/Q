@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { FrequentSites, Links, Notification, ProjectGrid, SearchBar } from '$lib/components'
+    import { FrequentSites, Links, Notification, ProjectGrid } from '$lib/components'
     import { appState } from '$lib/state.svelte'
     import { onMount } from 'svelte'
     import { fade, fly } from 'svelte/transition'
@@ -29,7 +29,7 @@
                 { url: 'https://reddit.com', title: 'Reddit' },
                 { url: 'https://chatgpt.com', title: 'ChatGPT' },
                 { url: 'https://medium.com', title: 'Medium' },
-                { url: 'https://techflix.club', title: 'TechFlix' },
+                { url: 'https://netflix.com', title: 'Netflix' },
             ]
         }
     })
@@ -75,10 +75,6 @@
             in:fade={{ duration: 400, easing: cubicOut }}
         >
             <div class="max-w-3xl w-full text-center space-y-8">
-                <div in:fly={{ y: -20, duration: 400, delay: 200, easing: cubicOut }}>
-                    <SearchBar />
-                </div>
-
                 <div in:fly={{ y: 20, duration: 400, delay: 300, easing: cubicOut }}>
                     <FrequentSites sites={frequentSites} />
                 </div>

@@ -4,7 +4,6 @@
 
 	const defaultLinks: QuickLink[] = [
 		{ category: 'AI App', name: 'ChatGPT', url: 'https://chat.openai.com' },
-		{ category: 'OTT Platform', name: 'Netflix', url: 'https://www.netflix.com' },
 		{ category: 'Email', name: 'Gmail', url: 'https://mail.google.com' },
 		{ category: 'Messaging', name: 'WhatsApp', url: 'https://web.whatsapp.com' },
 	]
@@ -15,7 +14,7 @@
 	let saveTimeouts: (ReturnType<typeof setTimeout> | null)[] = [null, null, null, null]
 	let customUrls: string[] = ['', '', '', ''] // Track custom URLs separately
 
-	const categories = ['AI App', 'OTT Platform', 'Email', 'Messaging']
+	const categories = ['AI App', 'Email', 'Messaging']
 
 	onMount(async () => {
 		// Load by category instead of index
@@ -26,7 +25,7 @@
 				.first()
 			
 			if (stored) {
-				const predefinedLists = [aiApps, ottApps, emailApps, messagingApps]
+				const predefinedLists = [aiApps, emailApps, messagingApps]
 				const list = predefinedLists[i]
 				
 				// Check if it's a predefined app (excluding 'Other')
@@ -64,7 +63,6 @@
 			}
 			
 			row.url = trimmedUrl
-			// Keep name as 'Other' for consistency
 		}
 
 		try {
@@ -100,7 +98,6 @@
 	}
 
 	const aiApps = ['ChatGPT', 'Claude', 'Gemini', 'Other']
-	const ottApps = ['Netflix', 'Prime Video', 'Hotstar', 'Other']
 	const emailApps = ['Gmail', 'Outlook', 'Other']
 	const messagingApps = ['WhatsApp', 'Telegram', 'Other']
 
@@ -108,7 +105,6 @@
 		'AI App': '🤖',
 		'Email': '✉️',
 		'Messaging': '💬',
-        'OTT Platform': '🎬'
 	}
 
 	function aiAppUrl(name: string) {
@@ -116,14 +112,6 @@
 			case 'ChatGPT': return 'https://chat.openai.com'
 			case 'Claude': return 'https://claude.ai'
 			case 'Gemini': return 'https://gemini.google.com'
-			default: return ''
-		}
-	}
-	function ottUrl(name: string) {
-		switch (name) {
-			case 'Netflix': return 'https://www.netflix.com'
-			case 'Prime Video': return 'https://www.primevideo.com'
-			case 'Hotstar': return 'https://www.hotstar.com'
 			default: return ''
 		}
 	}
@@ -149,9 +137,8 @@
 
 	{#each [
 		{ title: 'AI App', list: aiApps, index: 0, urlFn: aiAppUrl },
-		{ title: 'Email', list: emailApps, index: 2, urlFn: emailUrl },
-		{ title: 'Messaging', list: messagingApps, index: 3, urlFn: msgUrl },
-        { title: 'OTT Platform', list: ottApps, index: 1, urlFn: ottUrl }
+		{ title: 'Email', list: emailApps, index: 1, urlFn: emailUrl },
+		{ title: 'Messaging', list: messagingApps, index: 2, urlFn: msgUrl },
 	] as { title, list, index, urlFn }}
 		<section class="space-y-2">
 			<h2 class="font-semibold text-gray-200 text-lg flex items-center gap-2">
