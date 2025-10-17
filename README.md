@@ -4,11 +4,11 @@
 
 ## Overview
 
-Q is a simple yet powerful browser extension that transforms your new tab page into a quick and efficient todo application. Stay organized and productive directly from your browser without the need for external task management tools.
+Q is a simple yet powerful browser extension that transforms your new tab page into a quick and efficient to-do application. Stay organized and productive directly from your browser without the need for external task management tools.
 
 ## Features
 
-- **New Tab Integration**: Replaces the default new tab page with a clean todo interface
+- **New Tab Integration**: Replaces the default new tab page with a clean to-do interface
 - **Quick Access**: Manage your tasks right when you open a new tab
 - **Top Sites**: Shows your most visited sites for easy access
 - **Simple Interface**: Minimalist design focused on productivity
@@ -21,15 +21,20 @@ _(Coming soon)_
 
 ### Manual Installation
 
-1. Clone this repository and run `bun run build` to build the extension. This will create a `build` folder which you can unpack and install as an extension.
+#### Approach 1 (For general users)
+1. Check the release page for the latest release tag - https://github.com/aditya-xq/Q/releases, download the build.zip and extract it to a `build` folder
 2. Open Chrome and navigate to `chrome://extensions/`
 3. Enable "Developer mode" in the top-right corner
 4. Click "Load unpacked" and select the build folder containing the extension files
 5. The extension should now be installed and will activate when you open a new tab
 
+#### Approach 2 (For developers)
+1. Clone this repository and run `bun run build` to build the extension. This will create a `build` folder, which you can unpack and install as an extension.
+2. Steps to add an extension to your browser are the same as above, once you have the build folder.
+
 ## Usage
 
-- Open a new tab to access your todo list
+- Open a new tab to access your to-do list
 - Add new tasks with a simple input field
 - Mark tasks as complete with a single click
 - Remove completed tasks to keep your list clean
