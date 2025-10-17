@@ -13,16 +13,17 @@
 
 	const icons: Record<string, string> = {
 		'Email': `
-			<path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 
-			2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-			<path d="M3 6l9 6 9-6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+			<rect x="3" y="5" width="18" height="14" rx="3" ry="3"
+				stroke="currentColor" stroke-width="1.6" fill="none"/>
+			<path d="M4.5 6.5L12 12L19.5 6.5"
+				stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 		`,
 		'Messaging': `
-			<path d="M20 2H4a2 2 0 0 0-2 2v14l4-4h14a2 2 0 0 0 
-			2-2V4a2 2 0 0 0-2-2z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-			<circle cx="9" cy="10" r="1" fill="currentColor"/>
-			<circle cx="12" cy="10" r="1" fill="currentColor"/>
-			<circle cx="15" cy="10" r="1" fill="currentColor"/>
+			<path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 5V5z"
+				stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+			<circle cx="9" cy="10" r="0.9" fill="currentColor"/>
+			<circle cx="12" cy="10" r="0.9" fill="currentColor"/>
+			<circle cx="15" cy="10" r="0.9" fill="currentColor"/>
 		`,
 	}
 
@@ -114,14 +115,14 @@
 <div class="flex items-center text-lg flex-wrap gap-3">
 	{#each $renderedLinks as link}
 		<button
-			class="flex items-center justify-center px-3 py-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+			class="flex items-center gap-2 px-3 py-2 rounded-xl bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-150"
 			title={link.url}
 			onclick={() => openLink(link.url)}
 		>
-			<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none">
+			<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-700 dark:text-slate-200" viewBox="0 0 24 24" fill="none">
 				{@html getIcon(link.category)}
 			</svg>
-			<span>{link.name}</span>
+			<span class="font-medium text-sm tracking-wide">{link.name}</span>
 		</button>
 	{/each}
 </div>
