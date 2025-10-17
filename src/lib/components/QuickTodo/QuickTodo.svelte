@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount, onDestroy } from 'svelte'
+    import { onMount } from 'svelte'
     import { slide } from 'svelte/transition'
     import { cubicOut } from 'svelte/easing'
     import { db } from '$lib/utils/db'
@@ -13,7 +13,6 @@
     export let listTitle = '✅ Queue'
 
     const QUICK_TODO_ID = -1
-    let isPanelOpen = false
     let tasks: Task[] = []
     let projects: Project[] = []
     let isLoading = true
@@ -21,19 +20,13 @@
     function togglePanel() {
         if (appState.projectView) appState.projectView = false
         if (appState.settingsView) appState.settingsView = false
-        isPanelOpen = !isPanelOpen
+        appState.isQuickPanelOpen = !appState.isQuickPanelOpen
     }
 
     function toggleProjectView() {
         if (appState.settingsView) appState.settingsView = false
-        isPanelOpen = false
+        appState.isQuickPanelOpen = false
         appState.projectView = !appState.projectView
-    }
-
-    function toggleSettingsView() {
-        if (appState.projectView) appState.projectView = false
-        isPanelOpen = false
-        appState.settingsView = !appState.settingsView
     }
 
     async function loadTasks() {
@@ -66,26 +59,9 @@
         await loadTasks()
     }
 
-    let handleKey: (e: KeyboardEvent) => void
-
     onMount(async () => {
         await ensureQuickTodoProject()
         await Promise.all([loadTasks(), loadProjects()])
-
-        handleKey = (e: KeyboardEvent) => {
-            if (e.altKey && e.key.toLowerCase() === 'q') togglePanel()
-            else if (e.altKey && e.key.toLowerCase() === 'p') toggleProjectView()
-            else if (e.altKey && e.key.toLowerCase() === 's') toggleSettingsView()
-        }
-
-        window.addEventListener('keydown', handleKey)
-    })
-
-    // At top level
-    onDestroy(() => {
-        if (handleKey) {
-            window.removeEventListener('keydown', handleKey)
-        }
     })
 </script>
 
@@ -102,7 +78,7 @@
            hover:scale-105 active:scale-95
            data-[active=true]:bg-sky-100 dark:data-[active=true]:bg-sky-900/30
            data-[active=true]:border-sky-400 data-[active=true]:text-sky-600 dark:data-[active=true]:text-sky-400"
-        data-active={isPanelOpen && !appState.projectView}
+        data-active={appState.isQuickPanelOpen && !appState.projectView}
     >
         <span class="block md:text-sm transition-transform duration-300 group-hover:scale-110">✅</span>
     </button>
@@ -122,26 +98,10 @@
     >
         <span class="block md:text-sm transition-transform duration-300 group-hover:scale-110">📋</span>
     </button>
-
-    <!-- Settings -->
-    <button
-        onclick={toggleSettingsView}
-        aria-label="Settings (Alt+S)"
-        title="Settings (Alt+S)"
-        class="group rounded-lg p-2 border border-slate-200 dark:border-slate-700
-           bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
-           shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300
-           hover:scale-105 active:scale-95
-           data-[active=true]:bg-sky-100 dark:data-[active=true]:bg-sky-900/30
-           data-[active=true]:border-sky-400 data-[active=true]:text-sky-600 dark:data-[active=true]:text-sky-400"
-        data-active={appState.settingsView}
-    >
-        <span class="block md:text-sm transition-transform duration-300 group-hover:scale-110">⚙️</span>
-    </button>
 </div>
 
 <!-- ===== Quick Todo Panel ===== -->
-{#if isPanelOpen}
+{#if appState.isQuickPanelOpen}
     <div
         class="fixed top-0 left-[4.5rem] sm:left-[5rem] h-full w-[18rem] sm:w-[20rem]
            bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-700
@@ -152,7 +112,7 @@
         <header class="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
             <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100">{listTitle}</h2>
             <button
-                onclick={() => (isPanelOpen = false)}
+                onclick={() => (appState.isQuickPanelOpen = false)}
                 class="text-slate-500 hover:text-sky-500 dark:text-slate-400 dark:hover:text-sky-400 transition"
                 aria-label="Close Panel"
             >

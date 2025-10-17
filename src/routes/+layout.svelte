@@ -1,9 +1,45 @@
 <script lang="ts">
-    import { QuickTodo } from '$lib/components'
+    import { QuickTodo, Settings } from '$lib/components'
     import { cubicOut } from 'svelte/easing'
     import { slide } from 'svelte/transition'
     import '../app.css'
+    import { onDestroy, onMount } from 'svelte'
+    import { appState } from '$lib/state.svelte'
     let { children } = $props()
+    let handleKey: (e: KeyboardEvent) => void
+
+    function togglePanel() {
+        if (appState.projectView) appState.projectView = false
+        if (appState.settingsView) appState.settingsView = false
+        appState.isQuickPanelOpen = !appState.isQuickPanelOpen
+    }
+
+    function toggleProjectView() {
+        if (appState.settingsView) appState.settingsView = false
+        appState.isQuickPanelOpen = false
+        appState.projectView = !appState.projectView
+    }
+
+    function toggleSettingsView() {
+        appState.settingsView = !appState.settingsView
+    }
+
+    onMount(async () => {
+        handleKey = (e: KeyboardEvent) => {
+            if (e.altKey && e.key.toLowerCase() === 'q') togglePanel()
+            else if (e.altKey && e.key.toLowerCase() === 'p') toggleProjectView()
+            else if (e.altKey && e.key.toLowerCase() === 's') toggleSettingsView()
+        }
+
+        window.addEventListener('keydown', handleKey)
+    })
+
+    // At top level
+    onDestroy(() => {
+        if (handleKey) {
+            window.removeEventListener('keydown', handleKey)
+        }
+    })
 </script>
 
 <svelte:head>
@@ -21,6 +57,7 @@
         out:slide={{ axis: 'x', duration: 300 }}
     >
         <QuickTodo />
+        <Settings />
     </div>
 
     <!-- Main Content Wrapper -->

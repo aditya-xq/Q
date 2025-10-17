@@ -4,6 +4,7 @@ interface AppState {
     projectStore: ProjectWithTasks[]
     projectView: boolean
     settingsView: boolean
+    isQuickPanelOpen: boolean
 }
 
 interface Notification {
@@ -16,6 +17,7 @@ export const appState: AppState = $state({
     projectStore: [],
     projectView: false,
     settingsView: false,
+    isQuickPanelOpen: false,
 })
 
 export const notifications: Notification[] = $state([])

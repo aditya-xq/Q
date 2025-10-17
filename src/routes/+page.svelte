@@ -4,7 +4,6 @@
     import { onMount } from 'svelte'
     import { fade, fly } from 'svelte/transition'
     import { cubicOut, quintOut } from 'svelte/easing'
-    import Settings from '$lib/components/Settings.svelte'
 
     let frequentSites: { url: string; title: string }[] = []
 
@@ -56,16 +55,6 @@
         >
             <div in:fly={{ y: 20, duration: 500, delay: 300, easing: quintOut }}>
                 <ProjectGrid />
-            </div>
-        </div>
-    {:else if appState.settingsView}
-        <!-- Settings View -->
-        <div
-            class="w-full max-w-3xl mx-auto -mt-24 px-4 sm:px-6 lg:px-8 transition-all duration-500 ease-out"
-            in:fade={{ duration: 400, easing: cubicOut }}
-        >
-            <div in:fly={{ y: 20, duration: 400, delay: 200, easing: cubicOut }}>
-                <Settings />
             </div>
         </div>
     {:else}

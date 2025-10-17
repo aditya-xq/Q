@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
 	import { db, type QuickLink } from '$lib/utils/db'
+    import { appState } from '$lib/state.svelte'
+    import { quintOut } from 'svelte/easing'
+    import { fly, slide } from 'svelte/transition'
 
 	const defaultLinks: QuickLink[] = [
-		{ category: 'AI App', name: 'ChatGPT', url: 'https://chat.openai.com' },
 		{ category: 'Email', name: 'Gmail', url: 'https://mail.google.com' },
 		{ category: 'Messaging', name: 'WhatsApp', url: 'https://web.whatsapp.com' },
 	]
@@ -12,9 +14,9 @@
 	let savingState: boolean[] = [false, false, false, false]
 	let savedState: boolean[] = [false, false, false, false]
 	let saveTimeouts: (ReturnType<typeof setTimeout> | null)[] = [null, null, null, null]
-	let customUrls: string[] = ['', '', '', ''] // Track custom URLs separately
+	let customUrls: string[] = ['', ''] // Track custom URLs separately
 
-	const categories = ['AI App', 'Email', 'Messaging']
+	const categories = ['Email', 'Messaging']
 
 	onMount(async () => {
 		// Load by category instead of index
@@ -25,7 +27,7 @@
 				.first()
 			
 			if (stored) {
-				const predefinedLists = [aiApps, emailApps, messagingApps]
+				const predefinedLists = [emailApps, messagingApps]
 				const list = predefinedLists[i]
 				
 				// Check if it's a predefined app (excluding 'Other')
@@ -97,24 +99,14 @@
 		saveTimeouts[index] = setTimeout(() => saveRow(index), 500)
 	}
 
-	const aiApps = ['ChatGPT', 'Claude', 'Gemini', 'Other']
 	const emailApps = ['Gmail', 'Outlook', 'Other']
 	const messagingApps = ['WhatsApp', 'Telegram', 'Other']
 
 	const categoryIcons = {
-		'AI App': '🤖',
 		'Email': '✉️',
 		'Messaging': '💬',
 	}
 
-	function aiAppUrl(name: string) {
-		switch (name) {
-			case 'ChatGPT': return 'https://chat.openai.com'
-			case 'Claude': return 'https://claude.ai'
-			case 'Gemini': return 'https://gemini.google.com'
-			default: return ''
-		}
-	}
 	function emailUrl(name: string) {
 		switch (name) {
 			case 'Gmail': return 'https://mail.google.com'
@@ -129,66 +121,162 @@
 			default: return ''
 		}
 	}
+
+	function toggleSettingsView() {
+        appState.settingsView = !appState.settingsView
+    }
 </script>
 
-<div class="space-y-10 max-w-3xl mx-auto px-4">
-	<h1 class="text-3xl font-semibold text-gray-100 text-center mb-2">⚙️ Settings</h1>
-	<p class="text-base text-gray-400 text-center mb-6">Configure your quick links</p>
+<!-- ===== Settings Button & Panel ===== -->
+<div class="fixed bottom-5 left-3 z-[1000]">
+	{#if appState.settingsView}
+		<div
+			class="absolute bottom-full mb-3 w-[calc(100vw-2.5rem)] max-w-md origin-bottom-left pl-4 pr-12"
+			in:fly={{ y: 10, duration: 300, easing: quintOut }}
+			out:slide={{ axis: 'y', duration: 200 }}
+		>
+			<div
+				class="bg-slate-800 dark:bg-slate-950 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden"
+			>
+				<!-- Header-->
+				<div class="relative bg-slate-800/80 to-slate-700 dark:bg-slate-950 px-5 py-4 border-b border-slate-700">
+					<div class="flex items-center justify-between">
+						<div class="flex items-center gap-2.5">
+							<h1 class="text-lg font-semibold text-gray-100">Settings</h1>
+						</div>
+						<button
+							onclick={toggleSettingsView}
+							class="w-7 h-7 rounded-lg bg-white/5 dark:bg-slate-950 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-gray-200 transition-all"
+							aria-label="Close settings"
+						>
+							<span class="text-sm">✕</span>
+						</button>
+					</div>
+				</div>
 
-	{#each [
-		{ title: 'AI App', list: aiApps, index: 0, urlFn: aiAppUrl },
-		{ title: 'Email', list: emailApps, index: 1, urlFn: emailUrl },
-		{ title: 'Messaging', list: messagingApps, index: 2, urlFn: msgUrl },
-	] as { title, list, index, urlFn }}
-		<section class="space-y-2">
-			<h2 class="font-semibold text-gray-200 text-lg flex items-center gap-2">
-				<span class="text-xl">{categoryIcons[title]}</span> {title}
-			</h2>
+				<!-- Content -->
+				<div class="p-5 space-y-5">
+					{#each [
+						{ title: 'Email', list: emailApps, index: 0, urlFn: emailUrl },
+						{ title: 'Messaging', list: messagingApps, index: 1, urlFn: msgUrl },
+					] as { title, list, index, urlFn }}
+						<section class="space-y-2">
+							<!-- Section Title with improved spacing -->
+							<div class="flex items-center gap-2">
+								<span class="text-base">{categoryIcons[title]}</span>
+								<h2 class="text-sm font-semibold text-gray-200 uppercase tracking-wide">{title}</h2>
+							</div>
 
-			<div class="flex items-center gap-3 flex-wrap relative">
-				{#each list as app}
-					<button
-						class="px-5 py-2.5 rounded-lg text-base font-medium transition-all duration-200
-							{quickLinks[index].name === app
-								? 'bg-white/25 text-white'
-								: 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-100'}
-						"
-						on:click={() => {
-							quickLinks[index] = { 
-								...quickLinks[index], 
-								name: app, 
-								url: app === 'Other' ? (customUrls[index] || '') : urlFn(app) 
-							}
-							scheduleRowSave(index)
-						}}
-					>
-						{app}
-					</button>
-				{/each}
+							<!-- Options with improved spacing and hover states -->
+							<div class="flex items-center gap-2 flex-wrap">
+								{#each list as app}
+									<button
+										class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+											border backdrop-blur-sm
+											{quickLinks[index].name === app
+												? 'bg-white/20 border-white/30 text-white shadow-lg shadow-white/5'
+												: 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20 hover:text-gray-200'}
+										"
+										onclick={() => {
+											quickLinks[index] = { 
+												...quickLinks[index], 
+												name: app, 
+												url: app === 'Other' ? (customUrls[index] || '') : urlFn(app) 
+											}
+											scheduleRowSave(index)
+										}}
+									>
+										{app}
+									</button>
+								{/each}
+							</div>
 
-				{#if quickLinks[index].name === 'Other'}
-					<input
-						type="url"
-						bind:value={customUrls[index]}
-						placeholder="Enter URL (e.g., https://example.com)..."
-						class="ml-2 flex-1 min-w-[220px] px-3 py-2.5 rounded-lg bg-white/5 text-gray-100 border border-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 text-base placeholder:text-gray-500"
-						on:input={() => scheduleRowSave(index)}
-					/>
-				{/if}
+							<!-- Custom URL Input with improved styling -->
+							{#if quickLinks[index].name === 'Other'}
+								<div class="pt-1" transition:slide={{ duration: 200 }}>
+									<div class="relative">
+										<input
+											type="url"
+											bind:value={customUrls[index]}
+											placeholder="https://example.com"
+											class="w-full px-4 py-2.5 rounded-lg bg-white/5 text-gray-100 text-sm 
+												border border-white/10 focus:border-white/30 
+												focus:outline-none focus:ring-2 focus:ring-white/10
+												placeholder:text-gray-500 transition-all"
+											oninput={() => scheduleRowSave(index)}
+										/>
+										<div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs pointer-events-none">
+											🔗
+										</div>
+									</div>
+								</div>
+							{/if}
+
+							<!-- Save Status with improved feedback -->
+							<div class="min-h-[20px] flex items-center">
+								{#if savingState[index]}
+									<div class="flex items-center gap-1.5 text-xs text-gray-400">
+										<span class="inline-block w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
+										<span>Saving changes...</span>
+									</div>
+								{:else if savedState[index]}
+									<div class="flex items-center gap-1.5 text-xs text-green-400 animate-in fade-in duration-200">
+										<span>✓</span>
+										<span>Saved successfully</span>
+									</div>
+								{/if}
+							</div>
+						</section>
+					{/each}
+				</div>
 			</div>
+		</div>
+	{/if}
 
-			{#if savingState[index]}
-				<div class="text-xs text-gray-400 mt-1 select-none">Saving...</div>
-			{:else if savedState[index]}
-				<div class="text-xs text-green-400 mt-1 select-none">Saved ✅</div>
-			{/if}
-		</section>
-	{/each}
+    <!-- Enhanced Settings Button -->
+    <button
+        onclick={toggleSettingsView}
+        aria-label="Settings (Alt+S)"
+        title="Settings (Alt+S)"
+        class="group relative rounded-lg p-2 border
+           bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
+           shadow-lg hover:shadow-xl transition-all duration-300
+           hover:scale-110 active:scale-95
+           {appState.settingsView 
+				? 'border-sky-400 bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 shadow-sky-400/20' 
+				: 'border-slate-200 dark:border-slate-700 hover:border-sky-400'}"
+    >
+		<!-- Subtle glow effect when active -->
+		{#if appState.settingsView}
+			<div class="absolute inset-0 rounded-xl bg-sky-400/10 animate-pulse"></div>
+		{/if}
+        <span class="relative block text-base transition-transform duration-300 group-hover:rotate-90">⚙️</span>
+    </button>
 </div>
 
 <style>
 	button:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
+	}
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+	@keyframes fade-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+	.animate-spin {
+		animation: spin 1s linear infinite;
+	}
+
+	.animate-in {
+		animation: fade-in 0.2s ease-in;
 	}
 </style>
