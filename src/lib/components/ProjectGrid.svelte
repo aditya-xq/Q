@@ -5,8 +5,8 @@
     import { appState } from '$lib/state.svelte'
     import { fade } from 'svelte/transition'
 
-    let newProjectTitle = ''
-    let isAddingProject = false
+    let newProjectTitle = $state('')
+    let isAddingProject = $state(false)
     let addCardElement: HTMLElement
 
     onMount(() => {
@@ -43,9 +43,11 @@
             addNewProject()
         }
     }
+
+    let quickPanelPadding = $derived(appState?.keepQuickPanelOpen ? 'lg:pl-56' : '')
 </script>
 
-<div class="container mx-auto p-4 transition-colors duration-300">
+<div class={`container mx-auto p-4 transition-all duration-300 ease-in-out ${quickPanelPadding}`}>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {#each appState.projectStore as project (project.id)}
             <div in:fade={{ duration: 200, delay: 50 }}>
@@ -67,20 +69,20 @@
                                 type="text"
                                 placeholder="Project name"
                                 bind:value={newProjectTitle}
-                                on:keydown={handleKeydown}
+                                onkeydown={handleKeydown}
                                 class="w-full bg-slate-100/80 dark:bg-slate-800/70 border-0 rounded-lg px-4 py-3 mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:focus:ring-indigo-400/20 text-center placeholder:text-slate-500 dark:placeholder:text-slate-600 font-medium text-slate-700 dark:text-slate-200 shadow-sm backdrop-blur-sm"
                             />
 
                             <div class="flex justify-center space-x-3">
                                 <button
                                     class="px-4 py-2 rounded-lg text-sm transition-all duration-200 text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 font-medium"
-                                    on:click={cancelAddProject}
+                                    onclick={cancelAddProject}
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     class="px-4 py-2 rounded-lg text-sm transition-all duration-200 bg-gradient-to-r from-indigo-500/90 to-indigo-600/90 dark:from-indigo-700 dark:to-indigo-800 hover:from-indigo-600 hover:to-indigo-700 dark:hover:from-indigo-600 dark:hover:to-indigo-700 text-white font-medium shadow-sm hover:shadow"
-                                    on:click={addNewProject}
+                                    onclick={addNewProject}
                                 >
                                     Add Project
                                 </button>
@@ -90,7 +92,7 @@
                 </div>
             {:else}
                 <button
-                    on:click={startAddingProject}
+                    onclick={startAddingProject}
                     class="absolute inset-0 flex items-center justify-center rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-slate-50/80 dark:bg-slate-900/60 backdrop-blur-sm hover:bg-slate-100/80 dark:hover:bg-slate-800/70 transition-all duration-200 shadow-sm hover:shadow group"
                     in:fade={{ duration: 150 }}
                 >
