@@ -1,5 +1,20 @@
 <script lang="ts">
+    import { onMount } from 'svelte'
+
     export let onAddTask: (text: string) => void
+    export let autoFocus: boolean = false
+
+    let inputEl: HTMLInputElement
+
+    export function focus() {
+        inputEl?.focus()
+        // select text if you want
+        inputEl?.select()
+    }
+
+    onMount(() => {
+        if (autoFocus) focus()
+    })
 
     let newTaskText = ''
 
@@ -21,11 +36,15 @@
     <input
         id="quick-task-input"
         type="text"
+        bind:this={inputEl}
         placeholder="Add a task and press Enter..."
         bind:value={newTaskText}
         class="w-full pl-3 pr-10 py-2 rounded-lg bg-slate-100/80 dark:bg-slate-800/70 border-0 text-slate-600 dark:text-slate-200 placeholder-slate-500 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:focus:ring-indigo-400/20 transition-all duration-200"
         onkeydown={(e) => {
-            if (e.key === 'Enter') handleAddTask()
+            if (e.key === 'Enter') {
+                onAddTask(inputEl.value)
+                inputEl.value = ''
+            }
         }}
     />
     <button
