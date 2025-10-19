@@ -21,10 +21,16 @@ export interface QuickLink {
     url: string
 }
 
+export interface Setting {
+    key: string
+    value: string | number | boolean
+}
+
 export class MyAppDB extends Dexie {
     projects!: Table<Project, number>
     tasks!: Table<Task, number>
     quicklinks!: Table<QuickLink, number>
+    settings!: Table<Setting, string>
 
     constructor() {
         super('MyAppDB')
@@ -32,6 +38,7 @@ export class MyAppDB extends Dexie {
             projects: '++id, title, createdAt',
             tasks: '++id, projectId, text, completed, createdAt',
             quicklinks: '++id, category, name, url',
+            settings: '&key',
         })
     }
 }

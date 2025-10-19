@@ -80,3 +80,12 @@ export async function deleteTask(taskId: number) {
     await db.tasks.delete(taskId)
     await loadProjects()
 }
+
+export async function getSetting(key: string): Promise<string | number | boolean | undefined> {
+    const setting = await db.settings.get(key)
+    return setting?.value
+}
+
+export async function updateSetting(key: string, value: string | number | boolean) {
+    await db.settings.put({ key, value })
+}
