@@ -4,6 +4,7 @@
     import { appState } from '$lib/state.svelte'
     import { quintOut } from 'svelte/easing'
     import { fly, slide } from 'svelte/transition'
+    import { getSetting, updateSetting } from '$lib/utils/stores'
 
 	const defaultLinks: QuickLink[] = [
 		{ category: 'Email', name: 'Gmail', url: 'https://mail.google.com' },
@@ -42,6 +43,9 @@
 				}
 			}
 		}
+		// Initialize keepQuickPanelOpen from DB (fallback to false)
+        const keep = await getSetting('keepQuickPanelOpen')
+        appState.keepQuickPanelOpen = typeof keep === 'boolean' ? keep : false
 	})
 
 	async function saveRow(index: number) {
@@ -125,6 +129,12 @@
 	function toggleSettingsView() {
         appState.settingsView = !appState.settingsView
     }
+
+    async function toggleKeepQuickPanelOpen() {
+        const newVal = !appState.keepQuickPanelOpen
+        await updateSetting('keepQuickPanelOpen', newVal)
+        appState.keepQuickPanelOpen = newVal
+    }
 </script>
 
 <!-- ===== Settings Button & Panel ===== -->
@@ -136,10 +146,10 @@
 			out:slide={{ axis: 'y', duration: 200 }}
 		>
 			<div
-				class="bg-slate-800 dark:bg-slate-950 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden"
+				class="bg-slate-800 dark:bg-slate-950 rounded-2xl border border-slate-600 shadow-2xl overflow-hidden"
 			>
 				<!-- Header-->
-				<div class="relative bg-slate-800/80 to-slate-700 dark:bg-slate-950 px-5 py-4 border-b border-slate-700">
+				<div class="relative bg-slate-800/80 dark:bg-slate-950 px-5 py-4 border-b border-slate-700">
 					<div class="flex items-center justify-between">
 						<div class="flex items-center gap-2.5">
 							<h1 class="text-lg font-semibold text-gray-100">Settings</h1>
@@ -168,11 +178,10 @@
 							</div>
 
 							<!-- Options with improved spacing and hover states -->
-							<div class="flex items-center gap-2 flex-wrap">
+							<div class="flex items-center gap-4 flex-wrap">
 								{#each list as app}
 									<button
-										class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
-											border backdrop-blur-sm
+										class="p-2 rounded-lg text-sm font-medium transition-all duration-200
 											{quickLinks[index].name === app
 												? 'bg-white/20 border-white/30 text-white shadow-lg shadow-white/5'
 												: 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20 hover:text-gray-200'}
@@ -228,6 +237,28 @@
 							</div>
 						</section>
 					{/each}
+					<section class="space-y-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-base">📌</span>
+                            <h2 class="text-sm font-semibold text-gray-200 uppercase tracking-wide">Quick Panel</h2>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <p class="text-sm text-gray-300">Keep the quick panel open</p>
+
+                            <!-- simple switch -->
+                            <button
+                                onclick={toggleKeepQuickPanelOpen}
+                                aria-pressed={appState.keepQuickPanelOpen}
+                                aria-label="Toggle keep quick panel open"
+                                class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-200 focus:outline-none
+                                    {appState.keepQuickPanelOpen ? 'bg-sky-500' : 'bg-white/5'}"
+                            >
+                                <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200
+                                    {appState.keepQuickPanelOpen ? 'translate-x-5' : 'translate-x-0'}"></span>
+                            </button>
+                        </div>
+                    </section>
 				</div>
 			</div>
 		</div>
