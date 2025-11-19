@@ -1,5 +1,5 @@
 import { appState } from '$lib/state.svelte'
-import type { Project, Task } from './db'
+import type { Project, Task, Writeup } from './db'
 import { db } from './db'
 
 export interface ProjectWithTasks extends Project {
@@ -42,6 +42,12 @@ export async function loadProjects() {
         })
     )
     appState.projectStore = projectsWithTasks
+}
+
+// Load writeups from the database
+export async function loadWriteups() {
+    const writeups = await db.writeups.orderBy('updatedAt').reverse().toArray()
+    appState.writeupStore = writeups
 }
 
 // CRUD operations for projects
@@ -88,4 +94,27 @@ export async function getSetting(key: string): Promise<string | number | boolean
 
 export async function updateSetting(key: string, value: string | number | boolean) {
     await db.settings.put({ key, value })
+}
+
+// CRUD operations for writeups
+export async function addWriteup(title: string, content: string): Promise<number> {
+    const createdAt = new Date()
+    const id = await db.writeups.add({ title, content, createdAt, updatedAt: createdAt })
+    await loadWriteups()
+    return id as number
+}
+
+export async function updateWriteup(id: number, title: string, content: string) {
+    const updatedAt = new Date()
+    await db.writeups.update(id, { title, content, updatedAt })
+    await loadWriteups()
+}
+
+export async function deleteWriteup(id: number) {
+    await db.writeups.delete(id)
+    await loadWriteups()
+}
+
+export async function getWriteup(id: number): Promise<Writeup | undefined> {
+    return db.writeups.get(id)
 }
