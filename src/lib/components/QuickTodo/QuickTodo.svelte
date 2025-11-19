@@ -22,13 +22,22 @@
     function togglePanel() {
         if (appState.projectView) appState.projectView = false
         if (appState.settingsView) appState.settingsView = false
+        if (appState.writerView) appState.writerView = false
         appState.isQuickPanelOpen = !appState.isQuickPanelOpen
     }
 
     function toggleProjectView() {
         if (appState.settingsView) appState.settingsView = false
+        if (appState.writerView) appState.writerView = false
         appState.isQuickPanelOpen = false
         appState.projectView = !appState.projectView
+    }
+
+    function toggleWriterView() {
+        if (appState.settingsView) appState.settingsView = false
+        if (appState.projectView) appState.projectView = false
+        appState.isQuickPanelOpen = false
+        appState.writerView = !appState.writerView
     }
 
     async function loadTasks() {
@@ -97,8 +106,8 @@
     <!-- Projects -->
     <button
         onclick={toggleProjectView}
-        aria-label="Projects (AltP)"
-        title="Projects (AltP)"
+        aria-label="Projects (Alt + P)"
+        title="Projects (Alt + P)"
         class="group rounded-lg p-2 border border-slate-200 dark:border-slate-700
            bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
            shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300
@@ -108,6 +117,22 @@
         data-active={appState.projectView}
     >
         <span class="block md:text-sm transition-transform duration-300 group-hover:scale-110">📋</span>
+    </button>
+
+    <!-- Writer Mode -->
+    <button
+        onclick={toggleWriterView}
+        aria-label="Writer (Alt + W)"
+        title="Writer (Alt + W)"
+        class="group rounded-lg p-2 border border-slate-200 dark:border-slate-700
+           bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
+           shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300
+           hover:scale-105 active:scale-95
+           data-[active=true]:bg-sky-100 dark:data-[active=true]:bg-sky-900/30
+           data-[active=true]:border-sky-400 data-[active=true]:text-sky-600 dark:data-[active=true]:text-sky-400"
+        data-active={appState.writerView}
+    >
+        <span class="block md:text-sm transition-transform duration-300 group-hover:scale-110">✍️</span>
     </button>
 </div>
 
