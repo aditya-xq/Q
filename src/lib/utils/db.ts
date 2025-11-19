@@ -1,5 +1,13 @@
 import Dexie, { type Table } from 'dexie'
 
+export interface Writeup {
+    id?: number
+    title: string
+    content: string
+    createdAt: Date
+    updatedAt?: Date
+}
+
 export interface Project {
     id?: number
     title: string
@@ -27,6 +35,7 @@ export interface Setting {
 }
 
 export class MyAppDB extends Dexie {
+    writeups!: Table<Writeup, number>
     projects!: Table<Project, number>
     tasks!: Table<Task, number>
     quicklinks!: Table<QuickLink, number>
@@ -35,6 +44,7 @@ export class MyAppDB extends Dexie {
     constructor() {
         super('MyAppDB')
         this.version(1).stores({
+            writeups: '++id, title, content, createdAt, updatedAt',
             projects: '++id, title, createdAt',
             tasks: '++id, projectId, text, completed, createdAt',
             quicklinks: '++id, category, name, url',
