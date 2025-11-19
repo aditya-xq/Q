@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "Q",
-    "version": "0.2.5",
-    "description": "An extension that converts your new tab into a quick todo app.",
+    "version": "0.2.7",
+    "description": "An extension that converts your new tab into a quick todo app and a productivity powerhouse.",
     "permissions": ["topSites"],
     "chrome_url_overrides": {
         "newtab": "index.html"
