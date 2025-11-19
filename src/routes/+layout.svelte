@@ -11,13 +11,21 @@
     function togglePanel() {
         if (appState.projectView) appState.projectView = false
         if (appState.settingsView) appState.settingsView = false
+        if (appState.writerView) appState.writerView = false
         appState.isQuickPanelOpen = !appState.isQuickPanelOpen
     }
 
     function toggleProjectView() {
         if (appState.settingsView) appState.settingsView = false
+        if (appState.writerView) appState.writerView = false
         appState.isQuickPanelOpen = false
         appState.projectView = !appState.projectView
+    }
+
+    function toggleWriteriew() {
+        if (appState.settingsView) appState.settingsView = false
+        appState.isQuickPanelOpen = false
+        appState.writerView = !appState.writerView
     }
 
     function toggleSettingsView() {
@@ -28,6 +36,7 @@
         handleKey = (e: KeyboardEvent) => {
             if (e.altKey && e.key.toLowerCase() === 'q') togglePanel()
             else if (e.altKey && e.key.toLowerCase() === 'p') toggleProjectView()
+            else if (e.altKey && e.key.toLowerCase() === 'w') toggleWriteriew()
             else if (e.altKey && e.key.toLowerCase() === 's') toggleSettingsView()
         }
 
@@ -44,7 +53,7 @@
 
 <svelte:head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>QuickTodo</title>
+    <title>Q - New Tab</title>
     <meta charset="UTF-8" />
 </svelte:head>
 

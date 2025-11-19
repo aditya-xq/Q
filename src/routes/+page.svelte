@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { FrequentSites, Links, Notification, ProjectGrid } from '$lib/components'
+    import { FrequentSites, Links, Notification, ProjectGrid, WriterView } from '$lib/components'
     import { appState } from '$lib/state.svelte'
     import { onMount } from 'svelte'
     import { fade, fly } from 'svelte/transition'
@@ -36,7 +36,9 @@
 
 <!-- ===== Main Screen ===== -->
 <div
-    class="relative min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 transition-colors duration-500"
+    class={`relative min-h-screen flex flex-col transition-colors duration-500 ${
+        appState.projectView || appState.writerView ? 'items-start' : 'items-center justify-center'
+    } bg-slate-50 dark:bg-slate-950`}
 >
     <!-- Notifications -->
     <Notification />
@@ -47,14 +49,18 @@
     </div>
 
     <!-- Project View -->
-    {#if appState.projectView}
+    {#if appState.projectView || appState.writerView}
         <div
-            class="w-full max-w-7xl mx-auto -mt-64 transition-all duration-500 ease-out"
+            class="w-full max-w-7xl mx-auto transition-all duration-500 ease-out"
             style="opacity: 1;"
             in:fade={{ duration: 400, easing: cubicOut, delay: 200 }}
         >
             <div in:fly={{ y: 20, duration: 500, delay: 300, easing: quintOut }}>
-                <ProjectGrid />
+                {#if appState.projectView}
+                    <div class="mt-40"><ProjectGrid /></div>
+                {:else if appState.writerView}
+                    <div class="mt-18"><WriterView /></div>
+                {/if}
             </div>
         </div>
     {:else}
