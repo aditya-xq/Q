@@ -1,12 +1,6 @@
 <script lang="ts">
-    import { loadWriteups } from '$lib/utils/stores'
-    import { onMount } from 'svelte'
     import { appState } from '$lib/state.svelte'
     import { Editor } from '.'
-
-    onMount(() => {
-        loadWriteups()
-    })
 
     let content = $state('')
 
