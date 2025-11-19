@@ -21,7 +21,7 @@ _(Coming soon)_
 
 ### From Edge extension store (for Edge browsers)
 
-Add to your browser from the official extension link - [Q](https://microsoftedge.microsoft.com/addons/detail/q/caclhkefejgdigpilgjbljkjejnlfibd)
+Add to your browser from the official extension link - [Q - The new tab extension](https://microsoftedge.microsoft.com/addons/detail/q/caclhkefejgdigpilgjbljkjejnlfibd)
 
 ### Manual Installation
 
