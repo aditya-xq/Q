@@ -21,18 +21,16 @@
     onMount(() => {
         if (!rootEl) return
 
-        // Create the crepe instance
         crepe = new Crepe({
             root: rootEl,
             defaultValue: '# ',
             features: {
                 [Crepe.Feature.Latex]: false,
                 [Crepe.Feature.ImageBlock]: false,
-                [Crepe.Feature.Toolbar]: true,
                 [Crepe.Feature.BlockEdit]: false,
             },
             featureConfigs: {
-                [Crepe.Feature.Placeholder]: { text: 'Start a new draft', mode: 'block' } as any
+                [Crepe.Feature.Placeholder]: { text: 'Write something cool', mode: 'block' } as any
             }
         })
         crepe.create()
