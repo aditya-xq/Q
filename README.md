@@ -1,4 +1,4 @@
-# Q - New Tab Todo Extension
+# Q - New Tab Extension
 
 ![Q Logo](static/icons/icon32x32.png)
 
@@ -18,6 +18,10 @@ Q is a simple yet powerful browser extension that transforms your new tab page i
 ### From Chrome Web Store
 
 _(Coming soon)_
+
+### From Edge extension store (for Edge browsers)
+
+Add to your browser from the official extension link - [Q](https://microsoftedge.microsoft.com/addons/detail/q/caclhkefejgdigpilgjbljkjejnlfibd)
 
 ### Manual Installation
 
@@ -40,13 +44,6 @@ _(Coming soon)_
 - Remove completed tasks to keep your list clean
 
 ## Development
-
-### Project Structure
-
-- `index.html` - Main interface for the new tab page
-- `background.js` - Background service worker for extension functionality
-- `static/` - Contains icons and other static resources
-- `manifest.json` - Extension configuration file
 
 ### Building from Source
 
