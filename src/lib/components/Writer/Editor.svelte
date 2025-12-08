@@ -9,7 +9,7 @@
     let value: string = $state('')
 
     /** Props */
-    let { onInputChange } = $props();
+    let { onInputChange, initialContent } = $props()
 
     const handleMarkdown = () => {
         if (crepe) {
@@ -18,12 +18,21 @@
         }
     }
 
-    onMount(() => {
+    function initCrepe(defaultValue = '# ') {
         if (!rootEl) return
+        // destroy previous if exists
+        if (crepe) {
+            try {
+                const obs = (crepe as any).__svelteObserver
+                if (obs && typeof obs.disconnect === 'function') obs.disconnect()
+            } catch (_) {}
+            crepe.destroy?.()
+            crepe = null
+        }
 
         crepe = new Crepe({
             root: rootEl,
-            defaultValue: '# ',
+            defaultValue,
             features: {
                 [Crepe.Feature.Latex]: false,
                 [Crepe.Feature.ImageBlock]: false,
@@ -34,6 +43,11 @@
             }
         })
         crepe.create()
+    }
+
+    onMount(() => {
+        if (!rootEl) return
+        initCrepe(initialContent || '# ')
     })
 
     onDestroy(() => {
