@@ -2,10 +2,8 @@ import Dexie, { type Table } from 'dexie'
 
 export interface Writeup {
     id?: number
-    title: string
     content: string
-    createdAt: Date
-    updatedAt?: Date
+    updatedAt: Date
 }
 
 export interface Project {
@@ -44,7 +42,7 @@ export class MyAppDB extends Dexie {
     constructor() {
         super('MyAppDB')
         this.version(1).stores({
-            writeups: '++id, title, content, createdAt, updatedAt',
+            writeups: '++id, content, updatedAt',
             projects: '++id, title, createdAt',
             tasks: '++id, projectId, text, completed, createdAt',
             quicklinks: '++id, category, name, url',

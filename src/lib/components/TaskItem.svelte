@@ -1,13 +1,12 @@
 <script lang="ts">
     import type { Task } from '$lib/utils/db'
     import { updateTask, deleteTask } from '$lib/utils/stores'
-    import { slide } from 'svelte/transition'
+    import { DeleteButton } from './shared'
 
     export let task: Task
 
     let editing = false
     let editedText = task.text
-    let showConfirmDelete = false
     let isHovered = false
 
     function toggleComplete() {
@@ -19,18 +18,6 @@
             updateTask(task.id as number, editedText, task.completed)
             editing = false
         }
-    }
-
-    function handleDelete() {
-        if (showConfirmDelete) {
-            deleteTask(task.id as number)
-        } else {
-            showConfirmDelete = true
-        }
-    }
-
-    function cancelDelete() {
-        showConfirmDelete = false
     }
 
     // Auto-focus the input when editing
@@ -93,7 +80,7 @@
             {/if}
         </div>
 
-        <div class={`flex-shrink-0 ml-2 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+        <div class={`flex-shrink-0 ml-2 transition-opacity duration-200`}>
             {#if !editing}
                 <button
                     class="p-1 rounded-full mr-1 transition-colors text-slate-500 hover:text-indigo-500 dark:text-slate-500 dark:hover:text-indigo-400 hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
@@ -116,50 +103,7 @@
                     </svg>
                 </button>
             {/if}
-
-            <button
-                class="p-1 rounded-full transition-colors text-slate-500 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
-                on:click={handleDelete}
-                aria-label="Delete task"
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-3.5 w-3.5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                </svg>
-            </button>
+            <DeleteButton handleDelete={() => deleteTask(task.id as number)} />
         </div>
     </div>
-
-    {#if showConfirmDelete}
-        <div
-            class="mx-2 mb-2 p-2 rounded-md text-xs bg-red-50/90 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 backdrop-blur-sm"
-            transition:slide={{ duration: 150 }}
-        >
-            <p class="text-red-700 dark:text-red-300 mb-1.5">Delete this task?</p>
-            <div class="flex justify-end space-x-2">
-                <button
-                    class="px-2 py-0.5 text-xs rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                    on:click={cancelDelete}
-                >
-                    Cancel
-                </button>
-                <button
-                    class="px-2 py-0.5 text-xs rounded-md bg-red-500/90 hover:bg-red-600/90 dark:bg-red-700 dark:hover:bg-red-600 text-white transition-colors"
-                    on:click={handleDelete}
-                >
-                    Delete
-                </button>
-            </div>
-        </div>
-    {/if}
 </div>

@@ -1,14 +1,14 @@
 <script lang="ts">
     import { addTask, deleteProject, updateProject, type ProjectWithTasks } from '$lib/utils/stores'
+    import { DeleteButton } from './shared'
     import TaskItem from './TaskItem.svelte'
-    import { fade, slide } from 'svelte/transition'
+    import { fade } from 'svelte/transition'
 
     export let project: ProjectWithTasks
 
     let editingTitle = false
     let editedTitle = project.title
     let newTaskText = ''
-    let showConfirmDelete = false
     let isHovered = false
 
     function saveTitle() {
@@ -23,19 +23,6 @@
             addTask(project.id as number, newTaskText)
             newTaskText = ''
         }
-    }
-
-    function handleDeleteProject() {
-        if (showConfirmDelete) {
-            deleteProject(project.id as number)
-            showConfirmDelete = false
-        } else {
-            showConfirmDelete = true
-        }
-    }
-
-    function cancelDelete() {
-        showConfirmDelete = false
     }
 
     // Auto-focus the title input when editing
@@ -80,51 +67,8 @@
                     {/if}
                 </h2>
             {/if}
-
-            <button
-                class="p-1.5 rounded-full transition-colors text-slate-500 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 hover:bg-slate-200/70 dark:hover:bg-slate-800"
-                on:click={handleDeleteProject}
-                aria-label="Delete project"
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                </svg>
-            </button>
+            <DeleteButton handleDelete={() => deleteProject(project.id as number)}/>
         </div>
-
-        {#if showConfirmDelete}
-            <div
-                class="mt-3 p-3 rounded-lg bg-red-50/90 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 backdrop-blur-sm"
-                transition:slide={{ duration: 200 }}
-            >
-                <p class="text-sm text-red-700 dark:text-red-300 mb-2">Are you sure you want to delete this project?</p>
-                <div class="flex justify-end space-x-2">
-                    <button
-                        class="px-3 py-1.5 text-xs rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                        on:click={cancelDelete}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        class="px-3 py-1.5 text-xs rounded-lg bg-red-500/90 hover:bg-red-600/90 dark:bg-red-700 dark:hover:bg-red-600 text-white transition-colors"
-                        on:click={handleDeleteProject}
-                    >
-                        Delete
-                    </button>
-                </div>
-            </div>
-        {/if}
     </div>
 
     <div

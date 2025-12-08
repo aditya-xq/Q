@@ -3,7 +3,7 @@ import type { ProjectWithTasks } from './utils/stores'
 
 interface AppState {
     projectStore: ProjectWithTasks[]
-    writeupStore?: Writeup[]
+    writeups: Writeup[]
     projectView: boolean
     settingsView: boolean
     writerView: boolean
@@ -22,7 +22,7 @@ export const appState: AppState = $state({
     projectView: false,
     settingsView: false,
     writerView: false,
-    writeupStore: [],
+    writeups: [],
     isQuickPanelOpen: false,
     keepQuickPanelOpen: false,
 })
