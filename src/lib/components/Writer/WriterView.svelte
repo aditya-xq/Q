@@ -13,13 +13,14 @@
 
     let content = $state('')
     let currentWriteupId = $state<number | undefined>(undefined)
+    let createdTimeInNum = $state<number | undefined>(undefined)
     let autosavedAt = $state<Date | null>(null)
     let saving = $state(false)
     let dirty = $state(false)
 
     let editorContentToLoad = $derived(currentWriteupId === undefined ? '# ' : content)
 
-    const AUTOSAVE_DELAY = 1500 // ms
+    const AUTOSAVE_DELAY = 1400 // ms
     let autosaveTimer = $state<number | undefined>(undefined)
 
     // Minimum time saving indicator must be visible (ms)
@@ -82,7 +83,7 @@
             if (typeof currentWriteupId === 'number') {
                 await updateWriteup(currentWriteupId, content)
             } else {
-                const newId = await addWriteup(content)
+                const newId = await addWriteup(content, createdTimeInNum)
                 currentWriteupId = newId
             }
             autosavedAt = new Date()
@@ -110,6 +111,7 @@
         if (!w) return
         content = w.content
         currentWriteupId = w.id
+        createdTimeInNum = w.createdAt
         dirty = false
         autosavedAt = w.updatedAt ? new Date(w.updatedAt) : autosavedAt
     }
@@ -117,6 +119,7 @@
     // create new draft
     function createNewDraft() {
         currentWriteupId = undefined
+        createdTimeInNum = Date.now()
         content = '# '
         dirty = false
         autosavedAt = null
@@ -159,7 +162,6 @@
                 <div class="flex items-center gap-3">
                     <!-- you can add more controls here (title, actions) -->
                 </div>
-
                 <!-- unified status area -->
                 <div class="text-sm italic text-stone-400 flex items-center gap-2">
                     {#if saving}
@@ -172,7 +174,7 @@
                     <span>{saveStatusText}</span>
                 </div>
             </div>
-            {#key currentWriteupId ?? "new"}
+            {#key createdTimeInNum ?? "new"}
                 <div class="mt-4 transition-opacity duration-200 ease-in-out">
                     <Editor initialContent={editorContentToLoad} onInputChange={handleInputChange} />
                 </div>

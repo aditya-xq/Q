@@ -4,6 +4,7 @@ export interface Writeup {
     id?: number
     content: string
     updatedAt: Date
+    createdAt: number | undefined
 }
 
 export interface Project {
@@ -42,7 +43,7 @@ export class MyAppDB extends Dexie {
     constructor() {
         super('MyAppDB')
         this.version(1).stores({
-            writeups: '++id, content, updatedAt',
+            writeups: '++id, content, updatedAt, createdAt',
             projects: '++id, title, createdAt',
             tasks: '++id, projectId, text, completed, createdAt',
             quicklinks: '++id, category, name, url',

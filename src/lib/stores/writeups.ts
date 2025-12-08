@@ -1,15 +1,15 @@
 import { appState } from "$lib/state.svelte"
 import { db, type Writeup } from "$lib/utils/db"
 
-// Load writeups from the database
+// Load write-ups from the database
 export async function loadWriteups() {
     const writeups = await db.writeups.orderBy('updatedAt').reverse().toArray()
     appState.writeups = writeups
 }
 
-export async function addWriteup(content: string): Promise<number> {
-    const createdAt = new Date()
-    const id = await db.writeups.add({ content, updatedAt: createdAt })
+export async function addWriteup(content: string, createdAt?: number): Promise<number> {
+    const updatedAt = new Date()
+    const id = await db.writeups.add({ content, updatedAt, createdAt })
     await loadWriteups()
     return id as number
 }
