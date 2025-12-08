@@ -44,10 +44,10 @@
         }
     }
 
-    let quickPanelPadding = $derived(appState?.keepQuickPanelOpen ? 'lg:pl-56' : '')
+    let quickPanelPadding = $derived(appState?.keepQuickPanelOpen ? 'lg:pl-84' : '')
 </script>
 
-<div class={`container mx-auto p-4 transition-all duration-300 ease-in-out ${quickPanelPadding}`}>
+<div class={`container mx-auto px-40 transition-all duration-300 ease-in-out ${quickPanelPadding}`}>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {#each appState.projectStore as project (project.id)}
             <div in:fade={{ duration: 200, delay: 50 }}>

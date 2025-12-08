@@ -163,7 +163,7 @@
                     <!-- you can add more controls here (title, actions) -->
                 </div>
                 <!-- unified status area -->
-                <div class="text-sm italic text-stone-400 flex items-center gap-2">
+                <div class="text-sm italic text-slate-400 flex items-center gap-2">
                     {#if saving}
                         <!-- small spinner + saving text; animate-pulse makes it noticeable but not loud -->
                         <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -175,7 +175,7 @@
                 </div>
             </div>
             {#key createdTimeInNum ?? "new"}
-                <div class="mt-4 transition-opacity duration-200 ease-in-out">
+                <div class="mt-4 ml-20 transition-opacity duration-200 ease-in-out">
                     <Editor initialContent={editorContentToLoad} onInputChange={handleInputChange} />
                 </div>
             {/key}

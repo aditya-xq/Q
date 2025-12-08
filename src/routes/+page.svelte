@@ -51,7 +51,7 @@
     <!-- Project View -->
     {#if appState.projectView || appState.writerView}
         <div
-            class="w-full max-w-7xl mx-auto transition-all duration-500 ease-out"
+            class="w-full mx-auto transition-all duration-500 ease-out"
             style="opacity: 1;"
             in:fade={{ duration: 400, easing: cubicOut, delay: 200 }}
         >
@@ -59,7 +59,7 @@
                 {#if appState.projectView}
                     <div class="mt-40"><ProjectGrid /></div>
                 {:else if appState.writerView}
-                    <div class="mt-18"><WriterView /></div>
+                    <div class="mt-20"><WriterView /></div>
                 {/if}
             </div>
         </div>

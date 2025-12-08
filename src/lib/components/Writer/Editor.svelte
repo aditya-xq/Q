@@ -84,4 +84,7 @@
     :global(.milkdown) {
         background: transparent;
     }
+    :global(.milkdown .ProseMirror ) {
+        padding-top: 0;
+    }
 </style>
