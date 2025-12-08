@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { clickOutside } from "$lib/utils/utils"
     import { slide } from "svelte/transition"
     let { handleDelete } = $props()
     let showConfirmDelete = $state(false)
@@ -33,6 +34,7 @@
     {#if showConfirmDelete}
         <!-- absolutely positioned popup placed below the button; does not change layout -->
         <div
+            use:clickOutside={() => (showConfirmDelete = false)}
             class="absolute top-full -left-30 transform -translate-x-1/2 mt-2 w-[min(22rem,calc(100vw-2rem))] max-w-xs z-50 rounded-lg bg-red-50/95 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 backdrop-blur-sm shadow-lg p-3"
             transition:slide={{ duration: 180 }}
             role="dialog"
