@@ -38,10 +38,10 @@ Add to your browser from the official extension link - [Q - The new tab extensio
 
 ## Usage
 
-- Open a new tab to access your to-do list
-- Add new tasks with a simple input field
-- Mark tasks as complete with a single click
-- Remove completed tasks to keep your list clean
+- Open a new tab to access your frequently visited sites on a clean distraction free interface
+- Access your quick to-do list on the left side panel
+- Check out the writer mode to write some notes, snippets, and manage your drafts.
+- Manage your projects via the projects tab.
 
 ## Development
 
