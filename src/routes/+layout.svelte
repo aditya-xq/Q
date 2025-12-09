@@ -59,6 +59,10 @@
 
 <!-- ===== Layout Container ===== -->
 <div class="flex h-screen text-slate-900 dark:text-slate-100 overflow-hidden">
+    <!-- Top-Left Minimal "Queue" Label -->
+    <div class="fixed top-4 left-20 z-40 select-none font-light text-xl tracking-wide text-slate-400 dark:text-slate-600">
+        Queue 
+    </div>
     <!-- Sidebar / Floating QuickTodo -->
     <div
         class="fixed left-0 top-0 h-full w-16 z-50 flex flex-col items-center pt-4 pb-6 bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 shadow-xl"
