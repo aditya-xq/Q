@@ -33,7 +33,7 @@
 
 	function openLink(url: string) {
 		if (!url) return
-		window.open(url, '_blank')
+		window.location.href = url
 	}
 
 	// Extract a friendly name from URL
