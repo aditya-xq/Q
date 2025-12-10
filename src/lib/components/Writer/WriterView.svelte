@@ -83,7 +83,7 @@
             if (typeof currentWriteupId === 'number') {
                 await updateWriteup(currentWriteupId, content)
             } else {
-                const newId = await addWriteup(content, createdTimeInNum)
+                const newId = await addWriteup(content, Date.now())
                 currentWriteupId = newId
             }
             autosavedAt = new Date()
@@ -132,23 +132,23 @@
         }
     }
 
+    const onBeforeUnload = async (e: BeforeUnloadEvent) => {
+        if (dirty) {
+            // attempt sync save (best-effort)
+            await saveDraftIfNeeded(true)
+        }
+        // allow unload
+    }
+
     // lifecycle hooks
     onMount(async () => {
         await loadWriteups()
-
-        const onBeforeUnload = async (e: BeforeUnloadEvent) => {
-            if (dirty) {
-                // attempt sync save (best-effort)
-                await saveDraftIfNeeded(true)
-            }
-            // allow unload
-        }
         window.addEventListener('beforeunload', onBeforeUnload)
+    })
 
-        onDestroy(() => {
-            window.removeEventListener('beforeunload', onBeforeUnload)
-            if (autosaveTimer) clearTimeout(autosaveTimer)
-        })
+    onDestroy(() => {
+        window.removeEventListener('beforeunload', onBeforeUnload)
+        if (autosaveTimer) clearTimeout(autosaveTimer)
     })
 
     let quickPanelPadding = $derived(appState?.keepQuickPanelOpen ? 'lg:pl-56' : '')
