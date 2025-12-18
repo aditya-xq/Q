@@ -1,17 +1,13 @@
-# Q - New Tab Extension
+![Q Logo](static/assets//banner.svg)
 
-![Q Logo](static/icons/icon32x32.png)
-
-## Overview
-
-Q is a simple yet powerful browser extension that transforms your new tab page into a quick and efficient to-do application. Stay organized and productive directly from your browser without the need for external task management tools.
+Q is a simple yet powerful browser extension that transforms your new tab page into a sleek and focused productivity tool. Stay organized directly from your browser without the need for external task management or writing apps.
 
 ## Features
 
-- **New Tab Integration**: Replaces the default new tab page with a clean to-do interface
-- **Quick Access**: Manage your tasks right when you open a new tab
+- **New Tab Integration**: Replaces the default new tab page with a clean interface
+- **Quick Todo**: Manage your tasks right when you open a new tab
 - **Top Sites**: Shows your most visited sites for easy access
-- **Simple Interface**: Minimalist design focused on productivity
+- **Writer**: A special mode for focused and distraction free writing
 
 ## Installation
 
@@ -67,4 +63,4 @@ Contributions are welcome! Feel free to submit issues or pull requests to help i
 
 ---
 
-Made with ❤️ for productivity enthusiasts
+Made with ❤️ for productivity enthusiasts. Feel free to tweet me your feedback and suggestions [@xq_is_here](https://x.com/xq_is_here) on X/Twitter.
