@@ -9,8 +9,9 @@
 
     import TaskList from './TaskList.svelte'
     import QuickAddInput from './QuickAddInput.svelte'
+    import { Icon } from '../shared'
 
-    export let listTitle = '✅ Queue'
+    export let listTitle = `To do`
 
     let quickInput: any
 
@@ -90,17 +91,16 @@
     <!-- Quick Todo -->
     <button
         onclick={togglePanel}
-        aria-label="Quick Todo (AltQ)"
-        title="Quick Todo (AltQ)"
-        class="group rounded-lg p-2 border border-slate-200 dark:border-slate-700
+        aria-label="Quick Todo (Alt + Q)"
+        title="Quick Todo (Alt + Q)"
+        class="group rounded-lg border border-slate-200 dark:border-slate-700
            bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
            shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300
-           hover:scale-105 active:scale-95
            data-[active=true]:bg-sky-100 dark:data-[active=true]:bg-sky-900/30
            data-[active=true]:border-sky-400 data-[active=true]:text-sky-600 dark:data-[active=true]:text-sky-400"
         data-active={appState.isQuickPanelOpen && !appState.projectView}
     >
-        <span class="block md:text-sm transition-transform duration-300 group-hover:scale-110">✅</span>
+        <span class="block md:text-sm transition-transform duration-300"><Icon/></span>
     </button>
 
     <!-- Projects -->
