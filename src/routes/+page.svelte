@@ -69,7 +69,7 @@
             class="flex flex-col items-center justify-center flex-1 w-full -mt-24 px-4 sm:px-6 lg:px-8 transition-all duration-500 ease-out"
             in:fade={{ duration: 400, easing: cubicOut }}
         >
-            <div class="max-w-3xl w-full text-center space-y-8">
+            <div class={`${appState.isQuickPanelOpen || appState.keepQuickPanelOpen ? 'max-w-6xl pl-86' : 'max-w-3xl'} text-center space-y-8 transition-all duration-400 ease-in-out`}>
                 <div in:fly={{ y: 20, duration: 400, delay: 300, easing: cubicOut }}>
                     <FrequentSites sites={frequentSites} />
                 </div>

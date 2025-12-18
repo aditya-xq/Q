@@ -1,5 +1,5 @@
 <script lang="ts">
-    export let sites: any[] = []
+    let {sites = []} = $props()
 
     // Function to get the favicon for a site
     function getFavicon(url: string | URL) {
@@ -37,7 +37,7 @@
                         src={getFavicon(site.url)}
                         alt={site.title}
                         class="w-10 h-10 object-contain"
-                        on:error={(e) => handleImageError(e)}
+                        onerror={(e) => handleImageError(e)}
                     />
                     <div
                         class="absolute inset-0 flex items-center justify-center text-lg font-semibold text-slate-600 dark:text-slate-300"
