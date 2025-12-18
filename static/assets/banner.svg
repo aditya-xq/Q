@@ -1,0 +1,29 @@
+<svg width="100%" viewBox="0 0 1200 260" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="260" fill="#0B0F14"/>
+    <!-- Decorative line -->
+    <line x1="120" y1="160" x2="1080" y2="160" stroke="#1F2937" stroke-width="2"/>
+    <!-- Title -->
+    <text
+        x="600"
+        y="125"
+        text-anchor="middle"
+        font-size="88"
+        font-family="Inter, SF Mono, JetBrains Mono, monospace"
+        fill="#E5E7EB"
+        letter-spacing="8"
+    >
+        Q
+    </text>
+    <!-- Subtitle -->
+    <text
+        x="600"
+        y="190"
+        text-anchor="middle"
+        font-size="22"
+        font-family="Inter, system-ui, sans-serif"
+        fill="#9CA3AF"
+        letter-spacing="1.2"
+    >
+        a focused new-tab experience
+    </text>
+</svg>
