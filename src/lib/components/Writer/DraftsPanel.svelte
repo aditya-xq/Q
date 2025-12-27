@@ -56,6 +56,8 @@
     ))
 
     let openOlder = $state(false)
+    // Show older section only if there are more than 10 records total
+    let showOlderSection = $derived(today.length + thisWeek.length + older.length > 10)
 
     // --- Interactions ---
     function handleKeyCreate(e: KeyboardEvent) {
@@ -86,68 +88,89 @@
     <div class="space-y-6">
         {#if today.length > 0}
             <div class="space-y-1">
-                {#each [...today, ...thisWeek] as w (w.id)}
-                    <article 
-                        class="group relative flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 transition-all
-                        {w.id === currentWriteupId 
-                            ? 'bg-white dark:bg-slate-800 dark:ring-slate-800' 
-                            : 'hover:bg-slate-200/50 dark:hover:bg-slate-900'}"
-                    >
-                        <button class="flex min-w-0 flex-1 flex-col gap-0.5 text-left focus:outline-none" onclick={() => openDraft(w.id)}>
-                            <span class="truncate text-sm font-medium text-slate-800 dark:text-slate-200">
-                                {deriveTitle(w.content) || 'Untitled Draft'}
-                            </span>
-                            <span class="truncate text-xs text-slate-300 group-hover:text-slate-400">
-                                {formatRelative(new Date(w.updatedAt))}
-                            </span>
-                        </button>
-                        <div class="ml-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-                            <DeleteButton handleDelete={() => removeDraft(w.id)} />
-                        </div>
-                    </article>
-                {/each}
-            </div>
-        {/if}
-        {#if older.length > 0}
-            <section>
-                <button 
-                    class="flex w-full items-center justify-between px-2 py-1.5 text-xs font-medium text-slate-400 transition-colors hover:text-slate-600 dark:hover:text-slate-300" 
-                    onclick={() => (openOlder = !openOlder)}
-                >
-                    <span>Older</span>
-                    <div class="flex items-center gap-1">
-                    <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] dark:bg-slate-900">{older.length}</span>
-                    <svg 
-                        class="h-3 w-3 transform transition-transform duration-200 {openOlder ? 'rotate-90' : ''}" 
-                        viewBox="0 0 20 20" fill="currentColor"
-                    >
-                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                    </svg>
-                    </div>
-                </button>
-                {#if openOlder}
-                    <div class="mt-1 space-y-1 pl-1" transition:slide={{ duration: 200, easing: cubicOut }}>
-                        {#each older as w (w.id)}
-                            <article 
-                                class="group flex cursor-pointer items-center justify-between rounded-lg px-2 py-2 transition-colors
-                                {w.id === currentWriteupId ? 'bg-slate-100 dark:bg-slate-900' : 'hover:bg-slate-100 dark:hover:bg-slate-900'}"
+                {#if showOlderSection}
+                    {#each [...today, ...thisWeek] as w (w.id)}
+                        <article 
+                            class="group relative flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 transition-all
+                            {w.id === currentWriteupId 
+                                ? 'bg-white dark:bg-slate-800 dark:ring-slate-800' 
+                                : 'hover:bg-slate-200/50 dark:hover:bg-slate-900'}"
+                        >
+                            <button class="flex min-w-0 flex-1 flex-col gap-0.5 text-left focus:outline-none" onclick={() => openDraft(w.id)}>
+                                <span class="truncate text-sm font-medium text-slate-800 dark:text-slate-200">
+                                    {deriveTitle(w.content) || 'Untitled Draft'}
+                                </span>
+                                <span class="truncate text-xs text-slate-300 group-hover:text-slate-400">
+                                    {formatRelative(new Date(w.updatedAt))}
+                                </span>
+                            </button>
+                            <div class="ml-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                                <DeleteButton handleDelete={() => removeDraft(w.id)} />
+                            </div>
+                        </article>
+                    {/each}
+                    <section>
+                        <button 
+                            class="flex w-full items-center justify-between px-2 py-1.5 text-xs font-medium text-slate-400 transition-colors hover:text-slate-600 dark:hover:text-slate-300" 
+                            onclick={() => (openOlder = !openOlder)}
+                        >
+                            <span>Older</span>
+                            <div class="flex items-center gap-1">
+                            <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] dark:bg-slate-900">{older.length}</span>
+                            <svg 
+                                class="h-3 w-3 transform transition-transform duration-200 {openOlder ? 'rotate-90' : ''}" 
+                                viewBox="0 0 20 20" fill="currentColor"
                             >
-                                <button class="flex min-w-0 flex-1 flex-col text-left focus:outline-none" onclick={() => openDraft(w.id)}>
-                                    <span class="truncate text-sm text-slate-600 dark:text-slate-400 {w.id === currentWriteupId ? 'font-medium text-slate-900 dark:text-slate-100' : ''}">
-                                        {deriveTitle(w.content)}
-                                    </span>
-                                    <span class="truncate text-[10px] text-slate-400">
-                                        {new Date(w.updatedAt).toLocaleDateString()}
-                                    </span>
-                                </button>
-                                <div class="ml-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-                                    <DeleteButton handleDelete={() => removeDraft(w.id)} />
-                                </div>
-                            </article>
-                        {/each}
-                    </div>
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                            </div>
+                        </button>
+                        {#if openOlder}
+                            <div class="mt-1 space-y-1 pl-1" transition:slide={{ duration: 200, easing: cubicOut }}>
+                                {#each older as w (w.id)}
+                                    <article 
+                                        class="group flex cursor-pointer items-center justify-between rounded-lg px-2 py-2 transition-colors
+                                        {w.id === currentWriteupId ? 'bg-slate-100 dark:bg-slate-900' : 'hover:bg-slate-100 dark:hover:bg-slate-900'}"
+                                    >
+                                        <button class="flex min-w-0 flex-1 flex-col text-left focus:outline-none" onclick={() => openDraft(w.id)}>
+                                            <span class="truncate text-sm text-slate-600 dark:text-slate-400 {w.id === currentWriteupId ? 'font-medium text-slate-900 dark:text-slate-100' : ''}">
+                                                {deriveTitle(w.content)}
+                                            </span>
+                                            <span class="truncate text-[10px] text-slate-400">
+                                                {new Date(w.updatedAt).toLocaleDateString()}
+                                            </span>
+                                        </button>
+                                        <div class="ml-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                                            <DeleteButton handleDelete={() => removeDraft(w.id)} />
+                                        </div>
+                                    </article>
+                                {/each}
+                            </div>
+                        {/if}
+                    </section>
+                {:else}
+                    {#each [...today, ...thisWeek, ...older] as w (w.id)}
+                        <article 
+                            class="group relative flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 transition-all
+                            {w.id === currentWriteupId 
+                                ? 'bg-white dark:bg-slate-800 dark:ring-slate-800' 
+                                : 'hover:bg-slate-200/50 dark:hover:bg-slate-900'}"
+                        >
+                            <button class="flex min-w-0 flex-1 flex-col gap-0.5 text-left focus:outline-none" onclick={() => openDraft(w.id)}>
+                                <span class="truncate text-sm font-medium text-slate-800 dark:text-slate-200">
+                                    {deriveTitle(w.content) || 'Untitled Draft'}
+                                </span>
+                                <span class="truncate text-xs text-slate-300 group-hover:text-slate-400">
+                                    {formatRelative(new Date(w.updatedAt))}
+                                </span>
+                            </button>
+                            <div class="ml-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                                <DeleteButton handleDelete={() => removeDraft(w.id)} />
+                            </div>
+                        </article>
+                    {/each}
                 {/if}
-            </section>
+            </div>
         {/if}
     </div>
 </aside>
