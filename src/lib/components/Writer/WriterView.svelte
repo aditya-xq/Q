@@ -20,11 +20,11 @@
 
     let editorContentToLoad = $derived(currentWriteupId === undefined ? '# ' : content)
 
-    const AUTOSAVE_DELAY = 1400 // ms
+    const AUTOSAVE_DELAY = 1200 // ms
     let autosaveTimer = $state<number | undefined>(undefined)
 
     // Minimum time saving indicator must be visible (ms)
-    const MIN_SAVE_DISPLAY_MS = 800
+    const MIN_SAVE_DISPLAY_MS = 600
 
     // internal timestamp to ensure min display
     let _saveShownSince = $state(0)
