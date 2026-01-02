@@ -1,2 +1,124 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
+
+/* Global Tooltip Styles */
+[data-tooltip] {
+	position: relative;
+}
+
+[data-tooltip]::before {
+	content: attr(data-tooltip);
+	position: absolute;
+	right: calc(100% + 0.5rem);
+	top: 50%;
+	transform: translateY(-50%);
+	padding: 0.5rem 0.75rem;
+	background-color: rgb(30 41 59);
+	color: white;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	border-radius: 0.5rem;
+	white-space: nowrap;
+	pointer-events: none;
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 150ms, visibility 150ms;
+	box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+	z-index: 1000;
+}
+
+[data-tooltip]::after {
+	content: '';
+	position: absolute;
+	right: 100%;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 0;
+	height: 0;
+	border: 4px solid transparent;
+	border-left-color: rgb(30 41 59);
+	pointer-events: none;
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 150ms, visibility 150ms;
+	z-index: 1000;
+}
+
+[data-tooltip]:hover::before,
+[data-tooltip]:hover::after {
+	opacity: 1;
+	visibility: visible;
+}
+
+/* Tooltip positioning variants */
+[data-tooltip][data-tooltip-position="top"]::before {
+	right: auto;
+	left: 50%;
+	top: auto;
+	bottom: calc(100% + 0.5rem);
+	transform: translateX(-50%);
+}
+
+[data-tooltip][data-tooltip-position="top"]::after {
+	right: auto;
+	left: 50%;
+	top: auto;
+	bottom: 100%;
+	transform: translateX(-50%);
+	border-left-color: transparent;
+	border-top-color: rgb(30 41 59);
+}
+
+[data-tooltip][data-tooltip-position="bottom"]::before {
+	right: auto;
+	left: 50%;
+	top: calc(100% + 0.5rem);
+	bottom: auto;
+	transform: translateX(-50%);
+}
+
+[data-tooltip][data-tooltip-position="bottom"]::after {
+	right: auto;
+	left: 50%;
+	top: 100%;
+	bottom: auto;
+	transform: translateX(-50%);
+	border-left-color: transparent;
+	border-bottom-color: rgb(30 41 59);
+}
+
+[data-tooltip][data-tooltip-position="left"]::before {
+	left: calc(100% + 0.5rem);
+	right: auto;
+}
+
+[data-tooltip][data-tooltip-position="left"]::after {
+	left: 100%;
+	right: auto;
+	border-left-color: transparent;
+	border-right-color: rgb(30 41 59);
+}
+
+/* Dark mode support */
+:global(.dark) [data-tooltip]::before {
+	background-color: rgb(51 65 85);
+}
+
+:global(.dark) [data-tooltip]::after {
+	border-left-color: rgb(51 65 85);
+}
+
+:global(.dark) [data-tooltip][data-tooltip-position="top"]::after {
+	border-left-color: transparent;
+	border-top-color: rgb(51 65 85);
+}
+
+:global(.dark) [data-tooltip][data-tooltip-position="bottom"]::after {
+	border-left-color: transparent;
+	border-bottom-color: rgb(51 65 85);
+}
+
+:global(.dark) [data-tooltip][data-tooltip-position="left"]::after {
+	border-left-color: transparent;
+	border-right-color: rgb(51 65 85);
+}

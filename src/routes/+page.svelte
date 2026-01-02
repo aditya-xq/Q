@@ -42,11 +42,7 @@
 >
     <!-- Notifications -->
     <Notification />
-
-    <!-- Top-right user links -->
-    <div class="fixed top-4 right-4 z-30">
-        <Links />
-    </div>
+    <Links />
 
     <!-- Project View -->
     {#if appState.projectView || appState.writerView}
@@ -59,14 +55,14 @@
                 {#if appState.projectView}
                     <div class="mt-40"><ProjectGrid /></div>
                 {:else if appState.writerView}
-                    <div class="mt-20"><WriterView /></div>
+                    <div class="mt-20 mr-20"><WriterView /></div>
                 {/if}
             </div>
         </div>
     {:else}
         <!-- Home View -->
         <div
-            class="flex flex-col items-center justify-center flex-1 w-full -mt-24 px-4 sm:px-6 lg:px-8 transition-all duration-500 ease-out"
+            class="flex flex-col items-center justify-center flex-1 w-full -mt-24 mr-6 px-4 sm:px-6 lg:px-8 transition-all duration-500 ease-out"
             in:fade={{ duration: 400, easing: cubicOut }}
         >
             <div class={`${appState.isQuickPanelOpen || appState.keepQuickPanelOpen ? 'max-w-6xl pl-86' : 'max-w-3xl'} text-center space-y-8 transition-all duration-400 ease-in-out`}>

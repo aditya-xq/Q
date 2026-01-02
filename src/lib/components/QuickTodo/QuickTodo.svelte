@@ -87,7 +87,7 @@
 </script>
 
 <!-- ===== Floating Menu ===== -->
-<div class="fixed top-5 left-4 z-[1000] flex flex-col gap-3">
+<div class="fixed top-5 left-4 z-1000 flex flex-col gap-3">
     <!-- Quick Todo -->
     <button
         onclick={togglePanel}
@@ -139,9 +139,9 @@
 <!-- ===== Quick Todo Panel ===== -->
 {#if appState.keepQuickPanelOpen || appState.isQuickPanelOpen}
     <div
-        class="fixed top-0 left-[4.5rem] sm:left-[5rem] h-full w-[18rem] sm:w-[20rem]
+        class="fixed top-0 left-18 sm:left-20 h-full w-[18rem] sm:w-[20rem]
            bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-700
-           shadow-xl rounded-r-2xl flex flex-col overflow-hidden z-[900]"
+           shadow-xl rounded-r-2xl flex flex-col overflow-hidden z-900"
         in:slide={{ axis: 'x', duration: 300, easing: cubicOut }}
         out:slide={{ axis: 'x', duration: 250 }}
         onintroend={() => quickInput?.focus?.()}

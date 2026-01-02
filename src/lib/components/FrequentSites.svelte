@@ -8,7 +8,7 @@
             return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
         } catch (e) {
             // Fallback icon if URL parsing fails
-            return '/favicon.png'
+            return 'icons/apple-touch-icon.png'
         }
     }
 

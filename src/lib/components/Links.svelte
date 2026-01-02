@@ -1,34 +1,31 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
 	import { db, type QuickLink } from '$lib/utils/db'
-	import { writable, derived } from 'svelte/store'
 	import { liveQuery } from 'dexie'
 
-	const quickLinksStore = writable<QuickLink[]>([])
+	let quickLinks = $state<QuickLink[]>([])
 
 	const defaultLinks: QuickLink[] = [
 		{ category: 'Email', name: 'Gmail', url: 'https://mail.google.com' },
 		{ category: 'Messaging', name: 'WhatsApp', url: 'https://web.whatsapp.com' },
 	]
 
-	const icons: Record<string, string> = {
-		'Email': `
-			<rect x="3" y="5" width="18" height="14" rx="3" ry="3"
-				stroke="currentColor" stroke-width="1.6" fill="none"/>
-			<path d="M4.5 6.5L12 12L19.5 6.5"
-				stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-		`,
-		'Messaging': `
-			<path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 5V5z"
-				stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-			<circle cx="9" cy="10" r="0.9" fill="currentColor"/>
-			<circle cx="12" cy="10" r="0.9" fill="currentColor"/>
-			<circle cx="15" cy="10" r="0.9" fill="currentColor"/>
-		`,
+	const linkIcons: Record<string, string> = {
+		'Gmail': 'https://www.google.com/gmail/about/static/images/logo-gmail.png?cache=1adba63',
+		'WhatsApp': 'https://static.whatsapp.net/rsrc.php/v3/yz/r/ujTY9i_Jhs1.png',
 	}
 
-	function getIcon(category: string): string {
-		return icons[category] || ''
+	function getIconUrl(name: string, url: string): string {
+		if (linkIcons[name]) {
+			return linkIcons[name]
+		}
+		
+		try {
+			const urlObj = new URL(url.startsWith('http') ? url : 'https://' + url)
+			return `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=32`
+		} catch {
+			return `https://www.google.com/s2/favicons?domain=example.com&sz=32`
+		}
 	}
 
 	function openLink(url: string) {
@@ -36,12 +33,10 @@
 		window.location.href = url
 	}
 
-	// Extract a friendly name from URL
 	function extractNameFromUrl(url: string): string {
 		if (!url) return 'Custom Link'
 		
 		try {
-			// Normalize URL - add protocol if missing
 			let normalizedUrl = url.trim()
 			if (!normalizedUrl.match(/^https?:\/\//i)) {
 				normalizedUrl = 'https://' + normalizedUrl
@@ -50,20 +45,15 @@
 			const urlObj = new URL(normalizedUrl)
 			let hostname = urlObj.hostname
 			
-			// Remove 'www.' prefix
 			hostname = hostname.replace(/^www\./, '')
 			
-			// Remove common TLDs and get the main domain name
 			const parts = hostname.split('.')
 			let mainPart = parts[0]
 			
-			// Handle special cases
 			if (parts.length > 2) {
-				// For domains like 'chat.openai.com', take the second-to-last part
 				mainPart = parts[parts.length - 2]
 			}
 			
-			// Capitalize first letter and handle common abbreviations
 			const name = mainPart.charAt(0).toUpperCase() + mainPart.slice(1)
 			
 			return name
@@ -74,7 +64,6 @@
 	}
 
 	onMount(() => {
-		// Use liveQuery for reactive updates
 		const subscription = liveQuery(async () => {
 			const stored = await db.table('quicklinks').toArray()
 			if (stored.length > 0) {
@@ -86,43 +75,51 @@
 			return defaultLinks
 		}).subscribe(links => {
 			if (links) {
-				quickLinksStore.set(links)
+				quickLinks = ['Email', 'Messaging'].map(category => {
+					const link = links.find(l => l.category === category) || 
+					             defaultLinks.find(d => d.category === category)
+					
+					if (link && link.name === 'Other' && link.url) {
+						return {
+							...link,
+							name: extractNameFromUrl(link.url)
+						}
+					}
+					
+					return link
+				}).filter(Boolean) as QuickLink[]
 			}
 		})
 
-		// Cleanup subscription on unmount
 		return () => subscription.unsubscribe()
-	})
-
-	const renderedLinks = derived(quickLinksStore, $links => {
-		return ['Email', 'Messaging'].map(category => {
-			const link = $links.find(l => l.category === category) || 
-			             defaultLinks.find(d => d.category === category)
-			
-			if (link && link.name === 'Other' && link.url) {
-				// For custom links, extract name from URL
-				return {
-					...link,
-					name: extractNameFromUrl(link.url)
-				}
-			}
-			
-			return link
-		}).filter(Boolean) as QuickLink[]
 	})
 </script>
 
-<div class="flex items-center text-lg flex-wrap gap-3">
-	{#each $renderedLinks as link}
-		<button
-			class="flex items-center gap-2 px-3 py-2 rounded-xl bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-150"
-			title={link.url}
-			onclick={() => openLink(link.url)}
-		>
-			<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-700 dark:text-slate-200" viewBox="0 0 24 24" fill="none">
-				{@html getIcon(link.category)}
-			</svg>
-			<span class="font-medium text-sm tracking-wide">{link.name}</span>
-		</button>
-	{/each}
-</div>
+<aside
+	class="fixed right-0 top-0 h-full w-16 z-50 flex flex-col items-center pt-4 pb-6
+	   bg-slate-50 dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800
+	   shadow-xl"
+>
+	<div class="fixed top-5 right-3.5 flex flex-col gap-3">
+		{#each quickLinks as link}
+			<button
+				class="group rounded-lg p-2 border border-slate-200 dark:border-slate-700
+					bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
+					shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300
+					hover:scale-105 active:scale-95"
+				data-tooltip={link.name}
+				onclick={() => openLink(link.url)}
+				aria-label={link.name}
+			>
+				<img 
+					src={getIconUrl(link.name, link.url)} 
+					alt={link.name}
+					class="w-5 h-5 transition-transform duration-300 group-hover:scale-110"
+					onerror={(e) => {
+						(e.currentTarget as HTMLImageElement).src = 'https://www.google.com/s2/favicons?domain=example.com&sz=32'
+					}}
+				/>
+			</button>
+		{/each}
+	</div>
+</aside>
