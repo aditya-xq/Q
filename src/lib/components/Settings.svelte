@@ -138,7 +138,7 @@
 </script>
 
 <!-- ===== Settings Button & Panel ===== -->
-<div class="fixed bottom-5 left-3 z-[1000]">
+<div class="fixed bottom-5 left-3 z-1000">
 	{#if appState.settingsView}
 		<div
 			class="absolute bottom-full mb-3 w-[calc(100vw-2.5rem)] max-w-md origin-bottom-left pl-4 pr-12"
@@ -222,7 +222,7 @@
 							{/if}
 
 							<!-- Save Status with improved feedback -->
-							<div class="min-h-[20px] flex items-center">
+							<div class="min-h-5 flex items-center">
 								{#if savingState[index]}
 									<div class="flex items-center gap-1.5 text-xs text-gray-400">
 										<span class="inline-block w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
@@ -267,8 +267,8 @@
     <!-- Enhanced Settings Button -->
     <button
         onclick={toggleSettingsView}
-        aria-label="Settings (Alt+S)"
-        title="Settings (Alt+S)"
+        aria-label="Settings (Alt + S)"
+		data-tooltip="Settings (Alt + S)" data-tooltip-position="right" 
         class="group relative rounded-lg p-2 border
            bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
            shadow-lg hover:shadow-xl transition-all duration-300

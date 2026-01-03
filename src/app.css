@@ -87,12 +87,12 @@
 	border-bottom-color: rgb(30 41 59);
 }
 
-[data-tooltip][data-tooltip-position="left"]::before {
+[data-tooltip][data-tooltip-position="right"]::before {
 	left: calc(100% + 0.5rem);
 	right: auto;
 }
 
-[data-tooltip][data-tooltip-position="left"]::after {
+[data-tooltip][data-tooltip-position="right"]::after {
 	left: 100%;
 	right: auto;
 	border-left-color: transparent;
@@ -118,7 +118,7 @@
 	border-bottom-color: rgb(51 65 85);
 }
 
-:global(.dark) [data-tooltip][data-tooltip-position="left"]::after {
+:global(.dark) [data-tooltip][data-tooltip-position="right"]::after {
 	border-left-color: transparent;
 	border-right-color: rgb(51 65 85);
 }
