@@ -8,12 +8,27 @@
 	const defaultLinks: QuickLink[] = [
 		{ category: 'Email', name: 'Gmail', url: 'https://mail.google.com' },
 		{ category: 'Messaging', name: 'WhatsApp', url: 'https://web.whatsapp.com' },
+		{ category: 'OTT', name: 'Netflix', url: 'https://www.netflix.com' },
+		{ category: 'AI', name: 'ChatGPT', url: 'https://chat.openai.com' },
+		{ category: 'Social', name: 'X.com', url: 'https://x.com' },
+		{ category: 'Custom', name: 'Techflix', url: 'https://techflix.club' },
 	]
 
 	const linkIcons: Record<string, string> = {
 		'Gmail': 'https://www.google.com/gmail/about/static/images/logo-gmail.png?cache=1adba63',
 		'WhatsApp': 'https://static.whatsapp.net/rsrc.php/v3/yz/r/ujTY9i_Jhs1.png',
+		'Telegram': 'https://telegram.org/img/t_logo.png',
+		'Netflix': 'https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2016.png',
+		'ChatGPT': 'https://cdn.oaistatic.com/_next/static/media/apple-touch-icon.59f2e898.png',
+		'Claude': 'https://claude.ai/images/claude_app_icon.png',
+		'Gemini': 'https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg',
+		'X': 'https://abs.twimg.com/favicons/twitter.3.ico',
+		'Instagram': 'https://static.cdninstagram.com/rsrc.php/v3/yt/r/30PrGfR3xhB.png',
+		'Reddit': 'https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png',
+		'GitHub': 'https://github.githubassets.com/favicons/favicon.png',
 	}
+
+	const categories = ['Email', 'Messaging', 'OTT', 'AI', 'Social', 'Custom']
 
 	function getIconUrl(name: string, url: string): string {
 		if (linkIcons[name]) {
@@ -67,15 +82,13 @@
 		const subscription = liveQuery(async () => {
 			const stored = await db.table('quicklinks').toArray()
 			if (stored.length > 0) {
-				const filtered = stored.filter(l =>
-					['Email', 'Messaging'].includes(l.category)
-				)
+				const filtered = stored.filter(l => categories.includes(l.category))
 				return filtered.length ? filtered : defaultLinks
 			}
 			return defaultLinks
 		}).subscribe(links => {
 			if (links) {
-				quickLinks = ['Email', 'Messaging'].map(category => {
+				quickLinks = categories.map(category => {
 					const link = links.find(l => l.category === category) || 
 					             defaultLinks.find(d => d.category === category)
 					
