@@ -86,7 +86,7 @@
         </button>
     </div>
     <div class="space-y-6">
-        {#if today.length > 0}
+        {#if writeups.length > 0}
             <div class="space-y-1">
                 {#if showOlderSection}
                     {#each [...today, ...thisWeek] as w (w.id)}
@@ -170,6 +170,10 @@
                         </article>
                     {/each}
                 {/if}
+            </div>
+        {:else}
+            <div class="text-center text-sm text-slate-400 py-8">
+                No drafts yet
             </div>
         {/if}
     </div>

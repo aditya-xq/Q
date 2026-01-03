@@ -17,6 +17,7 @@
     let autosavedAt = $state<Date | null>(null)
     let saving = $state(false)
     let dirty = $state(false)
+    let loading = $state(true) // Add loading state
 
     let editorContentToLoad = $derived(currentWriteupId === undefined ? '# ' : content)
 
@@ -142,7 +143,11 @@
 
     // lifecycle hooks
     onMount(async () => {
+        loading = true
         await loadWriteups()
+        // Give a tiny delay to ensure reactivity has settled
+        await new Promise(resolve => setTimeout(resolve, 0))
+        loading = false
         window.addEventListener('beforeunload', onBeforeUnload)
     })
 
@@ -180,11 +185,13 @@
                 </div>
             {/key}
         </div>
-        <DraftsPanel
-            {createNewDraft}
-            {currentWriteupId}
-            {openDraft}
-            {removeDraft}
-        />
+        {#if !loading}
+            <DraftsPanel
+                {createNewDraft}
+                {currentWriteupId}
+                {openDraft}
+                {removeDraft}
+            />
+        {/if}
     </div>
 </div>
