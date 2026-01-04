@@ -9,10 +9,8 @@ interface AppState {
     writerView: boolean
     isQuickPanelOpen: boolean
     keepQuickPanelOpen: boolean
-    widgets: {
-        showQuote: boolean
-        showWeather: boolean
-    }
+    showQuote: boolean
+    showWeather: boolean
 }
 
 interface Notification {
@@ -29,10 +27,8 @@ export const appState: AppState = $state({
     writeups: [],
     isQuickPanelOpen: false,
     keepQuickPanelOpen: false,
-    widgets: {
-        showQuote: true,
-        showWeather: true,
-    },
+    showQuote: true,
+    showWeather: true,
 })
 
 export const notifications: Notification[] = $state([])

@@ -4,7 +4,7 @@
 	import { appState } from '$lib/state.svelte'
 	import { quintOut } from 'svelte/easing'
 	import { fly, slide } from 'svelte/transition'
-	import { getSetting, updateSetting } from '$lib/utils/stores'
+	import { updateSetting } from '$lib/utils/stores'
 
 	const defaultLinks: QuickLink[] = [
 		{ category: 'Email', name: 'Gmail', url: 'https://mail.google.com' },
@@ -118,9 +118,6 @@
 				}
 			}
 		}
-		
-		const keep = await getSetting('keepQuickPanelOpen')
-		appState.keepQuickPanelOpen = typeof keep === 'boolean' ? keep : false
 	})
 
 	async function saveRow(index: number) {
@@ -183,9 +180,9 @@
 	}
 
 	async function toggleWidget(widget: 'showQuote' | 'showWeather') {
-		const newVal = !appState.widgets[widget]
+		const newVal = !appState[widget]
 		await updateSetting(widget, newVal)
-		appState.widgets[widget] = newVal
+		appState[widget] = newVal
 	}
 
 	$: hasUnsavedChanges = savingState.some(s => s) || savedState.some(s => s)
@@ -312,26 +309,26 @@
 								<p class="text-xs text-gray-300">Quote</p>
 								<button
 									onclick={() => toggleWidget('showQuote')}
-									aria-pressed={appState.widgets.showQuote}
+									aria-pressed={appState.showQuote}
 									aria-label="Toggle keep quick panel open"
 									class="relative inline-flex items-center h-5 rounded-full w-9 transition-colors duration-200 focus:outline-none
-										{appState.widgets.showQuote ? 'bg-sky-500' : 'bg-white/5'}"
+										{appState.showQuote ? 'bg-sky-500' : 'bg-white/5'}"
 								>
 									<span class="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200
-										{appState.widgets.showQuote ? 'translate-x-4' : 'translate-x-0'}"></span>
+										{appState.showQuote ? 'translate-x-4' : 'translate-x-0'}"></span>
 								</button>
 							</div>
 							<div class="flex items-center gap-3">
 								<p class="text-xs text-gray-300">Weather</p>
 								<button
 									onclick={() => toggleWidget('showWeather')}
-									aria-pressed={appState.widgets.showWeather}
+									aria-pressed={appState.showWeather}
 									aria-label="Toggle keep quick panel open"
 									class="relative inline-flex items-center h-5 rounded-full w-9 transition-colors duration-200 focus:outline-none
-										{appState.widgets.showWeather ? 'bg-sky-500' : 'bg-white/5'}"
+										{appState.showWeather ? 'bg-sky-500' : 'bg-white/5'}"
 								>
 									<span class="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200
-										{appState.widgets.showWeather ? 'translate-x-4' : 'translate-x-0'}"></span>
+										{appState.showWeather ? 'translate-x-4' : 'translate-x-0'}"></span>
 								</button>
 							</div>
 						</div>

@@ -114,7 +114,7 @@
     }
 
     const init = async () => {
-        if (!appState.widgets.showWeather) return
+        if (!appState.showWeather) return
 
         const cached = readCache()
         if (cached) { 
@@ -151,13 +151,13 @@
 
     // Re-initialize when widget visibility changes
     $effect(() => {
-        if (appState.widgets.showWeather && !weather && !loading && !error) {
+        if (appState.showWeather && !weather && !loading && !error) {
             init()
         }
     })
 </script>
 
-{#if appState.widgets.showWeather}
+{#if appState.showWeather}
     <div 
         class="fixed top-6 right-24 z-40"
         in:fly="{{ y: -20, duration: 500, easing: quintOut }}"

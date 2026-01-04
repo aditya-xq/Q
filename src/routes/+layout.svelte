@@ -43,10 +43,13 @@
         }
 
         window.addEventListener('keydown', handleKey)
-        const showQuote = await getSetting('showQuote')
-		appState.widgets.showQuote = typeof showQuote === 'boolean' ? showQuote : true
+        
 		const showWeather = await getSetting('showWeather')
-		appState.widgets.showWeather = typeof showWeather === 'boolean' ? showWeather : true
+		const showQuote = await getSetting('showQuote')
+		appState.keepQuickPanelOpen = typeof keep === 'boolean' ? keep : false
+		appState.showWeather = typeof showWeather === 'boolean' ? showWeather : false
+		appState.showQuote = typeof showQuote === 'boolean' ? showQuote : false
+        
         isLoading = false
     })
 
