@@ -8,9 +8,9 @@ interface AppState {
     settingsView: boolean
     writerView: boolean
     isQuickPanelOpen: boolean
-    keepQuickPanelOpen: boolean
-    showQuote: boolean
-    showWeather: boolean
+    keepQuickPanelOpen?: boolean
+    showQuote?: boolean
+    showWeather?: boolean
 }
 
 interface Notification {

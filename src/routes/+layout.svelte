@@ -5,7 +5,6 @@
     import '../app.css'
     import { onDestroy, onMount } from 'svelte'
     import { appState } from '$lib/state.svelte'
-    import { getSetting } from '$lib/utils/stores'
     let { children } = $props()
     let handleKey: (e: KeyboardEvent) => void
     let isLoading = $state(true)
@@ -42,14 +41,7 @@
             else if (e.altKey && e.key.toLowerCase() === 's') toggleSettingsView()
         }
 
-        window.addEventListener('keydown', handleKey)
-        
-		const showWeather = await getSetting('showWeather')
-		const showQuote = await getSetting('showQuote')
-		appState.keepQuickPanelOpen = typeof keep === 'boolean' ? keep : false
-		appState.showWeather = typeof showWeather === 'boolean' ? showWeather : false
-		appState.showQuote = typeof showQuote === 'boolean' ? showQuote : false
-        
+        window.addEventListener('keydown', handleKey)        
         isLoading = false
     })
 

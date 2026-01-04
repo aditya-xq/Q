@@ -46,7 +46,7 @@ export class MyAppDB extends Dexie {
             writeups: '++id, content, updatedAt, createdAt',
             projects: '++id, title, createdAt',
             tasks: '++id, projectId, text, completed, createdAt',
-            quicklinks: '++id, category, name, url',
+            quicklinks: '++id, &category, name, url',
             settings: '&key',
         })
     }
@@ -54,7 +54,7 @@ export class MyAppDB extends Dexie {
 
 export const db = new MyAppDB()
 
-// Initialize the database with the QuickTodo project
+// Initialize the database with default data
 export async function initializeDatabase() {
     const QUICK_TODO_PROJECT_ID = -1
 
@@ -68,6 +68,39 @@ export async function initializeDatabase() {
             createdAt: new Date(),
         })
     }
+
+    // Initialize default settings if they don't exist
+    await initializeDefaultSettings()
+}
+
+// Initialize default settings
+async function initializeDefaultSettings() {
+    const defaultSettings = {
+        keepQuickPanelOpen: false,
+        showQuote: true,
+        showWeather: true,
+    }
+
+    for (const [key, value] of Object.entries(defaultSettings)) {
+        const existing = await db.settings.get(key)
+        if (!existing) {
+            await db.settings.put({ key, value })
+        }
+    }
+}
+
+// Helper function to get a setting with type safety
+export async function getSetting<T = boolean | string | number>(
+    key: string,
+    defaultValue?: T
+): Promise<T | undefined> {
+    const setting = await db.settings.get(key)
+    return setting ? (setting.value as T) : defaultValue
+}
+
+// Helper function to set a setting
+export async function setSetting(key: string, value: boolean | string | number): Promise<void> {
+    await db.settings.put({ key, value })
 }
 
 // Call this function when your app starts

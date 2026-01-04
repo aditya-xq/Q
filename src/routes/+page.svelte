@@ -5,7 +5,7 @@
     import { fade, fly } from 'svelte/transition'
     import { cubicOut, quintOut } from 'svelte/easing'
 
-    let frequentSites: { url: string; title: string }[] = []
+    let frequentSites = $state<{ url: string; title: string }[]>([])
 
     onMount(() => {
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches

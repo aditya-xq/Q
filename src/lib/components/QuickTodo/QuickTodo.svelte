@@ -2,9 +2,9 @@
     import { onMount } from 'svelte'
     import { slide } from 'svelte/transition'
     import { cubicOut } from 'svelte/easing'
-    import { db } from '$lib/utils/db'
+    import { db, getSetting, setSetting } from '$lib/utils/db'
     import type { Task, Project } from '$lib/utils/db'
-    import { ensureQuickTodoProject, getSetting, updateSetting } from '$lib/utils/stores'
+    import { ensureQuickTodoProject } from '$lib/utils/stores'
     import { appState } from '$lib/state.svelte'
 
     import TaskList from './TaskList.svelte'
@@ -81,7 +81,7 @@
 
     async function toggleKeepQuickPanelOpen() {
         const newVal = !appState.keepQuickPanelOpen
-        await updateSetting('keepQuickPanelOpen', newVal)
+        await setSetting('keepQuickPanelOpen', newVal)
         appState.keepQuickPanelOpen = newVal
     }
 </script>

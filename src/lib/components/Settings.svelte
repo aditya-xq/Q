@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
-	import { db, type QuickLink } from '$lib/utils/db'
+	import { db, type QuickLink, getSetting, setSetting } from '$lib/utils/db'
 	import { appState } from '$lib/state.svelte'
 	import { quintOut } from 'svelte/easing'
 	import { fly, slide } from 'svelte/transition'
-	import { updateSetting } from '$lib/utils/stores'
 
 	const defaultLinks: QuickLink[] = [
 		{ category: 'Email', name: 'Gmail', url: 'https://mail.google.com' },
@@ -15,96 +14,59 @@
 		{ category: 'Custom', name: 'Techflix', url: 'https://techflix.club' },
 	]
 
-	let quickLinks: QuickLink[] = structuredClone(defaultLinks)
-	let savingState: boolean[] = Array(6).fill(false)
-	let savedState: boolean[] = Array(6).fill(false)
-	let saveTimeouts: (ReturnType<typeof setTimeout> | null)[] = Array(6).fill(null)
-	let customUrls: string[] = Array(6).fill('')
-
-	const categories = ['Email', 'Messaging', 'OTT', 'AI', 'Social', 'Custom']
-
 	const categoryConfigs = [
 		{ 
 			title: 'Email', 
 			icon: '✉️',
 			apps: ['Gmail', 'Outlook', 'Other'],
-			urlFn: (name: string) => {
-				switch (name) {
-					case 'Gmail': return 'https://mail.google.com'
-					case 'Outlook': return 'https://outlook.live.com'
-					default: return ''
-				}
-			}
+			urls: { Gmail: 'https://mail.google.com', Outlook: 'https://outlook.live.com' }
 		},
 		{ 
 			title: 'Messaging', 
 			icon: '💬',
 			apps: ['WhatsApp', 'Telegram', 'Other'],
-			urlFn: (name: string) => {
-				switch (name) {
-					case 'WhatsApp': return 'https://web.whatsapp.com'
-					case 'Telegram': return 'https://web.telegram.org'
-					default: return ''
-				}
-			}
+			urls: { WhatsApp: 'https://web.whatsapp.com', Telegram: 'https://web.telegram.org' }
 		},
 		{ 
 			title: 'OTT', 
 			icon: '📺',
 			apps: ['Netflix', 'Prime', 'Other'],
-			urlFn: (name: string) => {
-				switch (name) {
-					case 'Netflix': return 'https://www.netflix.com'
-					case 'Prime': return 'https://www.primevideo.com'
-					default: return ''
-				}
-			}
+			urls: { Netflix: 'https://www.netflix.com', Prime: 'https://www.primevideo.com' }
 		},
 		{ 
 			title: 'AI', 
 			icon: '🤖',
 			apps: ['ChatGPT', 'Claude', 'Gemini', 'Other'],
-			urlFn: (name: string) => {
-				switch (name) {
-					case 'ChatGPT': return 'https://chat.openai.com'
-					case 'Claude': return 'https://claude.ai'
-					case 'Gemini': return 'https://gemini.google.com'
-					default: return ''
-				}
-			}
+			urls: { ChatGPT: 'https://chat.openai.com', Claude: 'https://claude.ai', Gemini: 'https://gemini.google.com' }
 		},
 		{ 
 			title: 'Social', 
 			icon: '🌐',
 			apps: ['X', 'Instagram', 'Reddit', 'Other'],
-			urlFn: (name: string) => {
-				switch (name) {
-					case 'X': return 'https://x.com'
-					case 'Instagram': return 'https://www.instagram.com'
-					case 'Reddit': return 'https://www.reddit.com'
-					default: return ''
-				}
-			}
+			urls: { X: 'https://x.com', Instagram: 'https://www.instagram.com', Reddit: 'https://www.reddit.com' }
 		},
 		{ 
 			title: 'Custom', 
 			icon: '🔗',
 			apps: ['Techflix', 'GitHub', 'Other'],
-			urlFn: (name: string) => {
-				switch (name) {
-					case 'Techflix': return 'https://techflix.club'
-					case 'GitHub': return 'https://github.com'
-					default: return ''
-				}
-			}
+			urls: { Techflix: 'https://techflix.club', GitHub: 'https://github.com' }
 		}
 	]
 
-	onMount(async () => {
-		for (let i = 0; i < categories.length; i++) {
+	let quickLinks = $state(structuredClone(defaultLinks))
+	let savingState = $state(Array(6).fill(false))
+	let savedState = $state(Array(6).fill(false))
+	let saveTimeouts = $state<(ReturnType<typeof setTimeout> | null)[]>(Array(6).fill(null))
+	let customUrls = $state(Array(6).fill(''))
+
+	const hasUnsavedChanges = $derived(savingState.some(Boolean) || savedState.some(Boolean))
+
+	async function loadSettings() {
+		// Load quick links
+		for (let i = 0; i < categoryConfigs.length; i++) {
 			const stored = await db.table('quicklinks')
 				.where('category')
-				.equals(categories[i])
+				.equals(categoryConfigs[i].title)
 				.first()
 			
 			if (stored) {
@@ -118,13 +80,20 @@
 				}
 			}
 		}
-	})
+
+		// Load other settings with type safety and defaults
+		appState.keepQuickPanelOpen = await getSetting('keepQuickPanelOpen', false)
+		appState.showQuote = await getSetting('showQuote', true)
+		appState.showWeather = await getSetting('showWeather', true)
+	}
+
+	onMount(loadSettings)
 
 	async function saveRow(index: number) {
 		savingState[index] = true
 		savedState[index] = false
 
-		let row = { ...quickLinks[index] }
+		const row = { ...quickLinks[index] }
 
 		if (row.name === 'Other') {
 			let trimmedUrl = customUrls[index]?.trim() || ''
@@ -175,17 +144,25 @@
 
 	async function toggleKeepQuickPanelOpen() {
 		const newVal = !appState.keepQuickPanelOpen
-		await updateSetting('keepQuickPanelOpen', newVal)
+		await setSetting('keepQuickPanelOpen', newVal)
 		appState.keepQuickPanelOpen = newVal
 	}
 
 	async function toggleWidget(widget: 'showQuote' | 'showWeather') {
 		const newVal = !appState[widget]
-		await updateSetting(widget, newVal)
+		await setSetting(widget, newVal)
 		appState[widget] = newVal
 	}
 
-	$: hasUnsavedChanges = savingState.some(s => s) || savedState.some(s => s)
+	function selectApp(index: number, app: string) {
+		const config = categoryConfigs[index]
+		quickLinks[index] = { 
+			...quickLinks[index], 
+			name: app, 
+			url: app === 'Other' ? (customUrls[index] || '') : (config.urls[app as keyof typeof config.urls] || '')
+		}
+		scheduleRowSave(index)
+	}
 </script>
 
 <div class="fixed bottom-5 left-3 z-1000">
@@ -202,10 +179,10 @@
 							<h1 class="text-lg font-semibold text-gray-100">Settings</h1>
 							{#if hasUnsavedChanges}
 								<div class="flex items-center gap-1.5 text-xs text-gray-400" transition:slide={{ duration: 250, axis: 'x' }}>
-									{#if savingState.some(s => s)}
+									{#if savingState.some(Boolean)}
 										<span class="inline-block w-2.5 h-2.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
 										<span>Saving...</span>
-									{:else if savedState.some(s => s)}
+									{:else if savedState.some(Boolean)}
 										<span class="text-green-400">✓</span>
 										<span class="text-green-400">Saved</span>
 									{/if}
@@ -239,14 +216,7 @@
 													? 'bg-white/20 border border-white/30 text-white shadow-lg shadow-white/5'
 													: 'bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20 hover:text-gray-200'}
 											"
-											onclick={() => {
-												quickLinks[index] = { 
-													...quickLinks[index], 
-													name: app, 
-													url: app === 'Other' ? (customUrls[index] || '') : config.urlFn(app) 
-												}
-												scheduleRowSave(index)
-											}}
+											onclick={() => selectApp(index, app)}
 										>
 											{app}
 										</button>
@@ -298,7 +268,7 @@
 							</div>
 						</div>
 					</section>
-					<!-- Enable/disable various widgets like Quote, Weather, etc -->
+
 					<section class="pt-2 border-t border-slate-700">
 						<div class="flex items-center gap-4">
 							<div class="flex items-center gap-2 min-w-30">
@@ -310,7 +280,7 @@
 								<button
 									onclick={() => toggleWidget('showQuote')}
 									aria-pressed={appState.showQuote}
-									aria-label="Toggle keep quick panel open"
+									aria-label="Toggle quote widget"
 									class="relative inline-flex items-center h-5 rounded-full w-9 transition-colors duration-200 focus:outline-none
 										{appState.showQuote ? 'bg-sky-500' : 'bg-white/5'}"
 								>
@@ -323,7 +293,7 @@
 								<button
 									onclick={() => toggleWidget('showWeather')}
 									aria-pressed={appState.showWeather}
-									aria-label="Toggle keep quick panel open"
+									aria-label="Toggle weather widget"
 									class="relative inline-flex items-center h-5 rounded-full w-9 transition-colors duration-200 focus:outline-none
 										{appState.showWeather ? 'bg-sky-500' : 'bg-white/5'}"
 								>
@@ -361,21 +331,5 @@
 	button:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
-	}
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
-	@keyframes fade-in {
-		from {
-			opacity: 0;
-		}
-		to {
-			opacity: 1;
-		}
-	}
-	.animate-spin {
-		animation: spin 1s linear infinite;
 	}
 </style>
