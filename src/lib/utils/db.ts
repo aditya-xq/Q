@@ -42,35 +42,12 @@ export class MyAppDB extends Dexie {
 
     constructor() {
         super('MyAppDB')
-        
-        // Version 1: Initial schema
         this.version(1).stores({
             writeups: '++id, content, updatedAt, createdAt',
             projects: '++id, title, createdAt',
             tasks: '++id, projectId, text, completed, createdAt',
             quicklinks: '++id, category, name, url',
             settings: '&key',
-        })
-        
-        // Version 2: Add unique index on quicklinks.category
-        this.version(2).stores({
-            quicklinks: '++id, &category, name, url',
-        }).upgrade(async tx => {
-            // Optional: Clean up duplicate categories if any exist
-            const links = await tx.table('quicklinks').toArray()
-            const seen = new Set<string>()
-            const toDelete: number[] = []
-            
-            for (const link of links) {
-                if (seen.has(link.category)) {
-                    if (link.id) toDelete.push(link.id)
-                } else {
-                    seen.add(link.category)
-                }
-            }
-            
-            // Delete duplicates
-            await Promise.all(toDelete.map(id => tx.table('quicklinks').delete(id)))
         })
     }
 }
