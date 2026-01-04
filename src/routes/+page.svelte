@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { FrequentSites, Links, Notification, ProjectGrid, WriterView } from '$lib/components'
+    import { FrequentSites, Links, Notification, ProjectGrid, Quote, Weather, WriterView } from '$lib/components'
     import { appState } from '$lib/state.svelte'
     import { onMount } from 'svelte'
     import { fade, fly } from 'svelte/transition'
@@ -35,11 +35,7 @@
 </script>
 
 <!-- ===== Main Screen ===== -->
-<div
-    class={`relative min-h-screen flex flex-col transition-colors duration-500 ${
-        appState.projectView || appState.writerView ? 'items-start' : 'items-center justify-center'
-    } bg-slate-50 dark:bg-slate-950`}
->
+<div class={`relative min-h-screen flex flex-col transition-colors duration-500 ${appState.projectView || appState.writerView ? 'items-start' : 'items-center justify-center'}`}>
     <!-- Notifications -->
     <Notification />
     <Links />
@@ -62,11 +58,13 @@
     {:else}
         <!-- Home View -->
         <div
-            class="flex flex-col items-center justify-center flex-1 w-full -mt-24 mr-6 px-4 sm:px-6 lg:px-8 transition-all duration-500 ease-out"
+            class={`flex flex-col items-center justify-center flex-1 w-full ${appState.widgets.showQuote ? '-mt-44' : '-mt-24'} mr-6 px-4 sm:px-6 lg:px-8 transition-all duration-500 ease-out`}
             in:fade={{ duration: 400, easing: cubicOut }}
         >
             <div class={`${appState.isQuickPanelOpen || appState.keepQuickPanelOpen ? 'max-w-6xl pl-86' : 'max-w-3xl'} text-center space-y-8 transition-all duration-400 ease-in-out`}>
+                <Weather />
                 <div in:fly={{ y: 20, duration: 400, delay: 300, easing: cubicOut }}>
+                    {#if appState.widgets.showQuote}<Quote />{/if}
                     <FrequentSites sites={frequentSites} />
                 </div>
             </div>

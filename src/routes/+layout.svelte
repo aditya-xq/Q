@@ -5,8 +5,10 @@
     import '../app.css'
     import { onDestroy, onMount } from 'svelte'
     import { appState } from '$lib/state.svelte'
+    import { getSetting } from '$lib/utils/stores'
     let { children } = $props()
     let handleKey: (e: KeyboardEvent) => void
+    let isLoading = $state(true)
 
     function togglePanel() {
         if (appState.projectView) appState.projectView = false
@@ -41,6 +43,11 @@
         }
 
         window.addEventListener('keydown', handleKey)
+        const showQuote = await getSetting('showQuote')
+		appState.widgets.showQuote = typeof showQuote === 'boolean' ? showQuote : true
+		const showWeather = await getSetting('showWeather')
+		appState.widgets.showWeather = typeof showWeather === 'boolean' ? showWeather : true
+        isLoading = false
     })
 
     // At top level
@@ -58,7 +65,7 @@
 </svelte:head>
 
 <!-- ===== Layout Container ===== -->
-<div class="flex h-screen text-slate-900 dark:text-slate-100 overflow-hidden">
+<div class="flex h-screen text-slate-900 dark:text-slate-100 overflow-hidden bg-slate-50 dark:bg-slate-950">
     <!-- Top-Left Minimal "Queue" Label -->
     <div class="fixed top-4 left-20 z-40 select-none font-light text-xl tracking-wide text-slate-400 dark:text-slate-600">
         Queue 
@@ -72,9 +79,10 @@
         <QuickTodo />
         <Settings />
     </div>
-
     <!-- Main Content Wrapper -->
     <main class="flex-1 ml-16 overflow-y-auto relative transition-all duration-300">
-        {@render children()}
+        {#if !isLoading}
+            {@render children()}
+        {/if}
     </main>
 </div>
