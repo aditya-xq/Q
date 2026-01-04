@@ -81,7 +81,7 @@
                                     Cancel
                                 </button>
                                 <button
-                                    class="px-4 py-2 rounded-lg text-sm transition-all duration-200 bg-gradient-to-r from-indigo-500/90 to-indigo-600/90 dark:from-indigo-700 dark:to-indigo-800 hover:from-indigo-600 hover:to-indigo-700 dark:hover:from-indigo-600 dark:hover:to-indigo-700 text-white font-medium shadow-sm hover:shadow"
+                                    class="px-4 py-2 rounded-lg text-sm transition-all duration-200 bg-linear-to-r from-indigo-500/90 to-indigo-600/90 dark:from-indigo-700 dark:to-indigo-800 hover:from-indigo-600 hover:to-indigo-700 dark:hover:from-indigo-600 dark:hover:to-indigo-700 text-white font-medium shadow-sm hover:shadow"
                                     onclick={addNewProject}
                                 >
                                     Add Project
@@ -98,7 +98,7 @@
                 >
                     <div class="flex flex-col items-center space-y-2">
                         <div
-                            class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400/90 to-indigo-600/90 dark:from-indigo-600 dark:to-indigo-800 flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-200 group-hover:scale-110"
+                            class="w-10 h-10 rounded-full bg-linear-to-br from-indigo-400/90 to-indigo-600/90 dark:from-indigo-600 dark:to-indigo-800 flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-200 group-hover:scale-110"
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"

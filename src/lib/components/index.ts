@@ -8,5 +8,7 @@ import Links from './Links.svelte'
 import Settings from './Settings.svelte'
 import WriterView from './Writer/WriterView.svelte'
 import Editor from './Writer/Editor.svelte'
+import Quote from './Widgets/Quote.svelte'
+import Weather from './Widgets/Weather.svelte'
 
-export { Notification, ProjectCard, ProjectGrid, TaskItem, FrequentSites, QuickTodo, Links, Settings, WriterView, Editor}
+export { Notification, ProjectCard, ProjectGrid, TaskItem, FrequentSites, QuickTodo, Links, Settings, WriterView, Editor, Quote, Weather}

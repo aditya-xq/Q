@@ -182,6 +182,12 @@
 		appState.keepQuickPanelOpen = newVal
 	}
 
+	async function toggleWidget(widget: 'showQuote' | 'showWeather') {
+		const newVal = !appState.widgets[widget]
+		await updateSetting(widget, newVal)
+		appState.widgets[widget] = newVal
+	}
+
 	$: hasUnsavedChanges = savingState.some(s => s) || savedState.some(s => s)
 </script>
 
@@ -291,6 +297,41 @@
 								>
 									<span class="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200
 										{appState.keepQuickPanelOpen ? 'translate-x-4' : 'translate-x-0'}"></span>
+								</button>
+							</div>
+						</div>
+					</section>
+					<!-- Enable/disable various widgets like Quote, Weather, etc -->
+					<section class="pt-2 border-t border-slate-700">
+						<div class="flex items-center gap-4">
+							<div class="flex items-center gap-2 min-w-30">
+								<span class="text-base">✨</span>
+								<h2 class="text-sm font-semibold text-gray-200 uppercase tracking-wide whitespace-nowrap">Widgets</h2>
+							</div>
+							<div class="flex items-center gap-3">
+								<p class="text-xs text-gray-300">Quote</p>
+								<button
+									onclick={() => toggleWidget('showQuote')}
+									aria-pressed={appState.widgets.showQuote}
+									aria-label="Toggle keep quick panel open"
+									class="relative inline-flex items-center h-5 rounded-full w-9 transition-colors duration-200 focus:outline-none
+										{appState.widgets.showQuote ? 'bg-sky-500' : 'bg-white/5'}"
+								>
+									<span class="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200
+										{appState.widgets.showQuote ? 'translate-x-4' : 'translate-x-0'}"></span>
+								</button>
+							</div>
+							<div class="flex items-center gap-3">
+								<p class="text-xs text-gray-300">Weather</p>
+								<button
+									onclick={() => toggleWidget('showWeather')}
+									aria-pressed={appState.widgets.showWeather}
+									aria-label="Toggle keep quick panel open"
+									class="relative inline-flex items-center h-5 rounded-full w-9 transition-colors duration-200 focus:outline-none
+										{appState.widgets.showWeather ? 'bg-sky-500' : 'bg-white/5'}"
+								>
+									<span class="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200
+										{appState.widgets.showWeather ? 'translate-x-4' : 'translate-x-0'}"></span>
 								</button>
 							</div>
 						</div>
