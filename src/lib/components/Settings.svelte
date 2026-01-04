@@ -80,11 +80,6 @@
 				}
 			}
 		}
-
-		// Load other settings with type safety and defaults
-		appState.keepQuickPanelOpen = await getSetting('keepQuickPanelOpen', false)
-		appState.showQuote = await getSetting('showQuote', true)
-		appState.showWeather = await getSetting('showWeather', true)
 	}
 
 	onMount(loadSettings)
