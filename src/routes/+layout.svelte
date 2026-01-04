@@ -5,7 +5,7 @@
     import '../app.css'
     import { onDestroy, onMount } from 'svelte'
     import { appState } from '$lib/state.svelte'
-    import { getSetting } from '$lib/utils/db'
+    import { getAllSettings } from '$lib/utils/db'
     let { children } = $props()
     let handleKey: (e: KeyboardEvent) => void
     let isLoading = $state(true)
@@ -44,10 +44,11 @@
 
         window.addEventListener('keydown', handleKey)        
 
-        // Load widget settings with type safety and defaults
-		appState.keepQuickPanelOpen = await getSetting('keepQuickPanelOpen', false)
-		appState.showQuote = await getSetting('showQuote', true)
-		appState.showWeather = await getSetting('showWeather', true)
+        // Load all settings at once
+        const settings = await getAllSettings()
+        appState.keepQuickPanelOpen = settings.keepQuickPanelOpen as boolean ?? false
+        appState.showQuote = settings.showQuote as boolean ?? true
+        appState.showWeather = settings.showWeather as boolean ?? true
 
         isLoading = false
     })

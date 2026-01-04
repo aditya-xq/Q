@@ -54,23 +54,43 @@ export class MyAppDB extends Dexie {
 
 export const db = new MyAppDB()
 
+// Promise that tracks database initialization state
+let dbInitialized: Promise<void> | null = null
+
 // Initialize the database with default data
 export async function initializeDatabase() {
-    const QUICK_TODO_PROJECT_ID = -1
+    // Return existing initialization promise if already running
+    if (dbInitialized) return dbInitialized
 
-    // Check if the QuickTodo project already exists
-    const quickTodoProject = await db.projects.get(QUICK_TODO_PROJECT_ID)
+    dbInitialized = (async () => {
+        try {
+            // Ensure database connection is open and ready
+            await db.open()
 
-    if (!quickTodoProject) {
-        await db.projects.put({
-            id: QUICK_TODO_PROJECT_ID,
-            title: 'Quick Todo',
-            createdAt: new Date(),
-        })
-    }
+            const QUICK_TODO_PROJECT_ID = -1
 
-    // Initialize default settings if they don't exist
-    await initializeDefaultSettings()
+            // Check if the QuickTodo project already exists
+            const quickTodoProject = await db.projects.get(QUICK_TODO_PROJECT_ID)
+
+            if (!quickTodoProject) {
+                await db.projects.put({
+                    id: QUICK_TODO_PROJECT_ID,
+                    title: 'Quick Todo',
+                    createdAt: new Date(),
+                })
+            }
+
+            // Initialize default settings if they don't exist
+            await initializeDefaultSettings()
+        } catch (error) {
+            console.error('Database initialization failed:', error)
+            // Reset the promise so it can be retried
+            dbInitialized = null
+            throw error
+        }
+    })()
+
+    return dbInitialized
 }
 
 // Initialize default settings
@@ -89,19 +109,36 @@ async function initializeDefaultSettings() {
     }
 }
 
+// Helper to ensure DB is ready before any operation
+export async function ensureDBReady() {
+    await initializeDatabase()
+}
+
+// Helper function to get all settings at once (most efficient)
+export async function getAllSettings(): Promise<Record<string, boolean | string | number>> {
+    await ensureDBReady()
+    const allSettings = await db.settings.toArray()
+    return allSettings.reduce((acc, setting) => {
+        acc[setting.key] = setting.value
+        return acc
+    }, {} as Record<string, boolean | string | number>)
+}
+
 // Helper function to get a setting with type safety
 export async function getSetting<T = boolean | string | number>(
     key: string,
     defaultValue?: T
 ): Promise<T | undefined> {
+    await ensureDBReady()
     const setting = await db.settings.get(key)
     return setting ? (setting.value as T) : defaultValue
 }
 
 // Helper function to set a setting
 export async function setSetting(key: string, value: boolean | string | number): Promise<void> {
+    await ensureDBReady()
     await db.settings.put({ key, value })
 }
 
-// Call this function when your app starts
+// Start initialization immediately but don't block module loading
 initializeDatabase().catch((error) => console.error('Failed to initialize database:', error))
