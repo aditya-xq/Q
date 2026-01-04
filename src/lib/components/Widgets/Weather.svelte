@@ -129,7 +129,7 @@
             <div class="flex items-center gap-4 bg-white/80 dark:bg-slate-950/90 backdrop-blur-xl px-4 py-2 rounded-lg border border-white/40 dark:border-slate-600/60 transition-all">
                 
                 <div class="flex items-center gap-2 border-r border-slate-200 dark:border-slate-800 pr-4">
-                    <span class="text-[12px] font-black text-slate-800 dark:text-slate-400 uppercase">
+                    <span class="text-[12px] font-black text-slate-800 dark:text-slate-300 uppercase">
                         {weather.location}
                     </span>
                     <span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase {weather.vibe === 'Warm' ? 'bg-orange-500/10 text-orange-500' : 'bg-blue-500/10 text-blue-500'}">
