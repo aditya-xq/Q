@@ -5,7 +5,7 @@
     import { db, getSetting, setSetting } from '$lib/utils/db'
     import type { Task, Project } from '$lib/utils/db'
     import { ensureQuickTodoProject } from '$lib/utils/stores'
-    import { appState } from '$lib/state.svelte'
+    import { appState, updateView, type View } from '$lib/state.svelte'
 
     import TaskList from './TaskList.svelte'
     import QuickAddInput from './QuickAddInput.svelte'
@@ -20,26 +20,26 @@
     let projects: Project[] = []
     let isLoading = true
 
-    function togglePanel() {
-        if (appState.projectView) appState.projectView = false
-        if (appState.settingsView) appState.settingsView = false
-        if (appState.writerView) appState.writerView = false
-        appState.isQuickPanelOpen = !appState.isQuickPanelOpen
-    }
-
-    function toggleProjectView() {
-        if (appState.settingsView) appState.settingsView = false
-        if (appState.writerView) appState.writerView = false
-        appState.isQuickPanelOpen = false
-        appState.projectView = !appState.projectView
-    }
-
-    function toggleWriterView() {
-        if (appState.settingsView) appState.settingsView = false
-        if (appState.projectView) appState.projectView = false
-        appState.isQuickPanelOpen = false
-        appState.writerView = !appState.writerView
-    }
+    const menuItems = [
+        { 
+            id: 'projects', 
+            label: 'Projects (Alt + P)', 
+            icon: '📋',
+            view: 'projects'
+        },
+        { 
+            id: 'writer', 
+            label: 'Writer (Alt + W)', 
+            icon: '✍️',
+            view: 'writer'
+        },
+        { 
+            id: 'games', 
+            label: 'Games (Alt + G)', 
+            icon: '🎮',
+            view: 'games'
+        }
+    ]
 
     async function loadTasks() {
         isLoading = true
@@ -90,51 +90,37 @@
 <div class="fixed top-5 left-4 z-1000 flex flex-col gap-3">
     <!-- Quick Todo -->
     <button
-        onclick={togglePanel}
+        onclick={() => updateView('quick-panel')}
         aria-label="Quick Todo (Alt + Q)"
         class="group rounded-lg border border-slate-200 dark:border-slate-700
            bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
            shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300
            data-[active=true]:bg-sky-100 dark:data-[active=true]:bg-sky-900/30
            data-[active=true]:border-sky-400 data-[active=true]:text-sky-600 dark:data-[active=true]:text-sky-400"
-        data-active={appState.isQuickPanelOpen && !appState.projectView} data-tooltip="Quick Todo (Alt + Q)" data-tooltip-position="right"
+        data-active={appState.view === 'quick-panel'} data-tooltip="Quick Todo (Alt + Q)" data-tooltip-position="right"
     >
         <span class="block md:text-sm transition-transform duration-300"><Icon/></span>
     </button>
 
-    <!-- Projects -->
-    <button
-        onclick={toggleProjectView}
-        aria-label="Projects (Alt + P)"
-        class="group rounded-lg p-2 border border-slate-200 dark:border-slate-700
-           bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
-           shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300
-           hover:scale-105 active:scale-95
-           data-[active=true]:bg-sky-100 dark:data-[active=true]:bg-sky-900/30
-           data-[active=true]:border-sky-400 data-[active=true]:text-sky-600 dark:data-[active=true]:text-sky-400"
-        data-active={appState.projectView} data-tooltip="Projects (Alt + P)" data-tooltip-position="right"
-    >
-        <span class="block md:text-sm transition-transform duration-300 group-hover:scale-110">📋</span>
-    </button>
-
-    <!-- Writer Mode -->
-    <button
-        onclick={toggleWriterView}
-        aria-label="Writer (Alt + W)"
-        class="group rounded-lg p-2 border border-slate-200 dark:border-slate-700
-           bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
-           shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300
-           hover:scale-105 active:scale-95
-           data-[active=true]:bg-sky-100 dark:data-[active=true]:bg-sky-900/30
-           data-[active=true]:border-sky-400 data-[active=true]:text-sky-600 dark:data-[active=true]:text-sky-400"
-        data-active={appState.writerView} data-tooltip="Writer (Alt + W)" data-tooltip-position="right"
-    >
-        <span class="block md:text-sm transition-transform duration-300 group-hover:scale-110">✍️</span>
-    </button>
+    {#each menuItems as item}
+        <button
+            onclick={() => updateView(item.view as View)}
+            aria-label={item.label}
+            class="group rounded-lg p-2 border border-slate-200 dark:border-slate-700
+            bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
+            shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300
+            hover:scale-105 active:scale-95
+            data-[active=true]:bg-sky-100 dark:data-[active=true]:bg-sky-900/30
+            data-[active=true]:border-sky-400 data-[active=true]:text-sky-600 dark:data-[active=true]:text-sky-400"
+            data-active={appState.view === item.view} data-tooltip={item.label} data-tooltip-position="right"
+        >
+            <span class="block md:text-sm transition-transform duration-300 group-hover:scale-110">{item.icon}</span>
+        </button>
+    {/each}
 </div>
 
 <!-- ===== Quick Todo Panel ===== -->
-{#if appState.keepQuickPanelOpen || appState.isQuickPanelOpen}
+{#if appState.keepQuickPanelOpen || appState.view === 'quick-panel'}
     <div
         class="fixed top-0 left-18 sm:left-20 h-full w-[18rem] sm:w-[20rem]
            bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-700
@@ -163,7 +149,7 @@
 
                 {#if !appState.keepQuickPanelOpen}
                     <button
-                        onclick={() => (appState.isQuickPanelOpen = false)}
+                        onclick={() => updateView('home')}
                         class="text-slate-500 hover:text-sky-500 dark:text-slate-400 dark:hover:text-sky-400 transition"
                         aria-label="Close Panel"
                     >

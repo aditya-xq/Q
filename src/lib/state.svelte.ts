@@ -1,13 +1,12 @@
 import type { Writeup } from './utils/db'
 import type { ProjectWithTasks } from './utils/stores'
 
+export type View = 'projects' | 'writer' | 'games' | 'home' | 'quick-panel'
+
 interface AppState {
     projectStore: ProjectWithTasks[]
     writeups: Writeup[]
-    projectView: boolean
-    settingsView: boolean
-    writerView: boolean
-    isQuickPanelOpen: boolean
+    view: View
     keepQuickPanelOpen?: boolean
     showQuote?: boolean
     showWeather?: boolean
@@ -21,11 +20,8 @@ interface Notification {
 
 export const appState: AppState = $state({
     projectStore: [],
-    projectView: false,
-    settingsView: false,
-    writerView: false,
+    view: 'home',
     writeups: [],
-    isQuickPanelOpen: false,
     keepQuickPanelOpen: false,
     showQuote: true,
     showWeather: true,
@@ -33,3 +29,11 @@ export const appState: AppState = $state({
 
 export const notifications: Notification[] = $state([])
 export const notificationId = $state({ value: 0 })
+
+export  function updateView(view: View) {
+    if (appState.view === view) {
+        appState.view = 'home'
+        return
+    }
+    appState.view = view
+}

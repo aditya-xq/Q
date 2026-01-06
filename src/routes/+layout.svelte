@@ -4,42 +4,17 @@
     import { slide } from 'svelte/transition'
     import '../app.css'
     import { onDestroy, onMount } from 'svelte'
-    import { appState } from '$lib/state.svelte'
+    import { appState, updateView } from '$lib/state.svelte'
     import { getAllSettings } from '$lib/utils/db'
     let { children } = $props()
     let handleKey: (e: KeyboardEvent) => void
     let isLoading = $state(true)
 
-    function togglePanel() {
-        if (appState.projectView) appState.projectView = false
-        if (appState.settingsView) appState.settingsView = false
-        if (appState.writerView) appState.writerView = false
-        appState.isQuickPanelOpen = !appState.isQuickPanelOpen
-    }
-
-    function toggleProjectView() {
-        if (appState.settingsView) appState.settingsView = false
-        if (appState.writerView) appState.writerView = false
-        appState.isQuickPanelOpen = false
-        appState.projectView = !appState.projectView
-    }
-
-    function toggleWriteriew() {
-        if (appState.settingsView) appState.settingsView = false
-        appState.isQuickPanelOpen = false
-        appState.writerView = !appState.writerView
-    }
-
-    function toggleSettingsView() {
-        appState.settingsView = !appState.settingsView
-    }
-
     onMount(async () => {
         handleKey = (e: KeyboardEvent) => {
-            if (e.altKey && e.key.toLowerCase() === 'q') togglePanel()
-            else if (e.altKey && e.key.toLowerCase() === 'p') toggleProjectView()
-            else if (e.altKey && e.key.toLowerCase() === 'w') toggleWriteriew()
-            else if (e.altKey && e.key.toLowerCase() === 's') toggleSettingsView()
+            if (e.altKey && e.key.toLowerCase() === 'q') updateView('quick-panel')
+            else if (e.altKey && e.key.toLowerCase() === 'p') updateView('projects')
+            else if (e.altKey && e.key.toLowerCase() === 'w') updateView('writer')
         }
 
         window.addEventListener('keydown', handleKey)        

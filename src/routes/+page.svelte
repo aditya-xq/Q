@@ -35,22 +35,22 @@
 </script>
 
 <!-- ===== Main Screen ===== -->
-<div class={`relative min-h-screen flex flex-col transition-colors duration-500 ${appState.projectView || appState.writerView ? 'items-start' : 'items-center justify-center'}`}>
+<div class={`relative min-h-screen flex flex-col transition-colors duration-500 ${appState.view === 'projects' || appState.view === 'writer' ? 'items-start' : 'items-center justify-center'}`}>
     <!-- Notifications -->
     <Notification />
     <Links />
 
     <!-- Project View -->
-    {#if appState.projectView || appState.writerView}
+    {#if appState.view === 'projects' || appState.view === 'writer'}
         <div
             class="w-full mx-auto transition-all duration-500 ease-out"
             style="opacity: 1;"
             in:fade={{ duration: 400, easing: cubicOut, delay: 200 }}
         >
             <div in:fly={{ y: 20, duration: 500, delay: 300, easing: quintOut }}>
-                {#if appState.projectView}
+                {#if appState.view === 'projects'}
                     <div class="mt-40"><ProjectGrid /></div>
-                {:else if appState.writerView}
+                {:else if appState.view === 'writer'}
                     <div class="mt-20 mr-20"><WriterView /></div>
                 {/if}
             </div>
@@ -61,7 +61,7 @@
             class={`flex flex-col items-center justify-center flex-1 w-full ${appState.showQuote ? '-mt-44' : '-mt-24'} mr-6 px-4 sm:px-6 lg:px-8 transition-all duration-500 ease-out`}
             in:fade={{ duration: 400, easing: cubicOut }}
         >
-            <div class={`${appState.isQuickPanelOpen || appState.keepQuickPanelOpen ? 'max-w-6xl pl-86' : 'max-w-3xl'} text-center space-y-8 transition-all duration-400 ease-in-out`}>
+            <div class={`${appState.view === 'quick-panel' || appState.keepQuickPanelOpen ? 'max-w-6xl pl-86' : 'max-w-3xl'} text-center space-y-8 transition-all duration-400 ease-in-out`}>
                 <Weather />
                 <div in:fly={{ y: 20, duration: 400, delay: 300, easing: cubicOut }}>
                     {#if appState.showQuote}<Quote />{/if}

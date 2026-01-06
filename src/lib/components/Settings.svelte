@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { onMount } from 'svelte'
-	import { db, type QuickLink, getSetting, setSetting } from '$lib/utils/db'
+	import { onDestroy, onMount } from 'svelte'
+	import { db, type QuickLink, setSetting } from '$lib/utils/db'
 	import { appState } from '$lib/state.svelte'
 	import { quintOut } from 'svelte/easing'
 	import { fly, slide } from 'svelte/transition'
@@ -58,8 +58,12 @@
 	let savedState = $state(Array(6).fill(false))
 	let saveTimeouts = $state<(ReturnType<typeof setTimeout> | null)[]>(Array(6).fill(null))
 	let customUrls = $state(Array(6).fill(''))
+	let showSettings = $state(false)
 
 	const hasUnsavedChanges = $derived(savingState.some(Boolean) || savedState.some(Boolean))
+
+	let handleKey: (e: KeyboardEvent) => void
+	let handleClickOutside: (e: MouseEvent) => void
 
 	async function loadSettings() {
 		// Load quick links
@@ -80,9 +84,30 @@
 				}
 			}
 		}
+
+		if (typeof window !== 'undefined') {
+			handleKey = (e: KeyboardEvent) => {
+				if (e.altKey && e.key.toLowerCase() === 's') toggleSettingsView()
+			}
+			handleClickOutside = (e: MouseEvent) => {
+				const settingsElement = document.querySelector('[data-settings-panel]')
+				if (settingsElement && !settingsElement.contains(e.target as Node)) {
+					showSettings = false
+				}
+			}
+			window.addEventListener('keydown', handleKey)
+			window.addEventListener('mousedown', handleClickOutside)
+		}
 	}
 
 	onMount(loadSettings)
+
+	onDestroy(() => {
+        if (typeof window !== 'undefined' && handleKey && handleClickOutside) {
+            window.removeEventListener('keydown', handleKey)
+            window.removeEventListener('mousedown', handleClickOutside)
+        }
+    })
 
 	async function saveRow(index: number) {
 		savingState[index] = true
@@ -134,7 +159,7 @@
 	}
 
 	function toggleSettingsView() {
-		appState.settingsView = !appState.settingsView
+		showSettings = !showSettings
 	}
 
 	async function toggleKeepQuickPanelOpen() {
@@ -160,8 +185,8 @@
 	}
 </script>
 
-<div class="fixed bottom-5 left-3 z-1000">
-	{#if appState.settingsView}
+<div class="fixed bottom-5 left-3 z-1000" data-settings-panel>
+	{#if showSettings}
 		<div
 			class="absolute bottom-full mb-3 w-[calc(100vw-2.5rem)] max-w-lg origin-bottom-left pl-4 pr-12"
 			in:fly={{ y: 10, duration: 300, easing: quintOut }}
@@ -311,11 +336,11 @@
 		   bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
 		   shadow-lg hover:shadow-xl transition-all duration-300
 		   hover:scale-110 active:scale-95
-		   {appState.settingsView 
+		   {showSettings 
 				? 'border-sky-400 bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 shadow-sky-400/20' 
 				: 'border-slate-200 dark:border-slate-700 hover:border-sky-400'}"
 	>
-		{#if appState.settingsView}
+		{#if showSettings}
 			<div class="absolute inset-0 rounded-xl bg-sky-400/10 animate-pulse"></div>
 		{/if}
 		<span class="relative block text-base transition-transform duration-300 group-hover:rotate-90">⚙️</span>
