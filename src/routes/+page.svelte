@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { FrequentSites, Links, Notification, ProjectGrid, Quote, Weather, WriterView } from '$lib/components'
+    import { FrequentSites, GameDashboard, Links, Notification, ProjectGrid, Quote, Weather, WriterView } from '$lib/components'
     import { appState } from '$lib/state.svelte'
     import { onMount } from 'svelte'
     import { fade, fly } from 'svelte/transition'
@@ -41,7 +41,7 @@
     <Links />
 
     <!-- Project View -->
-    {#if appState.view === 'projects' || appState.view === 'writer'}
+    {#if appState.view === 'projects' || appState.view === 'writer' || appState.view === 'games'}
         <div
             class="w-full mx-auto transition-all duration-500 ease-out"
             style="opacity: 1;"
@@ -52,6 +52,8 @@
                     <div class="mt-40"><ProjectGrid /></div>
                 {:else if appState.view === 'writer'}
                     <div class="mt-20 mr-20"><WriterView /></div>
+                {:else if appState.view === 'games'}
+                    <GameDashboard />
                 {/if}
             </div>
         </div>

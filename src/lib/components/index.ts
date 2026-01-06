@@ -10,6 +10,12 @@ import WriterView from './Writer/WriterView.svelte'
 import Editor from './Writer/Editor.svelte'
 import Quote from './Widgets/Quote.svelte'
 import Weather from './Widgets/Weather.svelte'
-import QuantumDino from './Games/QuantumDino.svelte'
+import GameDashboard from './Games/GameDashboard.svelte'
 
-export { Notification, ProjectCard, ProjectGrid, TaskItem, FrequentSites, QuickTodo, Links, Settings, WriterView, Editor, Quote, Weather, QuantumDino}
+export {
+    Notification, ProjectCard,
+    ProjectGrid, TaskItem,
+    FrequentSites, QuickTodo,
+    Links, Settings, WriterView,
+    Editor, Quote, Weather, GameDashboard
+}
