@@ -1,7 +1,7 @@
 import type { Writeup } from './utils/db'
 import type { ProjectWithTasks } from './utils/stores'
 
-export type View = 'projects' | 'writer' | 'games' | 'home' | 'quick-panel'
+export type View = 'projects' | 'writer' | 'games' | 'home' | 'quick-panel' | 'finance'
 
 interface AppState {
     projectStore: ProjectWithTasks[]

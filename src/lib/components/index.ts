@@ -17,5 +17,6 @@ export {
     ProjectGrid, TaskItem,
     FrequentSites, QuickTodo,
     Links, Settings, WriterView,
-    Editor, Quote, Weather, GameDashboard
+    Editor, Quote, Weather,
+    GameDashboard
 }

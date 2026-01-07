@@ -33,6 +33,12 @@
             icon: '✍️',
             view: 'writer'
         },
+        {
+            id: 'finance',
+            label: 'Finance (Alt + M)', 
+            icon: '💰',
+            view: 'finance'
+        },
         { 
             id: 'games', 
             label: 'Games (Alt + G)', 
@@ -132,7 +138,7 @@
         <header class="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
             <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100">{listTitle}</h2>
             <div class="flex items-center gap-2">
-                <!-- Enhanced Pin Button -->
+                <!-- Pin Button -->
                 <button
                     onclick={toggleKeepQuickPanelOpen}
                     aria-pressed={appState.keepQuickPanelOpen}

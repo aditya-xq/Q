@@ -15,6 +15,7 @@
             if (e.altKey && e.key.toLowerCase() === 'q') updateView('quick-panel')
             else if (e.altKey && e.key.toLowerCase() === 'p') updateView('projects')
             else if (e.altKey && e.key.toLowerCase() === 'w') updateView('writer')
+            else if (e.altKey && e.key.toLowerCase() === 'm') updateView('finance')
             else if (e.altKey && e.key.toLowerCase() === 'g') updateView('games')
         }
 
