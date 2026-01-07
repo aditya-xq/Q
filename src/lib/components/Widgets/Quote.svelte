@@ -8,7 +8,7 @@
 
     let quote = $state<Quote | null>(null)
 
-    // Curated collection of inspiring quotes
+    // Curated collection of inspiring quotes and facts
     const quotes: Quote[] = [
         { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
         { text: "Innovation distinguishes between a leader and a follower.", author: "Steve Jobs" },
@@ -53,7 +53,60 @@
         { text: "Life is what happens to you while you're busy making other plans.", author: "John Lennon" },
         { text: "We become what we think about.", author: "Earl Nightingale" },
         { text: "The best way to predict the future is to create it.", author: "Peter Drucker" },
-        { text: "If you can dream it, you can achieve it.", author: "Zig Ziglar" }
+        { text: "If you can dream it, you can achieve it.", author: "Zig Ziglar" },
+        { text: "So many books, so little time.", author: "Frank Zappa" },
+        { text: "A room without books is like a body without a soul.", author: "Marcus Tullius Cicero" },
+        { text: "You can never get a cup of tea large enough or a book long enough to suit me.", author: "C.S. Lewis" },
+        { text: "Outside of a dog, a book is man's best friend. Inside of a dog it's too dark to read.", author: "Groucho Marx, The Essential Groucho" },
+        { text: "It is what you read when you don't have to that determines what you will be when you can't help it.", author: "Oscar Wilde" },
+        { text: "Believe in yourself. You are braver than you think, more talented than you know...", author: "Roy T. Bennett, The Light in the Heart" },
+        { text: "Live the life of your dreams: be brave enough to live the life of your dreams...", author: "Roy T. Bennett, The Light in the Heart" },
+        { text: "Do not be pushed around by the fears in your mind. Be led by the dreams in your heart.", author: "Roy T. Bennett, The Light in the Heart" },
+        { text: "Attitude is a choice. Happiness is a choice. Optimism is a choice. Kindness is a choice.", author: "Roy T. Bennett, The Light in the Heart" },
+        { text: "Do one thing every day that scares you.", author: "Eleanor Roosevelt" },
+        { text: "And now here is my secret: It is only with the heart that one can see rightly.", author: "Antoine de Saint-Exupéry, The Little Prince" },
+        { text: "Don't be afraid of growing slowly; be afraid only of standing still.", author: "Chinese Proverb" },
+        { text: "You only live once, but if you do it right, once is enough.", author: "Mae West" },
+        { text: "Live as if you were to die tomorrow. Learn as if you were to live forever.", author: "Mahatma Gandhi" },
+        { text: "If you don’t read the newspaper, you are uninformed. If you do read the newspaper, you are misinformed.", author: "Mark Twain" },
+        { text: "Knowledge is knowing a tomato is a fruit; wisdom is not putting it in a fruit salad.", author: "Miles Kington" },
+        { text: "Believe you can and you’re halfway there.", author: "Theodore Roosevelt" },
+        { text: "The best way out is always through.", author: "Robert Frost" },
+        { text: "Female sharks have thicker skin than males.", author: "" },
+        { text: "The average ocean depth equals about eight Empire State Buildings stacked.", author: "" },
+        { text: "The adult human skeleton has 206 bones; babies have about 270-300.", author: "" },
+        { text: "Madagascar hissing cockroaches hiss to communicate.", author: "" },
+        { text: "The human body’s largest organ is skin.", author: "" },
+        { text: "Your tongue print is unique — no two are alike.", author: "" },
+        { text: "The shortest recorded war lasted about 38 minutes (Anglo-Zanzibar War).", author: "" },
+        { text: "The North Pole has no official time zone.", author: "" },
+        { text: "Comets can smell like rotten eggs due to chemical composition.", author: "" },
+        { text: "A cloud weighs roughly 500 tons.", author: "" },
+        { text: "Identical twins don’t have identical fingerprints.", author: "" },
+        { text: "Earth’s rotation is slowing; days lengthen over time.", author: "" },
+        { text: "At any moment there are about 1,800 thunderstorms occurring on Earth.", author: "" },
+        { text: "Hippos secrete a natural reddish ‘sunscreen’ pigment.", author: "" },
+        { text: "The International Space Station orbits Earth about every 92 minutes.", author: "" },
+        { text: "Astronauts can’t burp in space; gases behave differently without gravity.", author: "" },
+        { text: "More than half of Earth’s oxygen comes from ocean plankton and plants.", author: "" },
+        { text: "Bananas are slightly radioactive due to potassium content.", author: "" },
+        { text: "Water can exist simultaneously as solid, liquid, and gas at the triple point.", author: "" },
+        { text: "Helium becomes a superfluid with zero friction at near-absolute zero.", author: "" },
+        { text: "Soil contains more microorganisms in a teaspoon than there are people on Earth.", author: "" },
+        { text: "Fleas can jump more than 100 times their body height.", author: "" },
+        { text: "Sound travels about four times faster in water than in air.", author: "" },
+        { text: "The 1883 eruption of Krakatau is one of the loudest sounds in history.", author: "" },
+        { text: "The largest known prime number has over 41 million digits.", author: "" },
+        { text: "Frogs breathe and absorb water through their skin.", author: "" },
+        { text: "A turtle’s shell is made from about 50 bones.", author: "" },
+        { text: "Earth’s magnetic poles have reversed many times over millions of years.", author: "" },
+        { text: "Earliest humans lived in Africa around 2.8 million years ago.", author: "" },
+        { text: "The Sun’s pressure waves produce sound too low for human ears.", author: "" },
+        { text: "The deepest ocean trenches exceed depths equivalent to 25 Empire State Buildings.", author: "" },
+        { text: "Spacecraft orbital speed keeps the ISS in free fall around Earth.", author: "" },
+        { text: "Oxygen production in oceans largely comes from microscopic marine organisms.", author: "" },
+        { text: "Human body growth fuses many infant bones into adult skeletal structure.", author: "" },
+        { text: "Frog and turtle physiology shows remarkable adaptations to environment.", author: "" }
     ]
 
     function getRandomQuote(): Quote {
@@ -72,11 +125,13 @@
                 <p class="text-xl text-slate-400 dark:text-slate-700">
                     {quote.text}
                 </p>
-                <footer class="text-end">
-                    <cite class="text-lg text-slate-400 dark:text-slate-700 not-italic">
-                        — {quote.author}
-                    </cite>
-                </footer>
+                {#if quote.author}
+                    <footer class="text-end">
+                        <cite class="text-lg text-slate-400 dark:text-slate-700 italic">
+                            — {quote.author}
+                        </cite>
+                    </footer>
+                {/if}
             </blockquote>
         </div>
     </div>
