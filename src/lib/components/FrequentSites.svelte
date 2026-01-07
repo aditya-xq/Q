@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { resolve } from '$app/paths'
     let {sites = []} = $props()
 
     // Function to get the favicon for a site
@@ -29,7 +28,7 @@
     <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-4 max-w-5xl mx-auto">
         {#each sites as site (site.title)}
             <a
-                href={resolve(site.url)}
+                href={site.url}
                 class="flex flex-col items-center justify-center p-3 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200"
                 rel="noopener noreferrer"
             >
