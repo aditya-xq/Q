@@ -5,7 +5,7 @@
         height=400, 
         speedFactor=1, 
         starCount=120 
-    }: { width: number, height: number, speedFactor: number, starCount: number } = $props()
+    }: { width?: number, height?: number, speedFactor?: number, starCount?: number } = $props()
 
     let canvas: HTMLCanvasElement
     let ctx: CanvasRenderingContext2D
