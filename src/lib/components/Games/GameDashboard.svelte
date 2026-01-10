@@ -108,32 +108,6 @@
 					</h1>
 				</div>
 			</header>
-
-			<!-- Stats Bar -->
-			<div 
-				class="mb-8 flex items-center justify-center gap-4"
-				in:fly={{ y: 20, duration: 500, delay: 200, easing: quintOut }}
-			>
-				<div class="bg-slate-800/50 backdrop-blur-sm rounded-xl px-4 py-3 border border-slate-700/60">
-					<div class="flex items-center gap-2">
-						<span class="text-3xl">🎯</span>
-						<div>
-							<div class="text-xs text-slate-500 font-bold uppercase tracking-wider">Games</div>
-							<div class="text-xl font-black text-slate-200">{games.length}</div>
-						</div>
-					</div>
-				</div>
-				<div class="bg-slate-800/50 backdrop-blur-sm rounded-xl px-4 py-3 border border-slate-700/60">
-					<div class="flex items-center gap-2">
-						<span class="text-3xl">⚡</span>
-						<div>
-							<div class="text-xs text-slate-500 font-bold uppercase tracking-wider">Ready</div>
-							<div class="text-xl font-black text-green-400">Online</div>
-						</div>
-					</div>
-				</div>
-			</div>
-
 			<!-- Games Grid -->
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 				{#each games as game, index}
