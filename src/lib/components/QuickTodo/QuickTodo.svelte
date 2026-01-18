@@ -63,12 +63,12 @@
 
     async function addNewTask(text: string) {
         if (!text.trim()) return
-        await db.tasks.add({ projectId: QUICK_TODO_ID, text, completed: false, createdAt: new Date() })
+        await db.tasks.add({ projectId: QUICK_TODO_ID, text, completed: false, createdAt: new Date(), updatedAt: new Date() })
         await loadTasks()
     }
 
     async function toggleComplete(taskId: number, text: string, completed: boolean) {
-        await db.tasks.update(taskId, { text, completed: !completed })
+        await db.tasks.update(taskId, { text, completed: !completed, updatedAt: new Date() })
         await loadTasks()
     }
 

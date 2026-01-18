@@ -19,6 +19,7 @@ export interface Task {
     text: string
     completed: boolean
     createdAt: Date
+    updatedAt: Date
 }
 
 export interface QuickLink {
@@ -45,7 +46,7 @@ export class MyAppDB extends Dexie {
         this.version(1).stores({
             writeups: '++id, content, updatedAt, createdAt',
             projects: '++id, title, createdAt',
-            tasks: '++id, projectId, text, completed, createdAt',
+            tasks: '++id, projectId, text, completed, createdAt, updatedAt',
             quicklinks: '++id, category, name, url',
             settings: '&key',
         })

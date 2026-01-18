@@ -34,7 +34,7 @@ export async function loadProjects() {
     await ensureDBReady()
     
     // Get all projects except the QuickTodo project
-    const projects = await db.projects.where('id').notEqual(QUICK_TODO_PROJECT_ID).toArray()
+    const projects = (await db.projects.where('id').notEqual(QUICK_TODO_PROJECT_ID).toArray()).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 
     const projectsWithTasks: ProjectWithTasks[] = await Promise.all(
         projects.map(async (project) => {
@@ -78,7 +78,7 @@ export async function addTask(projectId: number, text: string) {
     await ensureDBReady()
     
     const createdAt = new Date()
-    const task = { projectId, text, completed: false, createdAt }
+    const task = { projectId, text, completed: false, createdAt, updatedAt: createdAt }
     await db.tasks.add(task)
     await loadProjects()
 }
@@ -86,7 +86,8 @@ export async function addTask(projectId: number, text: string) {
 export async function updateTask(taskId: number, text: string, completed: boolean) {
     await ensureDBReady()
     
-    await db.tasks.update(taskId, { text, completed })
+    const updatedAt = new Date()
+    await db.tasks.update(taskId, { text, completed, updatedAt })
     await loadProjects()
 }
 
