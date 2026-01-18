@@ -4,7 +4,7 @@
 </script>
 
 <!-- FIRE Dashboard -->
-<div in:fade={{ duration: 300 }} class="min-h-screen flex items-center">
+<div in:fade={{ duration: 300 }} class="min-h-screen flex items-center selection:bg-emerald-400 selection:text-emerald-950">
     <div class="max-w-6xl mx-auto px-4 py-12 w-full">
         <!-- Header -->
         <header class="mb-12 text-center" in:fly={{ y: -30, duration: 600, delay: 100, easing: quintOut }}>
