@@ -69,7 +69,7 @@
                     id={`task-edit-${task.id}`}
                     type="text"
                     bind:value={editedText}
-                    class="w-full rounded-lg py-2 px-3 bg-slate-100/80 dark:bg-slate-800/80 border-0 text-slate-700 dark:text-slate-200
+                    class="w-full rounded-lg py-2 px-3 text-base bg-slate-100/80 dark:bg-slate-800/80 border-0 text-slate-700 dark:text-slate-200
                         focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:focus:ring-indigo-400/20 shadow-sm backdrop-blur-sm"
                     onblur={saveEdit}
                     onkeydown={(e) => {
@@ -82,7 +82,7 @@
                 />
             {:else}
                 <span
-                    class={`block py-1 transition-all duration-200 cursor-pointer truncate text-wrap ${
+                    class={`block py-1 text-base transition-all duration-200 cursor-pointer truncate text-wrap ${
                         task.completed
                             ? 'text-slate-500 dark:text-slate-500 line-through'
                             : 'text-slate-700 dark:text-slate-200'

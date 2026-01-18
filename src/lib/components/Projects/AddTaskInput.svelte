@@ -19,7 +19,7 @@
         placeholder="Add a new task..."
         bind:value={newTaskText}
         class="w-full pl-4 pr-12 py-2 rounded-lg text-slate-700 dark:text-slate-200 placeholder-slate-500 dark:placeholder-slate-600 
-            transition-all duration-200 border-0 focus:border-0 focus:outline-none focus:ring-0"
+            transition-all duration-200 border-0 focus:border-0 focus:outline-none focus:ring-0 text-base"
         onkeydown={(e) => {
             if (e.key === 'Enter') addNewTask()
         }}
