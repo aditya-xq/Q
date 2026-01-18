@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { QuickTodo, Settings } from '$lib/components'
+    import { Links, QuickTodo, Settings } from '$lib/components'
     import { cubicOut } from 'svelte/easing'
     import { slide } from 'svelte/transition'
     import '../app.css'
@@ -59,6 +59,7 @@
         <QuickTodo />
         <Settings />
     </div>
+    <Links />
     <!-- Main Content Wrapper -->
     <main class="flex-1 ml-16 overflow-y-auto relative transition-all duration-300">
         {#if !isLoading}

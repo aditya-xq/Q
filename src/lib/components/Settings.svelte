@@ -223,9 +223,9 @@
 					{#each categoryConfigs as config, index}
 						<section>
 							<div class="flex items-center gap-4">
-								<div class="flex items-center gap-2 min-w-30">
+								<div class="flex items-center gap-2 md:min-w-30">
 									<span class="text-base">{config.icon}</span>
-									<h2 class="text-sm font-semibold text-gray-200 uppercase tracking-wide whitespace-nowrap">{config.title}</h2>
+									<h2 class="text-sm hidden md:block font-semibold text-gray-200 uppercase tracking-wide whitespace-nowrap">{config.title}</h2>
 								</div>
 
 								<div class="flex items-center gap-2">
@@ -268,9 +268,9 @@
 
 					<section class="pt-2 border-t border-slate-700">
 						<div class="flex items-center gap-4">
-							<div class="flex items-center gap-2 min-w-30">
+							<div class="flex items-center gap-2 md:min-w-30">
 								<span class="text-base">📌</span>
-								<h2 class="text-sm font-semibold text-gray-200 uppercase tracking-wide whitespace-nowrap">Quick Panel</h2>
+								<h2 class="text-sm hidden md:block font-semibold text-gray-200 uppercase tracking-wide whitespace-nowrap">Quick Panel</h2>
 							</div>
 
 							<div class="flex items-center gap-3">
@@ -291,9 +291,9 @@
 
 					<section class="pt-2 border-t border-slate-700">
 						<div class="flex items-center gap-4">
-							<div class="flex items-center gap-2 min-w-30">
+							<div class="flex items-center gap-2 md:min-w-30">
 								<span class="text-base">✨</span>
-								<h2 class="text-sm font-semibold text-gray-200 uppercase tracking-wide whitespace-nowrap">Widgets</h2>
+								<h2 class="text-sm hidden md:block font-semibold text-gray-200 uppercase tracking-wide whitespace-nowrap">Widgets</h2>
 							</div>
 							<div class="flex items-center gap-3">
 								<p class="text-xs text-gray-300">Quote</p>
