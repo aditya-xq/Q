@@ -108,17 +108,21 @@
         }
     }
 
-    onMount(async () => {
-        await ensureQuickTodoProject()
-        // initialize keepQuickPanelOpen from DB (fallback to false)
-        const keep = await getSetting('keepQuickPanelOpen')
-        appState.keepQuickPanelOpen = typeof keep === 'boolean' ? keep : false
-        await Promise.all([loadTasks(), loadProjects()])
+    onMount(() => {
+        // Run async initialization
+        (async () => {
+            await ensureQuickTodoProject()
+            // initialize keepQuickPanelOpen from DB (fallback to false)
+            const keep = await getSetting('keepQuickPanelOpen')
+            appState.keepQuickPanelOpen = typeof keep === 'boolean' ? keep : false
+            await Promise.all([loadTasks(), loadProjects()])
+        })()
         
         // Check mobile on mount and resize
         checkMobile()
         window.addEventListener('resize', checkMobile)
         
+        // Return cleanup function synchronously
         return () => {
             window.removeEventListener('resize', checkMobile)
         }
