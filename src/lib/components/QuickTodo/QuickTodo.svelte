@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte'
-    import { slide } from 'svelte/transition'
+    import { slide, fade } from 'svelte/transition'
     import { cubicOut } from 'svelte/easing'
     import { db, getSetting, setSetting } from '$lib/utils/db'
     import type { Task, Project } from '$lib/utils/db'
@@ -11,13 +11,15 @@
     import QuickAddInput from './QuickAddInput.svelte'
     import { Icon } from '../shared'
 
-    export let listTitle = `To do`
+    let quickInput: any = $state()
+    let mobileMenuOpen = $state(false)
+    let isMobile = $state(false)
 
-    let quickInput: any
+    let listTitle = $derived(`${isMobile ? '📌' : ''} To do`)
 
     const QUICK_TODO_ID = -1
-    let tasks: Task[] = []
-    let projects: Project[] = []
+    let tasks: Task[] = $state([])
+    let projects: Project[] = $state([])
     let isLoading = true
 
     const menuItems = [
@@ -77,12 +79,49 @@
         await loadTasks()
     }
 
+    function checkMobile() {
+        isMobile = window.innerWidth < 768 // md breakpoint
+    }
+
+    function handleMobileMenuItemClick(view: View) {
+        if (isMobile) {
+            mobileMenuOpen = false
+            // Small delay to allow menu close animation before view change
+            setTimeout(() => updateView(view), 150)
+        } else {
+            updateView(view)
+        }
+    }
+
+    function handleQuickTodoClick() {
+        if (isMobile) {
+            updateView('quick-panel')
+            mobileMenuOpen = false
+        } else {
+            updateView('quick-panel')
+        }
+    }
+
+    function closeMobileQuickPanel() {
+        if (isMobile) {
+            updateView('home')
+        }
+    }
+
     onMount(async () => {
         await ensureQuickTodoProject()
         // initialize keepQuickPanelOpen from DB (fallback to false)
         const keep = await getSetting('keepQuickPanelOpen')
         appState.keepQuickPanelOpen = typeof keep === 'boolean' ? keep : false
         await Promise.all([loadTasks(), loadProjects()])
+        
+        // Check mobile on mount and resize
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+        
+        return () => {
+            window.removeEventListener('resize', checkMobile)
+        }
     })
 
     async function toggleKeepQuickPanelOpen() {
@@ -92,71 +131,135 @@
     }
 </script>
 
-<!-- ===== Floating Menu ===== -->
-<div class="fixed top-5 left-4 z-1000 flex flex-col gap-3">
-    <!-- Quick Todo -->
+<!-- Mobile Menu Toggle Button (only on mobile) -->
+{#if isMobile}
     <button
-        onclick={() => updateView('quick-panel')}
+        onclick={() => mobileMenuOpen = !mobileMenuOpen}
+        aria-label="Toggle Menu"
+        class="fixed z-1001 top-3 left-3 rounded-full p-2 
+               text-white shadow-lg hover:shadow-xl
+               hover:bg-slate-700 active:scale-95 transition-all duration-300"
+    >
+        <svg class="w-6 h-6 transition-transform duration-300" 
+             class:rotate-90={mobileMenuOpen}
+             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {#if mobileMenuOpen}
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            {:else}
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            {/if}
+        </svg>
+    </button>
+{/if}
+
+<!-- Mobile Menu Overlay -->
+{#if isMobile && mobileMenuOpen}
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div 
+        class="fixed inset-0 bg-black/50 z-999"
+        onclick={() => mobileMenuOpen = false}
+        transition:fade={{ duration: 200 }}
+    ></div>
+{/if}
+
+<!-- Desktop Floating Menu / Mobile Slide-out Menu -->
+<div 
+    class="fixed z-1000 transition-transform duration-300
+           {isMobile 
+             ? 'top-0 left-0 h-full w-64 bg-slate-50 dark:bg-slate-950 shadow-2xl flex flex-col py-20 px-4 gap-3 border-r border-slate-200 dark:border-slate-700' 
+             : 'top-5 left-4 flex flex-col gap-3'}"
+    class:translate-x-0={isMobile && mobileMenuOpen}
+    class:-translate-x-full={isMobile && !mobileMenuOpen}
+>
+    <!-- Quick Todo Button -->
+    <button
+        onclick={handleQuickTodoClick}
         aria-label="Quick Todo (Alt + Q)"
         class="group rounded-lg border border-slate-200 dark:border-slate-700
-           bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
-           shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300
-           data-[active=true]:bg-sky-100 dark:data-[active=true]:bg-sky-900/30
-           data-[active=true]:border-sky-400 data-[active=true]:text-sky-600 dark:data-[active=true]:text-sky-400"
-        data-active={appState.view === 'quick-panel'} data-tooltip="Quick Todo (Alt + Q)" data-tooltip-position="right"
+        bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
+        shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300
+        hover:scale-105 active:scale-95
+        data-[active=true]:bg-sky-100 dark:data-[active=true]:bg-sky-900/30
+        data-[active=true]:border-sky-400 data-[active=true]:text-sky-600 dark:data-[active=true]:text-sky-400
+        {isMobile ? 'w-full p-4 flex items-center gap-3' : 'p-2'}"
+        data-active={appState.view === 'quick-panel'} 
+        data-tooltip={isMobile ? null : 'Quick Todo (Alt + Q)'} 
+        data-tooltip-position="right"
     >
-        <span class="block md:text-sm transition-transform duration-300"><Icon/></span>
+        <span class="block md:text-sm transition-transform duration-300 {isMobile ? 'text-2xl' : ''}">
+            <Icon/>
+        </span>
+        {#if isMobile}
+            <span class="text-lg -ml-1">📌</span><span class="text-sm font-medium">Quick Todo</span>
+        {/if}
     </button>
 
+    <!-- Menu Items -->
     {#each menuItems as item}
         <button
-            onclick={() => updateView(item.view as View)}
+            onclick={() => handleMobileMenuItemClick(item.view as View)}
             aria-label={item.label}
-            class="group rounded-lg p-2 border border-slate-200 dark:border-slate-700
+            class="group rounded-lg border border-slate-200 dark:border-slate-700
             bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
             shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300
             hover:scale-105 active:scale-95
             data-[active=true]:bg-sky-100 dark:data-[active=true]:bg-sky-900/30
-            data-[active=true]:border-sky-400 data-[active=true]:text-sky-600 dark:data-[active=true]:text-sky-400"
-            data-active={appState.view === item.view} data-tooltip={item.label} data-tooltip-position="right"
+            data-[active=true]:border-sky-400 data-[active=true]:text-sky-600 dark:data-[active=true]:text-sky-400
+            {isMobile ? 'w-full p-4 flex items-center gap-3' : 'p-2'}"
+            data-active={appState.view === item.view} 
+            data-tooltip={isMobile ? null : item.label} 
+            data-tooltip-position="right"
         >
-            <span class="block md:text-sm transition-transform duration-300 group-hover:scale-110">{item.icon}</span>
+            <span class="block md:text-sm transition-transform duration-300 group-hover:scale-110 {isMobile ? 'text-2xl' : ''}">
+                {item.icon}
+            </span>
+            {#if isMobile}
+                <span class="text-sm font-medium">{item.label.split('(')[0].trim()}</span>
+            {/if}
         </button>
     {/each}
 </div>
 
-<!-- ===== Quick Todo Panel ===== -->
-{#if appState.keepQuickPanelOpen || appState.view === 'quick-panel'}
+<!-- Quick Todo Panel - Desktop Side Panel / Mobile Full Screen -->
+{#if (isMobile && appState.view === 'quick-panel') || (!isMobile && (appState.keepQuickPanelOpen || appState.view === 'quick-panel'))}
     <div
-        class="fixed top-0 left-18 sm:left-20 h-full w-[18rem] sm:w-[20rem]
-           bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-700
-           shadow-xl rounded-r-2xl flex flex-col overflow-hidden z-900"
-        in:slide={{ axis: 'x', duration: 300, easing: cubicOut }}
-        out:slide={{ axis: 'x', duration: 250 }}
+        class="fixed z-1002 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700
+           flex flex-col overflow-hidden
+           {isMobile 
+             ? 'inset-0 rounded-none' 
+             : 'top-0 left-18 sm:left-20 h-full w-[18rem] sm:w-[20rem] border-r rounded-r-2xl'}"
+        in:slide={{ axis: isMobile ? 'y' : 'x', duration: 300, easing: cubicOut }}
+        out:slide={{ axis: isMobile ? 'y' : 'x', duration: 250 }}
         onintroend={() => quickInput?.focus?.()}
     >
-        <header class="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+        <header class="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700
+                       {isMobile ? 'pt-3' : ''}">
             <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100">{listTitle}</h2>
             <div class="flex items-center gap-2">
-                <!-- Pin Button -->
-                <button
-                    onclick={toggleKeepQuickPanelOpen}
-                    aria-pressed={appState.keepQuickPanelOpen}
-                    aria-label={appState.keepQuickPanelOpen ? 'Unpin quick panel' : 'Pin quick panel'}
-                    class="pin-button group relative inline-flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
-                    class:pinned={appState.keepQuickPanelOpen}
-                    title={appState.keepQuickPanelOpen ? 'Unpin panel' : 'Pin panel'}
-                >
-                    <span class="pin-icon block text-base select-none leading-none">
-                        📌
-                    </span>
-                    <span class="sr-only">{appState.keepQuickPanelOpen ? 'Unpin' : 'Pin'} quick panel</span>
-                </button>
-
-                {#if !appState.keepQuickPanelOpen}
+                <!-- Pin Button - Desktop Only -->
+                {#if !isMobile}
                     <button
-                        onclick={() => updateView('home')}
-                        class="text-slate-500 hover:text-sky-500 dark:text-slate-400 dark:hover:text-sky-400 transition"
+                        onclick={toggleKeepQuickPanelOpen}
+                        aria-pressed={appState.keepQuickPanelOpen}
+                        aria-label={appState.keepQuickPanelOpen ? 'Unpin quick panel' : 'Pin quick panel'}
+                        class="pin-button group relative inline-flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
+                        class:pinned={appState.keepQuickPanelOpen}
+                        title={appState.keepQuickPanelOpen ? 'Unpin panel' : 'Pin panel'}
+                    >
+                        <span class="pin-icon block text-base select-none leading-none">
+                            📌
+                        </span>
+                        <span class="sr-only">{appState.keepQuickPanelOpen ? 'Unpin' : 'Pin'} quick panel</span>
+                    </button>
+                {/if}
+
+                <!-- Close Button -->
+                {#if isMobile || !appState.keepQuickPanelOpen}
+                    <button
+                        onclick={() => isMobile ? closeMobileQuickPanel() : updateView('home')}
+                        class="text-slate-500 hover:text-sky-500 dark:text-slate-400 dark:hover:text-sky-400 transition
+                               {isMobile ? 'text-xl p-1' : ''}"
                         aria-label="Close Panel"
                     >
                         ✕
