@@ -159,7 +159,7 @@
 		style:opacity={isOpen ? '1' : '0'}
 	>
 		<div class="rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-3 min-w-50">
-			<div class="grid grid-cols-3 gap-3">
+			<div class="grid grid-cols-2 gap-3">
 				{#each quickLinks as link}
 					<button
 						class="group flex flex-col items-center gap-1.5 p-2 rounded-xl
