@@ -154,7 +154,7 @@
 
 	<!-- Quick Links Menu -->
 	<div
-		class="fixed top-16 right-4 z-50 transition-all duration-300 ease-out origin-top-right"
+		class="fixed top-15 right-3 z-50 transition-all duration-300 ease-out origin-top-right"
 		style:transform={isOpen ? 'scale(1)' : 'scale(0)'}
 		style:opacity={isOpen ? '1' : '0'}
 	>
@@ -188,7 +188,7 @@
 
 	<!-- Floating Toggle Button -->
 	<button
-		class="fixed top-4 right-4 z-50 w-12 h-12 rounded-full
+		class="fixed top-3 right-3 z-50 w-10 h-10 rounded-full
 			border-2 border-slate-300 dark:border-slate-600
 			shadow-lg hover:shadow-xl active:shadow-md
 			flex items-center justify-center
@@ -198,6 +198,6 @@
 		aria-label="Toggle quick links"
 		style:transform={isOpen ? 'rotate(90deg)' : 'rotate(0deg)'}
 	>
-		<span class="text-2xl">🔗</span>
+		<span class="text-xl">🔗</span>
 	</button>
 </div>
