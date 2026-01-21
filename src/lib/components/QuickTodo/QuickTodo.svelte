@@ -228,7 +228,7 @@
 <!-- Quick Todo Panel - Desktop Side Panel / Mobile Full Screen -->
 {#if (isMobile && appState.view === 'quick-panel') || (!isMobile && (appState.keepQuickPanelOpen || appState.view === 'quick-panel'))}
     <div
-        class="fixed z-1002 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700
+        class="fixed bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700
            flex flex-col overflow-hidden
            {isMobile 
              ? 'inset-0 rounded-none' 
@@ -239,7 +239,7 @@
     >
         <header class="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700
                        {isMobile ? 'pt-3' : ''}">
-            <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100">{listTitle}</h2>
+            <h2 class={`text-base font-semibold text-slate-800 dark:text-slate-100 ${isMobile ? 'ml-10' : ''}`}>{listTitle}</h2>
             <div class="flex items-center gap-2">
                 <!-- Pin Button - Desktop Only -->
                 {#if !isMobile}
