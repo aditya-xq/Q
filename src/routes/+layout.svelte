@@ -52,7 +52,7 @@
     </div>
     <!-- Sidebar / Floating QuickTodo -->
     <div
-        class={`fixed left-0 top-0 h-full w-16 z-51 flex flex-col items-center pt-4 pb-6 bg-slate-50 dark:bg-slate-950 
+        class={`fixed left-0 top-0 h-full w-16 z-51 flex flex-col items-center pt-4 pb-6 
             md:border-r border-slate-200 dark:border-slate-800 shadow-xl`}
         in:slide={{ axis: 'x', duration: 400, easing: cubicOut }}
         out:slide={{ axis: 'x', duration: 300 }}

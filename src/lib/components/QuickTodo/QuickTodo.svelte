@@ -186,16 +186,16 @@
         hover:scale-105 active:scale-95
         data-[active=true]:bg-sky-100 dark:data-[active=true]:bg-sky-900/30
         data-[active=true]:border-sky-400 data-[active=true]:text-sky-600 dark:data-[active=true]:text-sky-400
-        {isMobile ? 'w-full p-4 flex items-center gap-3' : 'p-2'}"
+        {isMobile ? 'w-full p-4 flex items-center gap-3' : 'p-0'}"
         data-active={appState.view === 'quick-panel'} 
         data-tooltip={isMobile ? null : 'Quick Todo (Alt + Q)'} 
         data-tooltip-position="right"
     >
         <span class="block md:text-sm transition-transform duration-300 {isMobile ? 'text-2xl' : ''}">
-            <Icon/>
+            <div class="w-9 h-9"><Icon/></div>
         </span>
         {#if isMobile}
-            <span class="text-lg -ml-1">📌</span><span class="text-sm font-medium">Quick Todo</span>
+            <span class="text-sm font-medium">Quick Todo</span>
         {/if}
     </button>
 
