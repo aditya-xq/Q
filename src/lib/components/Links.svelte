@@ -162,7 +162,7 @@
 			<div class="grid grid-cols-2 gap-3">
 				{#each quickLinks as link}
 					<button
-						class="group flex flex-col items-center gap-1.5 p-2 rounded-xl
+						class="group flex flex-col items-center gap-1.5 p-4 rounded-xl
 							bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700
 							hover:border-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950
 							transition-all duration-200 active:scale-95"
@@ -172,7 +172,7 @@
 						<img 
 							src={getIconUrl(link.name, link.url)} 
 							alt={link.name}
-							class="w-6 h-6 transition-transform duration-200 group-hover:scale-110"
+							class="w-8 h-8 transition-transform duration-200 group-hover:scale-110"
 							onerror={(e) => {
 								(e.currentTarget as HTMLImageElement).src = 'https://www.google.com/s2/favicons?domain=example.com&sz=32'
 							}}
