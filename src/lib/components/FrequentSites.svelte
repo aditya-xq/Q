@@ -32,7 +32,7 @@
                 class="flex flex-col items-center justify-center p-2 md:p-3 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200"
                 rel="noopener noreferrer"
             >
-                <div class="relative w-10 h-10 md:w-14 md:h-14 mb-2 rounded-full overflow-hidden flex items-center justify-center">
+                <div class="relative w-12 h-12 md:w-14 md:h-14 mb-2 rounded-full overflow-hidden flex items-center justify-center">
                     <img
                         src={getFavicon(site.url)}
                         alt={site.title}
