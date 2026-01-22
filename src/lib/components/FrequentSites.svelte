@@ -25,7 +25,7 @@
 </script>
 
 <div class="flex justify-center">
-    <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-4 max-w-5xl mx-auto">
+    <div class="grid grid-cols-4 md:grid-cols-8 gap-4 max-w-5xl mx-auto">
         {#each sites as site (site.title)}
             <a
                 href={site.url}
