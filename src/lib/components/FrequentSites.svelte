@@ -25,18 +25,18 @@
 </script>
 
 <div class="flex justify-center">
-    <div class="grid grid-cols-4 md:grid-cols-8 gap-4 max-w-5xl mx-auto">
+    <div class="grid grid-cols-4 md:grid-cols-8 gap-2 md:gap-4 max-w-5xl mx-auto">
         {#each sites as site (site.title)}
             <a
                 href={site.url}
-                class="flex flex-col items-center justify-center p-3 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200"
+                class="flex flex-col items-center justify-center p-2 md:p-3 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200"
                 rel="noopener noreferrer"
             >
-                <div class="relative w-14 h-14 mb-2 rounded-full overflow-hidden flex items-center justify-center">
+                <div class="relative w-10 h-10 md:w-14 md:h-14 mb-2 rounded-full overflow-hidden flex items-center justify-center">
                     <img
                         src={getFavicon(site.url)}
                         alt={site.title}
-                        class="w-10 h-10 object-contain"
+                        class="w-8 h-8 md:w-10 md:h-10 object-contain"
                         onerror={(e) => handleImageError(e)}
                     />
                     <div
@@ -46,7 +46,7 @@
                         {getInitial(site.title)}
                     </div>
                 </div>
-                <span class="text-sm text-center text-slate-700 dark:text-slate-300 truncate w-full">
+                <span class="text-xs md:text-sm text-center text-slate-700 dark:text-slate-300 truncate w-full">
                     {site.title}
                 </span>
             </a>
