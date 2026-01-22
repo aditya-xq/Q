@@ -3,8 +3,8 @@
     import { quintOut } from 'svelte/easing'
 </script>
 
-<div in:fade={{ duration: 300 }} class="selection:bg-emerald-400 selection:text-emerald-950 py-8">
-    <div class="max-w-5xl mx-auto pr-14 pt-16 sm:pt-0">
+<div in:fade={{ duration: 300 }} class="selection:bg-emerald-400 selection:text-emerald-950 p-6">
+    <div class="max-w-5xl mx-auto pt-16 sm:pt-0">
         <header class="mb-8 md:mb-12 text-center" in:fly={{ y: -30, duration: 600, delay: 100, easing: quintOut }}>
             <div class="flex flex-col md:flex-row items-center justify-center md:inline-flex gap-4 mb-3">
                 <div class="w-16 h-16 hidden rounded-2xl bg-linear-to-br from-emerald-500 to-emerald-600 dark:from-emerald-400 dark:to-emerald-500 sm:flex items-center justify-center shadow-lg shadow-emerald-500/20 dark:shadow-emerald-500/30 shrink-0">
