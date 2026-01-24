@@ -109,6 +109,10 @@
         padding-bottom: 3rem;
         max-width: 100%;
     }
+
+    :global(.milkdown .ProseMirror h1) {
+        margin-top: 1rem;
+    }
     
     /* Tablet and up */
     @media (min-width: 640px) {
