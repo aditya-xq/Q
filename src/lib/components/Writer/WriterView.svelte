@@ -256,7 +256,7 @@
             </div>
             
             {#key createdTimeInNum ?? "new"}
-                <div class="transition-opacity duration-200 ease-in-out md:ml-40">
+                <div class="transition-opacity duration-200 ease-in-out ml-6 md:ml-40 2xl:ml-20">
                     <Editor initialContent={editorContentToLoad} onInputChange={handleInputChange} />
                 </div>
             {/key}
