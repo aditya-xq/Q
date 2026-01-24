@@ -68,21 +68,24 @@
     }
 </script>
 
-<aside class="w-80 pl-4">
-    <div class="mb-4 flex items-center justify-between">
+<aside class="w-80">
+    <div class="hidden md:flex mb-4 items-center justify-between">
         <h3 class="text-sm font-semibold tracking-wide text-slate-900 dark:text-slate-100 uppercase opacity-60">
             Drafts
         </h3>
+        <!-- New draft button -->
         <button
-            class="group flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600 transition-all hover:text-slate-900 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-700 dark:hover:text-slate-200"
+            class="group rounded-lg px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm hover:shadow"
             onclick={createNewDraft}
             onkeydown={handleKeyCreate}
             aria-label="Create new draft"
         >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 transition-transform group-hover:rotate-90" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-            </svg>
-            <span>New</span>
+            <div class="flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-all group-hover:rotate-90" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                <span class="text-xs font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200">New</span>
+            </div>
         </button>
     </div>
     <div class="space-y-6">
@@ -126,7 +129,7 @@
                             </div>
                         </button>
                         {#if openOlder}
-                            <div class="mt-1 space-y-1 pl-1" transition:slide={{ duration: 200, easing: cubicOut }}>
+                            <div class="mt-1 space-y-1" transition:slide={{ duration: 200, easing: cubicOut }}>
                                 {#each older as w (w.id)}
                                     <article 
                                         class="group flex cursor-pointer items-center justify-between rounded-lg px-2 py-2 transition-colors

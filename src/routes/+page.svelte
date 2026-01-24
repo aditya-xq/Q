@@ -49,7 +49,7 @@
                 {#if appState.view === 'projects'}
                     <div class="mt-16"><ProjectGrid /></div>
                 {:else if appState.view === 'writer'}
-                    <div class="mt-20 mr-20"><WriterView /></div>
+                    <div class="mt-20 mr-2 md:mr-16"><WriterView /></div>
                 {:else if appState.view === 'games'}
                     <GameDashboard />
                 {:else if appState.view === 'finance'}
