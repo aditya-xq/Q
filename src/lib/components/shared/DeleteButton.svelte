@@ -7,7 +7,8 @@
 <div class="relative inline-block">
     <button
         class="p-1.5 rounded-full transition-colors text-slate-500 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 hover:bg-slate-200/70 dark:hover:bg-slate-800"
-        onclick={() => {
+        onclick={(e) => {
+            e.stopPropagation()
             if (showConfirmDelete) {
                 handleDelete()
             } else {
@@ -47,7 +48,10 @@
                 <!-- Improved Cancel button to match delete aesthetic -->
                 <button
                     type="button"
-                    onclick={() => (showConfirmDelete = false)}
+                    onclick={(e) => {
+                        e.stopPropagation()
+                        showConfirmDelete = false
+                    }}
                     class="px-3 py-1.5 text-xs rounded-lg border border-red-200 dark:border-red-800 bg-transparent text-red-700 dark:text-red-300 hover:bg-red-50/70 dark:hover:bg-red-900/40 focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-700 transition"
                 >
                     Cancel
