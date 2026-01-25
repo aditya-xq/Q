@@ -26,8 +26,8 @@ try {
     run('bun run build:ext')
 
     // 3. Package artifacts
-    const webZip = `q-web-${version}.zip`
-    const extZip = `q-extension-${version}.zip`
+    const webZip = `q-web.zip`
+    const extZip = `q-extension.zip`
 
     run(`bestzip ${webZip} build/*`)
     run(`bestzip ${extZip} build-extension/*`)

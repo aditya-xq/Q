@@ -3,7 +3,7 @@
     "name": "Q",
     "version": "0.3.0",
     "description": "An extension that converts your new tab into a productivity powerhouse.",
-    "permissions": ["topSites"],
+    "permissions": ["topSites, geolocation"],
     "chrome_url_overrides": {
         "newtab": "index.html"
     },
