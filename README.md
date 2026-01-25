@@ -14,29 +14,16 @@ Transform every new tab into a focused productivity hub. Stay organized, write d
 
 ## ✨ What You Get
 
-**📝 Quick Todo**  
-Capture tasks the moment you open a new tab—no extra apps needed.
-
-**🎯 Projects**  
-Organize work streams and manage all your projects in one central place.
-
-**✍️ Writer Mode**  
-Distraction-free writing environment for when you need to focus.
-
-**🎮 Arcade**  
-Take a break with nostalgic games built right into your browser.
-
-**🔗 Quick Links & Top Sites**  
-One-click access to your most visited and favorite websites.
-
-**🌤️ Weather Widget**  
-Check conditions at a glance with the integrated weather display.
-
-**💭 Daily Inspiration**  
-Random quotes and facts to spark your curiosity each day.
-
-**⚙️ Customizable**  
-Tailor Q to match your workflow with flexible settings.
+| Feature | Description |
+|---------|-------------|
+| 📝 **Quick Todo** | Capture tasks the moment you open a new tab—no extra apps needed |
+| 🎯 **Projects** | Organize work streams and manage all your projects in one central place |
+| ✍️ **Writer Mode** | Distraction-free writing environment for when you need to focus |
+| 🎮 **Arcade** | Take a break with nostalgic games built right into your browser |
+| 🔗 **Quick Links & Top Sites** | One-click access to your most visited and favorite websites |
+| 🌤️ **Weather Widget** | Check conditions at a glance with the integrated weather display |
+| 💭 **Daily Inspiration** | Random quotes and facts to spark your curiosity each day |
+| ⚙️ **Customizable** | Tailor Q to match your workflow with flexible settings |
 
 ---
 
