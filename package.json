@@ -1,11 +1,13 @@
 {
     "name": "q",
     "private": true,
-    "version": "0.2.12",
+    "version": "0.3.0",
     "type": "module",
     "scripts": {
         "dev": "vite dev",
-        "build": "vite build",
+        "build:ext": "BUILD_TARGET=extension bun run vite build",
+        "build:web": "BUILD_TARGET=web bun run vite build",
+        "preview:web": "bun run build:web && vite preview",
         "preview": "vite preview",
         "release": "bun scripts/release.js",
         "prepare": "svelte-kit sync || echo ''",
@@ -17,10 +19,12 @@
     "devDependencies": {
         "@eslint/compat": "^1.4.1",
         "@eslint/js": "^9.39.2",
+        "@sveltejs/adapter-static": "^3.0.10",
         "@sveltejs/kit": "^2.49.2",
         "@sveltejs/vite-plugin-svelte": "^5.1.1",
         "@tailwindcss/typography": "^0.5.19",
         "@tailwindcss/vite": "^4.1.18",
+        "@vite-pwa/sveltekit": "^1.1.0",
         "bestzip": "^2.2.1",
         "eslint": "^9.39.2",
         "eslint-config-prettier": "^10.1.8",
