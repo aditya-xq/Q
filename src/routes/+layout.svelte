@@ -52,14 +52,14 @@
     </div>
     <!-- Sidebar / Floating QuickTodo -->
     <div
-        class={`fixed left-0 md:top-0 h-full w-16 z-51 flex flex-col items-center pt-4 pb-6 
+        class={`fixed left-0 md:top-0 h-full md:w-16 z-51 flex flex-col items-center pt-4 pb-6 
             md:border-r border-slate-200 dark:border-slate-800 shadow-xl`}
         in:slide={{ axis: 'x', duration: 400, easing: cubicOut }}
         out:slide={{ axis: 'x', duration: 300 }}
     >
         <QuickTodo />
-        <Settings />
     </div>
+    <Settings />
     <Links />
     <!-- Main Content Wrapper -->
     <main class="flex-1 md:ml-16 overflow-y-auto relative transition-all duration-300">
