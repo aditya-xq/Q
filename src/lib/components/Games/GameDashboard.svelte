@@ -192,7 +192,7 @@
 	<!-- Active Game View -->
     <button
         onclick={closeGame}
-        class="fixed top-4 left-20 z-50 group bg-slate-900/90 backdrop-blur-lg rounded-xl px-4 py-2.5 border border-slate-700/60 shadow-xl hover:shadow-2xl hover:border-slate-600 transition-all duration-300 hover:scale-105 active:scale-95"
+        class="fixed top-4 left-14 md:left-20 z-50 group bg-slate-900/90 backdrop-blur-lg rounded-xl px-4 py-2.5 border border-slate-700/60 shadow-xl hover:shadow-2xl hover:border-slate-600 transition-all duration-300 hover:scale-105 active:scale-95"
         in:fly={{ x: -30, duration: 400, delay: 200 }}
     >
         <div class="flex items-center gap-2">
