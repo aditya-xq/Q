@@ -1,70 +1,118 @@
+<div align="center">
+
 ![Q Logo](static/assets//banner.svg)
 
-Q is a simple yet powerful browser extension that transforms your new tab into a sleek and focused and fun productivity tool. You can stay organized directly from your new tab without needing to open some task management or writing apps.
+# Q - Your Productive New Tab
+
+Transform every new tab into a focused productivity hub. Stay organized, write distraction-free, and access everything you need—all without leaving your browser.
+
+[🌐 Live Demo](https://q.xqbuilds.com) · [🐛 Report Bug](https://github.com/aditya-xq/Q/issues) · [💡 Request Feature](https://github.com/aditya-xq/Q/issues)
+
+</div>
 
 ---
 
-## Features
-- **New Tab Integration**: Replaces the default new tab page with a clean interface
-- **Quick Todo**: Manage your tasks right when you open a new tab
-- **Top Sites**: Shows your most visited sites for easy access
-- **Writer**: A special mode for focused and distraction free writing
-- **Projects**: Manage your projects, work streams, and tasks in one place
-- **Settings**: Customize your Q experience with various settings
-- **Quick Links**: Access your frequently visited sites with a single click
-- **Arcade**: Play fun and nostalgic games directly from your new tab
-- **Weather**: Check the weather directly from your new tab via the custom widget
-- **Quote / Fact**: Get a random quote or fact directly from your new tab
+## ✨ What You Get
+
+**📝 Quick Todo**  
+Capture tasks the moment you open a new tab—no extra apps needed.
+
+**🎯 Projects**  
+Organize work streams and manage all your projects in one central place.
+
+**✍️ Writer Mode**  
+Distraction-free writing environment for when you need to focus.
+
+**🎮 Arcade**  
+Take a break with nostalgic games built right into your browser.
+
+**🔗 Quick Links & Top Sites**  
+One-click access to your most visited and favorite websites.
+
+**🌤️ Weather Widget**  
+Check conditions at a glance with the integrated weather display.
+
+**💭 Daily Inspiration**  
+Random quotes and facts to spark your curiosity each day.
+
+**⚙️ Customizable**  
+Tailor Q to match your workflow with flexible settings.
 
 ---
 
-## Installation
+## 🚀 Getting Started
 
-### From Chrome Web Store
-_(Coming soon)_
+### Browser Extension
 
-### From Edge extension store (for Edge browsers)
-Add to your browser from the official extension link - [Q - The new tab extension](https://microsoftedge.microsoft.com/addons/detail/q/caclhkefejgdigpilgjbljkjejnlfibd)
+**Microsoft Edge**  
+Install from the [Edge Add-ons Store](https://microsoftedge.microsoft.com/addons/detail/q/caclhkefejgdigpilgjbljkjejnlfibd)
 
-### Manual Installation
-#### Approach 1 (For general users)
-1. Check the release page for the latest release tag - https://github.com/aditya-xq/Q/releases, download the q-extension.zip and extract it to a `q-extension` folder
-2. Open Chrome and navigate to `chrome://extensions/`
-3. Enable "Developer mode" in the top-right corner
-4. Click "Load unpacked" and select the build folder containing the extension files
-5. The extension should now be installed and will activate when you open a new tab
+**Chrome**  
+Coming soon to the Chrome Web Store
 
-#### Approach 2 (For developers)
-1. Clone this repository and run `bun run build:ext` to build the extension. This will create a `build-extension` folder, which you can unpack and install as an extension.
-2. Steps to add an extension to your browser are the same as above, once you have the build-extension folder.
+**Manual Installation**
 
-### Live Demo
-You can also access a live demo of Q, deployed as a standalone web app at https://q.xqbuilds.com. Do note that it will always contain the latest development version of Q and may not be as stable as the official extension.
+1. Download the latest `q-extension.zip` from [Releases](https://github.com/aditya-xq/Q/releases)
+2. Extract the zip file to a folder
+3. Open your browser and go to `chrome://extensions/` (or `edge://extensions/`)
+4. Turn on **Developer mode** (toggle in the top-right)
+5. Click **Load unpacked** and select the extracted folder
+6. Open a new tab to see Q in action
 
----
+### Web App
 
-## Development
-### Building from Source
-1. Fork the repo and make your changes to the codebase, and build the extension.
-2. Test locally using the "Load unpacked" method described above (you can also use `bun run dev` to test in a development server).
-3. Raise a PR to merge the new changes.
+Try Q instantly without installation at [q.xqbuilds.com](https://q.xqbuilds.com)  
+*Note: The web version runs the latest development build and may be less stable.*
 
 ---
 
-## Permissions
-Q requires minimal permissions:
+## 🛠️ For Developers
 
-- `topSites` - To display your most frequently visited websites
-- `geolocation` - To display the weather
+### Build from Source
 
-## Contributing
-Contributions are welcome! Feel free to submit issues or pull requests to help improve Q.
+```bash
+# Clone the repository
+git clone https://github.com/aditya-xq/Q.git
 
-## License
-[MIT License](LICENSE)
+# Build the extension
+bun run build:ext
+
+# Or run development server
+bun run dev
+```
+
+### Contributing
+
+We welcome your contributions! Here's how to help:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes and test locally
+4. Submit a pull request
+
+Found a bug or have an idea? [Open an issue](https://github.com/aditya-xq/Q/issues)
 
 ---
 
-Made with ❤️ for productivity enthusiasts. 
+## 🔒 Permissions
 
-Feel free to tweet me your feedback and suggestions [@xq_is_here](https://x.com/xq_is_here) on X/Twitter.
+Q asks for minimal permissions to work:
+
+- **Top Sites** - Shows your frequently visited websites
+- **Geolocation** - Powers the weather widget
+
+---
+
+## 📄 License
+
+Released under the [MIT License](LICENSE)
+
+---
+
+<div align="center">
+
+**Built with ❤️ for productivity enthusiasts**
+
+Share your feedback [@xq_is_here](https://x.com/xq_is_here) on X
+
+</div>
