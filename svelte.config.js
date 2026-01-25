@@ -16,15 +16,15 @@ const config = {
             assets: 'build-extension',
             // optionally pick a different manifest in your static/ dir
             manifest: 'manifest.json'
-            })
+        })
         : staticAdapter({
             // web default
             pages: 'build',
             assets: 'build',
             fallback: 'index.html'
-            }),
+        }),
         prerender: {
-        entries: ['*']
+            entries: ['*']
         }
     }
 }

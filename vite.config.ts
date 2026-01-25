@@ -9,7 +9,6 @@ export default defineConfig({
     plugins: [
         tailwindcss(),
         sveltekit(),
-
         !isExtension &&
         SvelteKitPWA({
             registerType: 'autoUpdate',
