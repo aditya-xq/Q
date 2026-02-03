@@ -17,7 +17,7 @@ export function deriveTitle(fromContent: string, opts?: { maxTitleLength?: numbe
     // 3. From that block, take the first non-empty line (skip badges, images etc.)
     const lines = firstBlock.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
     if (lines.length === 0) return fallback
-    let firstLine = lines.find(l => !/^(!\[.*\]\(.*\)|\[\!\[.*\]\(.*\)\]|<!--)/.test(l)) ?? lines[0]
+    let firstLine = lines.find(l => !/^(!\[.*\]\(.*\)|\[\\!\[.*\]\(.*\)\]|<!--)/.test(l)) ?? lines[0]
 
     // 4. Remove leading Markdown heading markers and list / quote markers
     firstLine = firstLine.replace(/^\s{0,3}(#{1,6}\s+|>\s+|[-*+]\s+|\d+\.\s+)/, '').trim()
