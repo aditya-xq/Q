@@ -30,10 +30,28 @@ export const appState: AppState = $state({
 export const notifications: Notification[] = $state([])
 export const notificationId = $state({ value: 0 })
 
-export  function updateView(view: View) {
-    if (appState.view === view) {
-        appState.view = 'home'
-        return
+function syncViewParam(nextView: View) {
+    if (typeof window === 'undefined') return
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`
+    const url = new URL(window.location.href)
+    const params = url.searchParams
+    if (nextView === 'home') {
+        params.delete('view')
+    } else {
+        params.set('view', nextView)
     }
-    appState.view = view
+    if (nextView !== 'games') {
+        params.delete('game')
+    }
+    const nextSearch = params.toString()
+    const nextUrl = `${url.pathname}${nextSearch ? `?${nextSearch}` : ''}${url.hash}`
+    if (nextUrl !== currentUrl) {
+        history.replaceState({}, '', nextUrl)
+    }
+}
+
+export function updateView(view: View) {
+    const nextView = appState.view === view ? 'home' : view
+    appState.view = nextView
+    syncViewParam(nextView)
 }

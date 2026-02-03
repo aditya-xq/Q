@@ -3,7 +3,7 @@
 	import { quintOut, backOut } from 'svelte/easing'
     import { gameStore } from './state.svelte'
     import QuantumDino from './QuantumDino/QuantumDino.svelte'
-    import { onDestroy } from 'svelte'
+    import { onDestroy, onMount } from 'svelte'
 
 	// Game store interface
 	interface GameStore {
@@ -33,6 +33,8 @@
 		}
 		// Add more games here
 	]
+
+	const gameIds = new Set<keyof GameStore>(games.map((game) => game.id))
 
 	const accentColors = {
 		cyan: {
@@ -65,6 +67,32 @@
 		}
 	}
 
+	function getGameFromUrl(): keyof GameStore | null {
+		if (typeof window === 'undefined') return null
+		const gameParam = new URLSearchParams(window.location.search).get('game')
+		if (!gameParam) return null
+		const normalized = gameParam as keyof GameStore
+		return gameIds.has(normalized) ? normalized : null
+	}
+
+	function updateGameParam(gameId: keyof GameStore | null) {
+		if (typeof window === 'undefined') return
+		const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`
+		const url = new URL(window.location.href)
+		const params = url.searchParams
+		if (gameId) {
+			params.set('view', 'games')
+			params.set('game', gameId)
+		} else {
+			params.delete('game')
+		}
+		const nextSearch = params.toString()
+		const nextUrl = `${url.pathname}${nextSearch ? `?${nextSearch}` : ''}${url.hash}`
+		if (nextUrl !== currentUrl) {
+			history.replaceState({}, '', nextUrl)
+		}
+	}
+
 	function launchGame(gameId: keyof GameStore) {
 		// Reset all games
 		Object.keys(gameStore).forEach(key => {
@@ -72,6 +100,7 @@
 		})
 		// Launch selected game
 		gameStore[gameId] = true
+		updateGameParam(gameId)
 	}
 
 	function closeGame() {
@@ -79,6 +108,7 @@
 		Object.keys(gameStore).forEach(key => {
 			gameStore[key as keyof GameStore] = false
 		})
+		updateGameParam(null)
 	}
 
 	// Check if any game is active
@@ -87,6 +117,13 @@
 	)
 
 	const isAnyGameActive = $derived(Object.values(gameStore).some(v => v))
+
+	onMount(() => {
+		const gameFromUrl = getGameFromUrl()
+		if (gameFromUrl) {
+			launchGame(gameFromUrl)
+		}
+	})
 
     onDestroy(closeGame)
 </script>

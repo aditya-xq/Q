@@ -1,11 +1,27 @@
 <script lang="ts">
     import { FrequentSites, GameDashboard, Notification, ProjectGrid, Quote, Weather, WriterView, FireDashboard } from '$lib/components'
-    import { appState } from '$lib/state.svelte'
+    import { appState, type View } from '$lib/state.svelte'
     import { onMount } from 'svelte'
     import { fade, fly } from 'svelte/transition'
     import { cubicOut, quintOut } from 'svelte/easing'
 
     let frequentSites = $state<{ url: string; title: string }[]>([])
+    const validViews = new Set<View>(['home', 'quick-panel', 'projects', 'writer', 'games', 'finance'])
+
+    function getViewFromUrl(url: URL): View {
+        const viewParam = url.searchParams.get('view')
+        if (!viewParam) return 'home'
+        const normalized = viewParam.toLowerCase() as View
+        return validViews.has(normalized) ? normalized : 'home'
+    }
+
+    function syncViewFromUrl() {
+        if (typeof window === 'undefined') return
+        const nextView = getViewFromUrl(new URL(window.location.href))
+        if (appState.view !== nextView) {
+            appState.view = nextView
+        }
+    }
 
     onMount(() => {
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -30,6 +46,15 @@
                 { url: 'https://medium.com', title: 'Medium' },
                 { url: 'https://netflix.com', title: 'Netflix' },
             ]
+        }
+
+        syncViewFromUrl()
+
+        const handlePopState = () => syncViewFromUrl()
+        window.addEventListener('popstate', handlePopState)
+
+        return () => {
+            window.removeEventListener('popstate', handlePopState)
         }
     })
 </script>
