@@ -1,5 +1,11 @@
 <script lang="ts">
+    import defaultFaviconSvg from '$lib/assets/default-favicon.svg?raw'
+
     let {sites = []} = $props()
+
+    const DEFAULT_FAVICON = `data:image/svg+xml;utf8,${encodeURIComponent(defaultFaviconSvg)}`
+
+    const MIN_FAVICON_SIZE = 32
 
     // Function to get the favicon for a site
     function getFavicon(url: string | URL) {
@@ -8,19 +14,28 @@
             return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
         } catch (e) {
             // Fallback icon if URL parsing fails
-            return 'icons/apple-touch-icon.png'
+            return DEFAULT_FAVICON
         }
-    }
-
-    // Function to get site initial if favicon fails to load
-    function getInitial(title: string) {
-        return title ? title.charAt(0).toUpperCase() : '?'
     }
 
     // Handle favicon loading errors
     function handleImageError(event: any) {
-        event.target.style.display = 'none'
-        event.target.nextElementSibling.style.display = 'flex'
+        const img = event.target as HTMLImageElement
+        if (img.dataset.fallback === 'true') return
+
+        img.dataset.fallback = 'true'
+        img.src = DEFAULT_FAVICON
+    }
+
+    // Swap in the default icon when a low-res favicon loads
+    function handleImageLoad(event: any) {
+        const img = event.target as HTMLImageElement
+        if (img.dataset.fallback === 'true') return
+
+        if (img.naturalWidth < MIN_FAVICON_SIZE || img.naturalHeight < MIN_FAVICON_SIZE) {
+            img.dataset.fallback = 'true'
+            img.src = DEFAULT_FAVICON
+        }
     }
 </script>
 
@@ -35,16 +50,11 @@
                 <div class="relative w-12 h-12 md:w-14 md:h-14 mb-2 rounded-full overflow-hidden flex items-center justify-center">
                     <img
                         src={getFavicon(site.url)}
-                        alt={site.title}
+                        alt={`${site.title} icon`}
                         class="w-8 h-8 md:w-10 md:h-10 object-contain"
+                        onload={(e) => handleImageLoad(e)}
                         onerror={(e) => handleImageError(e)}
                     />
-                    <div
-                        class="absolute inset-0 flex items-center justify-center text-lg font-semibold text-slate-600 dark:text-slate-300"
-                        style="display: none"
-                    >
-                        {getInitial(site.title)}
-                    </div>
                 </div>
                 <span class="text-xs md:text-sm text-center text-slate-700 dark:text-slate-300 truncate w-full">
                     {site.title}
