@@ -25,7 +25,7 @@
         const settings = await getAllSettings()
         appState.keepQuickPanelOpen = settings.keepQuickPanelOpen as boolean ?? false
         appState.showQuote = settings.showQuote as boolean ?? true
-        appState.showWeather = settings.showWeather as boolean ?? true
+        appState.showWeather = settings.showWeather as boolean ?? false
 
         isLoading = false
     })

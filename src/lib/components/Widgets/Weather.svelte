@@ -22,6 +22,32 @@
     const CACHE_KEY = 'weather:status:v1'
     const CACHE_TTL = 15 * 60 * 1000
 
+    const isExtensionContext = () => {
+        if (typeof window === 'undefined') return false
+        return window.location.protocol === 'chrome-extension:' || window.location.protocol === 'moz-extension:'
+    }
+
+    const getPermissionsApi = () => {
+        return (globalThis as any).chrome?.permissions ?? (globalThis as any).browser?.permissions
+    }
+
+    const ensureGeolocationPermission = async (): Promise<boolean> => {
+        if (!isExtensionContext()) return true
+
+        const permissionsApi = getPermissionsApi()
+        if (!permissionsApi?.contains) return true
+
+        try {
+            const hasPermission = await new Promise<boolean>((resolve) => {
+                permissionsApi.contains({ permissions: ['geolocation'] }, resolve)
+            })
+            return hasPermission
+        } catch (e) {
+            console.error('Permissions check error:', e)
+            return false
+        }
+    }
+
     const readCache = (): Weather | null => {
         try {
             const raw = sessionStorage.getItem(CACHE_KEY)
@@ -127,6 +153,13 @@
 
         if (!navigator.geolocation) {
             error = 'Geolocation not supported'
+            loading = false
+            return
+        }
+
+        const permissionGranted = await ensureGeolocationPermission()
+        if (!permissionGranted) {
+            error = 'Location Access Denied'
             loading = false
             return
         }

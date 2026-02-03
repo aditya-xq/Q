@@ -167,8 +167,46 @@
 		appState.keepQuickPanelOpen = newVal
 	}
 
+	const isExtensionContext = () => {
+		if (typeof window === 'undefined') return false
+		return window.location.protocol === 'chrome-extension:' || window.location.protocol === 'moz-extension:'
+	}
+
+	const getPermissionsApi = () => {
+		return (globalThis as any).chrome?.permissions ?? (globalThis as any).browser?.permissions
+	}
+
+	const requestGeolocationPermission = async (): Promise<boolean> => {
+		if (!isExtensionContext()) return true
+
+		const permissionsApi = getPermissionsApi()
+		if (!permissionsApi?.contains || !permissionsApi?.request) return true
+
+		try {
+			const hasPermission = await new Promise<boolean>((resolve) => {
+				permissionsApi.contains({ permissions: ['geolocation'] }, resolve)
+			})
+			if (hasPermission) return true
+
+			const granted = await new Promise<boolean>((resolve) => {
+				permissionsApi.request({ permissions: ['geolocation'] }, resolve)
+			})
+			return granted
+		} catch (e) {
+			console.error('Permissions request error:', e)
+			return false
+		}
+	}
+
 	async function toggleWidget(widget: 'showQuote' | 'showWeather') {
 		const newVal = !appState[widget]
+		if (widget === 'showWeather' && newVal) {
+			const granted = await requestGeolocationPermission()
+			if (!granted) {
+				console.warn('Geolocation permission not granted.')
+				return
+			}
+		}
 		await setSetting(widget, newVal)
 		appState[widget] = newVal
 	}

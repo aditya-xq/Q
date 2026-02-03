@@ -24,7 +24,7 @@ export const appState: AppState = $state({
     writeups: [],
     keepQuickPanelOpen: false,
     showQuote: true,
-    showWeather: true,
+    showWeather: false,
 })
 
 export const notifications: Notification[] = $state([])

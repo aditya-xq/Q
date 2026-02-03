@@ -99,7 +99,7 @@ async function initializeDefaultSettings() {
     const defaultSettings = {
         keepQuickPanelOpen: false,
         showQuote: true,
-        showWeather: true,
+        showWeather: false,
     }
 
     for (const [key, value] of Object.entries(defaultSettings)) {
