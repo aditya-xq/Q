@@ -4,7 +4,6 @@
     "version": "0.3.2",
     "description": "An extension that converts your new tab into a productivity powerhouse.",
     "permissions": ["topSites"],
-    "optional_permissions": ["geolocation"],
     "chrome_url_overrides": {
         "newtab": "index.html"
     },
@@ -25,6 +24,6 @@
         }
     ],
     "content_security_policy": {
-        "extension_pages": "script-src 'self'; object-src 'self'"
+        "extension_pages": "script-src 'self'; object-src 'self'; worker-src 'self'; connect-src 'self' https:"
     }
 }

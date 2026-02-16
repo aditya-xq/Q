@@ -31,8 +31,9 @@
             .matchMedia('(prefers-color-scheme: dark)')
             .addEventListener('change', (e) => document.documentElement.classList.toggle('dark', e.matches))
 
-        if (chrome?.topSites?.get) {
-            chrome.topSites.get((sites: any) => {
+        const chromeApi = (globalThis as any).chrome
+        if (chromeApi?.topSites?.get) {
+            chromeApi.topSites.get((sites: any) => {
                 frequentSites = sites.slice(0, 8)
             })
         } else {
