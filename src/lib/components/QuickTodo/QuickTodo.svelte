@@ -35,12 +35,6 @@
             icon: '✍️',
             view: 'writer'
         },
-        {
-            id: 'finance',
-            label: 'Finance (Alt + M)', 
-            icon: '💰',
-            view: 'finance'
-        },
         { 
             id: 'games', 
             label: 'Games (Alt + G)', 

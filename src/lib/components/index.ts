@@ -10,12 +10,11 @@ import Quote from './Widgets/Quote.svelte'
 import Weather from './Widgets/Weather.svelte'
 import GameDashboard from './Games/GameDashboard.svelte'
 import ProjectGrid from './Projects/ProjectGrid.svelte'
-import FireDashboard from './Finance/FireDashboard.svelte'
 
 export {
     Notification, ProjectGrid, TaskItem,
     FrequentSites, QuickTodo,
     Links, Settings, WriterView,
     Editor, Quote, Weather,
-    GameDashboard, FireDashboard
+    GameDashboard
 }
