@@ -19,8 +19,6 @@
 
     const QUICK_TODO_ID = -1
     let tasks: Task[] = $state([])
-    let projects: Project[] = $state([])
-    let isLoading = true
 
     const menuItems = [
         { 
@@ -35,12 +33,6 @@
             icon: '✍️',
             view: 'writer'
         },
-        { 
-            id: 'games', 
-            label: 'Games (Alt + G)', 
-            icon: '🎮',
-            view: 'games'
-        }
     ]
 
     async function loadTasks() {

@@ -1,12 +1,12 @@
 <script lang="ts">
-    import { FrequentSites, GameDashboard, Notification, ProjectGrid, Quote, Weather, WriterView } from '$lib/components'
+    import { FrequentSites, Notification, ProjectGrid, Quote, Weather, WriterView } from '$lib/components'
     import { appState, type View } from '$lib/state.svelte'
     import { onMount } from 'svelte'
     import { fade, fly } from 'svelte/transition'
     import { cubicOut, quintOut } from 'svelte/easing'
 
     let frequentSites = $state<{ url: string; title: string }[]>([])
-    const validViews = new Set<View>(['home', 'quick-panel', 'projects', 'writer', 'games'])
+    const validViews = new Set<View>(['home', 'quick-panel', 'projects', 'writer'])
 
     function getViewFromUrl(url: URL): View {
         const viewParam = url.searchParams.get('view')
@@ -76,8 +76,6 @@
                     <div class="mt-16"><ProjectGrid /></div>
                 {:else if appState.view === 'writer'}
                     <div class="mt-20 mr-2 md:mr-16"><WriterView /></div>
-                {:else if appState.view === 'games'}
-                    <GameDashboard />
                 {/if}
             </div>
         </div>

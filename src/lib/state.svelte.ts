@@ -1,7 +1,7 @@
 import type { Writeup } from './utils/db'
 import type { ProjectWithTasks } from './utils/stores'
 
-export type View = 'projects' | 'writer' | 'games' | 'home' | 'quick-panel'
+export type View = 'projects' | 'writer' | 'home' | 'quick-panel'
 
 interface AppState {
     projectStore: ProjectWithTasks[]
@@ -39,9 +39,6 @@ function syncViewParam(nextView: View) {
         params.delete('view')
     } else {
         params.set('view', nextView)
-    }
-    if (nextView !== 'games') {
-        params.delete('game')
     }
     const nextSearch = params.toString()
     const nextUrl = `${url.pathname}${nextSearch ? `?${nextSearch}` : ''}${url.hash}`

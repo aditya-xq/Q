@@ -8,7 +8,6 @@ import WriterView from './Writer/WriterView.svelte'
 import Editor from './Writer/Editor.svelte'
 import Quote from './Widgets/Quote.svelte'
 import Weather from './Widgets/Weather.svelte'
-import GameDashboard from './Games/GameDashboard.svelte'
 import ProjectGrid from './Projects/ProjectGrid.svelte'
 
 export {
@@ -16,5 +15,4 @@ export {
     FrequentSites, QuickTodo,
     Links, Settings, WriterView,
     Editor, Quote, Weather,
-    GameDashboard
 }
