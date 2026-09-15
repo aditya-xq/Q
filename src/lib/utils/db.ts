@@ -1,10 +1,11 @@
 import Dexie, { type Table } from 'dexie'
+import { QUICK_TODO_PROJECT_ID } from './constants'
 
 export interface Writeup {
     id?: number
     content: string
     updatedAt: Date
-    createdAt: number | undefined
+    createdAt: number
 }
 
 export interface Project {
@@ -68,8 +69,6 @@ export async function initializeDatabase() {
             // Ensure database connection is open and ready
             await db.open()
 
-            const QUICK_TODO_PROJECT_ID = -1
-
             // Check if the QuickTodo project already exists
             const quickTodoProject = await db.projects.get(QUICK_TODO_PROJECT_ID)
 
@@ -94,19 +93,18 @@ export async function initializeDatabase() {
     return dbInitialized
 }
 
-// Initialize default settings
+// Initialize default settings in a single round-trip
 async function initializeDefaultSettings() {
-    const defaultSettings = {
-        keepQuickPanelOpen: false,
-        showQuote: true,
-        showWeather: false,
-    }
+    const defaultSettings: Setting[] = [
+        { key: 'keepQuickPanelOpen', value: false },
+        { key: 'showQuote', value: true },
+        { key: 'showWeather', value: false },
+    ]
 
-    for (const [key, value] of Object.entries(defaultSettings)) {
-        const existing = await db.settings.get(key)
-        if (!existing) {
-            await db.settings.put({ key, value })
-        }
+    const existingKeys = new Set((await db.settings.toArray()).map((setting) => setting.key))
+    const missing = defaultSettings.filter((setting) => !existingKeys.has(setting.key))
+    if (missing.length > 0) {
+        await db.settings.bulkPut(missing)
     }
 }
 
@@ -119,17 +117,17 @@ export async function ensureDBReady() {
 export async function getAllSettings(): Promise<Record<string, boolean | string | number>> {
     await ensureDBReady()
     const allSettings = await db.settings.toArray()
-    return allSettings.reduce((acc, setting) => {
-        acc[setting.key] = setting.value
-        return acc
-    }, {} as Record<string, boolean | string | number>)
+    return allSettings.reduce(
+        (acc, setting) => {
+            acc[setting.key] = setting.value
+            return acc
+        },
+        {} as Record<string, boolean | string | number>
+    )
 }
 
 // Helper function to get a setting with type safety
-export async function getSetting<T = boolean | string | number>(
-    key: string,
-    defaultValue?: T
-): Promise<T | undefined> {
+export async function getSetting<T = boolean | string | number>(key: string, defaultValue?: T): Promise<T | undefined> {
     await ensureDBReady()
     const setting = await db.settings.get(key)
     return setting ? (setting.value as T) : defaultValue
@@ -141,5 +139,7 @@ export async function setSetting(key: string, value: boolean | string | number):
     await db.settings.put({ key, value })
 }
 
-// Start initialization immediately but don't block module loading
-initializeDatabase().catch((error) => console.error('Failed to initialize database:', error))
+// Start initialization immediately in the browser but don't block module loading
+if (typeof indexedDB !== 'undefined') {
+    initializeDatabase().catch((error) => console.error('Failed to initialize database:', error))
+}

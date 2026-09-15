@@ -122,7 +122,7 @@ const INLINE_RULES: TextRule[] = [
 const CODE_FENCE_RULES: TextRule[] = [
     {
         pattern:
-            /\b(?:start|open|begin)\s+code(?:[ \t]+block)?(?:[ \t]+in[ \t]+([a-z0-9+#.\-]+))?\b(?:[ \t]*[:\-.,;!?])*/gi,
+            /\b(?:start|open|begin)\s+code(?:[ \t]+block)?(?:[ \t]+in[ \t]+([a-z0-9+#.-]+))?\b(?:[ \t]*[:\-.,;!?])*/gi,
         replacement: (_match, language?: string) => {
             const normalizedLanguage = String(language ?? '')
                 .trim()
@@ -167,7 +167,7 @@ function applyMarkdownLineCommands(text: string) {
 
 function autoFormatByContext(text: string) {
     return text
-        .replace(/(^|\n)[ \t]*(\d+)[)\-][ \t]+/g, '$1$2. ')
+        .replace(/(^|\n)[ \t]*(\d+)[)-][ \t]+/g, '$1$2. ')
         .replace(/(^|\n)[ \t]*(?:dash|hyphen)[ \t]+/g, '$1- ')
         .replace(/(^|\n)[ \t]*greater than[ \t]+/gi, '$1> ')
 }

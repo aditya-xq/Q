@@ -2,9 +2,15 @@
     import { fade } from 'svelte/transition'
     import type { Task } from '$lib/utils/db'
 
-    export let task: Task
-    export let onToggle: (id: number, text: string, completed: boolean) => void
-    export let onDelete: (id: number) => void
+    let {
+        task,
+        onToggle,
+        onDelete,
+    }: {
+        task: Task
+        onToggle: (id: number, text: string, completed: boolean) => void
+        onDelete: (id: number) => void
+    } = $props()
 </script>
 
 <div transition:fade={{ duration: 200 }} class="task-item {task.completed ? 'opacity-70' : ''}">
@@ -16,7 +22,7 @@
                         type="checkbox"
                         class="sr-only peer"
                         checked={task.completed}
-                        on:change={() => onToggle(task.id as number, task.text, task.completed)}
+                        onchange={() => onToggle(task.id as number, task.text, task.completed)}
                     />
                     <div
                         class={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
@@ -54,7 +60,7 @@
             <div class="flex-shrink-0 ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <button
                     class="p-1 rounded-full transition-colors text-slate-500 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
-                    on:click={() => onDelete(task.id as number)}
+                    onclick={() => onDelete(task.id as number)}
                     aria-label="Delete task"
                 >
                     <svg
@@ -78,18 +84,8 @@
 </div>
 
 <style>
-    /* Typography improvements */
     .task-item {
         font-size: 1.05rem;
-    }
-
-    .task-item {
-        font-size: 1.1rem;
         line-height: 1.5;
-    }
-
-    /* Fade in animation for task items */
-    .task-item {
-        animation: fadeIn 0.3s ease-in-out;
     }
 </style>

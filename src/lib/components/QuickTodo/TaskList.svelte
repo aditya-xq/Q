@@ -2,12 +2,18 @@
     import TaskItem from './TaskItem.svelte'
     import type { Task } from '$lib/utils/db'
 
-    export let tasks: Task[] = []
-    export let onToggleComplete: (id: number, text: string, completed: boolean) => void
-    export let onRemoveTask: (id: number) => void
+    let {
+        tasks = [],
+        onToggleComplete,
+        onRemoveTask,
+    }: {
+        tasks?: Task[]
+        onToggleComplete: (id: number, text: string, completed: boolean) => void
+        onRemoveTask: (id: number) => void
+    } = $props()
 
-    $: incompleteTasks = tasks.filter((t) => !t.completed)
-    $: completedTasks = tasks.filter((t) => t.completed)
+    let incompleteTasks = $derived(tasks.filter((task) => !task.completed))
+    let completedTasks = $derived(tasks.filter((task) => task.completed))
 </script>
 
 <div

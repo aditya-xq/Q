@@ -4,7 +4,7 @@
     import { getNotificationColor, removeNotification } from '$lib/utils/notification'
 </script>
 
-<div class="fixed top-4 right-4 z-50 space-y-2 max-w-md">
+<div class="fixed top-4 right-4 z-2000 space-y-2 max-w-md">
     {#each notifications as notification (notification.id)}
         <div
             transition:fly={{ x: 50, duration: 300 }}

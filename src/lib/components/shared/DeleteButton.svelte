@@ -1,9 +1,11 @@
 <script lang="ts">
-    import { clickOutside } from "$lib/utils/utils"
-    import { slide } from "svelte/transition"
-    let { handleDelete } = $props()
+    import { clickOutside } from '$lib/utils/utils'
+    import { slide } from 'svelte/transition'
+
+    let { handleDelete, label = 'item' }: { handleDelete: () => void; label?: string } = $props()
     let showConfirmDelete = $state(false)
 </script>
+
 <div class="relative inline-block">
     <button
         class="p-1.5 rounded-full transition-colors text-slate-500 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 hover:bg-slate-200/70 dark:hover:bg-slate-800"
@@ -15,7 +17,7 @@
                 showConfirmDelete = true
             }
         }}
-        aria-label="Delete project"
+        aria-label={`Delete ${label}`}
     >
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -23,6 +25,7 @@
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
+            aria-hidden="true"
         >
             <path
                 stroke-linecap="round"
@@ -39,7 +42,7 @@
             class="absolute top-full -left-30 transform -translate-x-1/2 mt-2 w-[min(22rem,calc(100vw-2rem))] max-w-xs z-50 rounded-lg bg-red-50/95 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 backdrop-blur-sm shadow-lg p-3"
             transition:slide={{ duration: 180 }}
             role="dialog"
-            aria-label="Confirm delete"
+            aria-label={`Confirm delete ${label}`}
             aria-modal="false"
         >
             <p class="text-sm text-red-700 dark:text-red-300 mb-2">Are you sure you want to delete this?</p>

@@ -11,8 +11,11 @@
     let { task, onToggleComplete }: Props = $props()
 
     let editing = $state(false)
-    let editedText = $derived(task.text)
-    let isHovered = $state(false)
+    let editedText = $state('')
+
+    $effect(() => {
+        if (!editing) editedText = task.text
+    })
 
     function toggleComplete() {
         updateTask(task.id as number, task.text, !task.completed)
@@ -38,10 +41,6 @@
 
 <div
     class="group rounded-lg transition-all duration-200 hover:bg-slate-100/80 dark:hover:bg-slate-800/70 border border-transparent hover:border-slate-200/50 dark:hover:border-slate-700/50"
-    onmouseenter={() => (isHovered = true)}
-    onmouseleave={() => (isHovered = false)}
-    role="button"
-    tabindex="0"
 >
     <div class="flex items-center p-3">
         <div class="shrink-0 mr-4">
@@ -103,7 +102,9 @@
             {/if}
         </div>
 
-        <div class={`shrink-0 ml-3 flex items-center gap-1 transition-opacity duration-200 ${isHovered || editing ? 'opacity-100' : 'opacity-0'}`}>
+        <div
+            class={`shrink-0 ml-3 flex items-center gap-1 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100 ${editing ? 'opacity-100' : 'opacity-0'}`}
+        >
             {#if !editing}
                 <button
                     class="p-1.5 rounded-full transition-colors text-slate-500 hover:text-indigo-500 dark:text-slate-500 dark:hover:text-indigo-400 hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
@@ -126,7 +127,7 @@
                     </svg>
                 </button>
             {/if}
-            <DeleteButton handleDelete={() => deleteTask(task.id as number)} />
+            <DeleteButton label="task" handleDelete={() => deleteTask(task.id as number)} />
         </div>
     </div>
 </div>

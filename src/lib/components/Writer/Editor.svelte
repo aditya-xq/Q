@@ -2,7 +2,8 @@
     import { onMount, onDestroy } from 'svelte'
     import { Crepe } from '@milkdown/crepe'
     import { editorViewCtx } from '@milkdown/kit/core'
-    import { Selection } from '@milkdown/prose/state'
+    import { Selection } from '@milkdown/kit/prose/state'
+    import { replaceAll } from '@milkdown/kit/utils'
     import '@milkdown/crepe/theme/common/style.css'
     import '@milkdown/crepe/theme/nord-dark.css'
     import type { EditorApi, EditorRange } from '$lib/features/voice/types'
@@ -83,6 +84,15 @@
         return crepe?.getMarkdown() ?? value
     }
 
+    function setContent(markdown: string) {
+        if (!crepe) {
+            value = markdown
+            return
+        }
+        crepe.editor.action(replaceAll(markdown))
+        value = markdown
+    }
+
     function createEditorApi(): EditorApi {
         return {
             getSelectionRange,
@@ -90,6 +100,7 @@
             moveCursorToEnd,
             focus,
             getMarkdown,
+            setContent,
         }
     }
 

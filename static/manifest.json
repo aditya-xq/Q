@@ -3,6 +3,7 @@
     "name": "Q",
     "version": "0.3.4",
     "description": "An extension that converts your new tab into a productivity powerhouse.",
+    "minimum_chrome_version": "114",
     "permissions": ["topSites", "geolocation"],
     "chrome_url_overrides": {
         "newtab": "index.html"
@@ -19,11 +20,11 @@
     },
     "web_accessible_resources": [
         {
-            "resources": ["*"],
+            "resources": ["icons/*", "assets/*"],
             "matches": ["<all_urls>"]
         }
     ],
     "content_security_policy": {
-        "extension_pages": "script-src 'self'; object-src 'self'; worker-src 'self'; connect-src 'self' https:"
+        "extension_pages": "script-src 'self'; object-src 'self'; worker-src 'self'; connect-src 'self' https://api.open-meteo.com https://air-quality-api.open-meteo.com https://api.bigdatacloud.net"
     }
 }

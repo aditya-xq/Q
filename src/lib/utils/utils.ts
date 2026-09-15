@@ -1,5 +1,8 @@
-export function deriveTitle(fromContent: string, opts?: { maxTitleLength?: number; maxSentenceLength?: number; fallback?: string }) {
-    const maxTitleLength = opts?.maxTitleLength ?? 28   // final title length (chars)
+export function deriveTitle(
+    fromContent: string,
+    opts?: { maxTitleLength?: number; maxSentenceLength?: number; fallback?: string }
+) {
+    const maxTitleLength = opts?.maxTitleLength ?? 28 // final title length (chars)
     const maxSentenceLength = opts?.maxSentenceLength ?? 120 // How far to search for a sentence end
     const fallback = opts?.fallback ?? 'Untitled'
 
@@ -15,9 +18,12 @@ export function deriveTitle(fromContent: string, opts?: { maxTitleLength?: numbe
     const firstBlock = s.split(/\r?\n\s*\r?\n/)[0] ?? s
 
     // 3. From that block, take the first non-empty line (skip badges, images etc.)
-    const lines = firstBlock.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+    const lines = firstBlock
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter(Boolean)
     if (lines.length === 0) return fallback
-    let firstLine = lines.find(l => !/^(!\[.*\]\(.*\)|\[\\!\[.*\]\(.*\)\]|<!--)/.test(l)) ?? lines[0]
+    let firstLine = lines.find((l) => !/^(!\[.*\]\(.*\)|\[\\!\[.*\]\(.*\)\]|<!--)/.test(l)) ?? lines[0]
 
     // 4. Remove leading Markdown heading markers and list / quote markers
     firstLine = firstLine.replace(/^\s{0,3}(#{1,6}\s+|>\s+|[-*+]\s+|\d+\.\s+)/, '').trim()
@@ -28,15 +34,15 @@ export function deriveTitle(fromContent: string, opts?: { maxTitleLength?: numbe
     //    - `code` -> code
     //    - **bold**, *em*, ~~strike~~ -> plain text
     firstLine = firstLine
-        .replace(/!\[.*?\]\(.*?\)/g, '')                      // images
-        .replace(/\[([^\]]+)\]\((?:[^)]+)\)/g, (_, t) => t)   // links -> title
-        .replace(/`([^`]+)`/g, (_, t) => t)                  // inline code
-        .replace(/(\*\*|__)(.*?)\1/g, (_, __, t) => t)       // bold
-        .replace(/(\*|_)(.*?)\1/g, (_, __, t) => t)          // emphasis
-        .replace(/~~(.*?)~~/g, (_, t) => t)                  // strikethrough
-        .replace(/<\/?[^>]+>/g, '')                         // remove any HTML tags
-        .replace(/\bhttps?:\/\/\S+\b/g, '')                  // remove naked URLs
-        .replace(/\s+/g, ' ')                                // collapse spaces
+        .replace(/!\[.*?\]\(.*?\)/g, '') // images
+        .replace(/\[([^\]]+)\]\((?:[^)]+)\)/g, (_, t) => t) // links -> title
+        .replace(/`([^`]+)`/g, (_, t) => t) // inline code
+        .replace(/(\*\*|__)(.*?)\1/g, (_, __, t) => t) // bold
+        .replace(/(\*|_)(.*?)\1/g, (_, __, t) => t) // emphasis
+        .replace(/~~(.*?)~~/g, (_, t) => t) // strikethrough
+        .replace(/<\/?[^>]+>/g, '') // remove any HTML tags
+        .replace(/\bhttps?:\/\/\S+\b/g, '') // remove naked URLs
+        .replace(/\s+/g, ' ') // collapse spaces
         .trim()
 
     // 6. Decode a few common HTML entities so titles look nice
@@ -62,7 +68,7 @@ export function deriveTitle(fromContent: string, opts?: { maxTitleLength?: numbe
         const truncated = str.slice(0, maxLen)
         const lastSpace = truncated.lastIndexOf(' ')
         if (lastSpace > Math.floor(maxLen * 0.6)) {
-        return truncated.slice(0, lastSpace).trim() + '…'
+            return truncated.slice(0, lastSpace).trim() + '…'
         }
         // if there's no decent space, fallback to a hard cut with ellipsis
         return truncated.trim() + '…'
@@ -84,11 +90,11 @@ export function clickOutside(node: HTMLElement, callback: () => void) {
         }
     }
 
-    document.addEventListener("click", handleClick, true)
+    document.addEventListener('click', handleClick, true)
 
     return {
         destroy() {
-            document.removeEventListener("click", handleClick, true)
-        }
+            document.removeEventListener('click', handleClick, true)
+        },
     }
 }

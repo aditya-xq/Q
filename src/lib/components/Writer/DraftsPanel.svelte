@@ -122,7 +122,7 @@
                             <div
                                 class="ml-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100"
                             >
-                                <DeleteButton handleDelete={() => removeDraft(w.id)} />
+                                <DeleteButton label="draft" handleDelete={() => removeDraft(w.id)} />
                             </div>
                         </article>
                     {/each}
@@ -179,7 +179,7 @@
                                         <div
                                             class="ml-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100"
                                         >
-                                            <DeleteButton handleDelete={() => removeDraft(w.id)} />
+                                            <DeleteButton label="draft" handleDelete={() => removeDraft(w.id)} />
                                         </div>
                                     </article>
                                 {/each}
@@ -208,7 +208,7 @@
                             <div
                                 class="ml-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100"
                             >
-                                <DeleteButton handleDelete={() => removeDraft(w.id)} />
+                                <DeleteButton label="draft" handleDelete={() => removeDraft(w.id)} />
                             </div>
                         </article>
                     {/each}

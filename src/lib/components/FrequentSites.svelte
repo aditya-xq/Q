@@ -1,7 +1,7 @@
 <script lang="ts">
     import defaultFaviconSvg from '$lib/assets/default-favicon.svg?raw'
 
-    let {sites = []} = $props()
+    let { sites = [] } = $props<{ sites?: { url: string; title: string }[] }>()
 
     const DEFAULT_FAVICON = `data:image/svg+xml;utf8,${encodeURIComponent(defaultFaviconSvg)}`
 
@@ -12,14 +12,14 @@
         try {
             const domain = new URL(url).hostname
             return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
-        } catch (e) {
+        } catch {
             // Fallback icon if URL parsing fails
             return DEFAULT_FAVICON
         }
     }
 
     // Handle favicon loading errors
-    function handleImageError(event: any) {
+    function handleImageError(event: Event) {
         const img = event.target as HTMLImageElement
         if (img.dataset.fallback === 'true') return
 
@@ -28,7 +28,7 @@
     }
 
     // Swap in the default icon when a low-res favicon loads
-    function handleImageLoad(event: any) {
+    function handleImageLoad(event: Event) {
         const img = event.target as HTMLImageElement
         if (img.dataset.fallback === 'true') return
 
@@ -41,19 +41,21 @@
 
 <div class="flex justify-center">
     <div class="grid grid-cols-4 md:grid-cols-8 gap-2 md:gap-4 max-w-5xl mx-auto">
-        {#each sites as site (site.title)}
+        {#each sites as site (site.url)}
             <a
                 href={site.url}
                 class="flex flex-col items-center justify-center p-2 md:p-3 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200"
-                rel="noopener noreferrer"
+                rel="external noopener noreferrer"
             >
-                <div class="relative w-12 h-12 md:w-14 md:h-14 mb-2 rounded-full overflow-hidden flex items-center justify-center">
+                <div
+                    class="relative w-12 h-12 md:w-14 md:h-14 mb-2 rounded-full overflow-hidden flex items-center justify-center"
+                >
                     <img
                         src={getFavicon(site.url)}
                         alt={`${site.title} icon`}
                         class="w-8 h-8 md:w-10 md:h-10 object-contain"
-                        onload={(e) => handleImageLoad(e)}
-                        onerror={(e) => handleImageError(e)}
+                        onload={handleImageLoad}
+                        onerror={handleImageError}
                     />
                 </div>
                 <span class="text-xs md:text-sm text-center text-slate-700 dark:text-slate-300 truncate w-full">

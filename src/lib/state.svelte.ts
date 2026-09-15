@@ -1,4 +1,4 @@
-import type { Writeup } from './utils/db'
+import type { Writeup, Task } from './utils/db'
 import type { ProjectWithTasks } from './utils/stores'
 
 export type View = 'projects' | 'writer' | 'home' | 'quick-panel'
@@ -6,6 +6,7 @@ export type View = 'projects' | 'writer' | 'home' | 'quick-panel'
 interface AppState {
     projectStore: ProjectWithTasks[]
     writeups: Writeup[]
+    quickTasks: Task[]
     view: View
     keepQuickPanelOpen?: boolean
     showQuote?: boolean
@@ -22,6 +23,7 @@ export const appState: AppState = $state({
     projectStore: [],
     view: 'home',
     writeups: [],
+    quickTasks: [],
     keepQuickPanelOpen: false,
     showQuote: true,
     showWeather: false,

@@ -1,6 +1,6 @@
 <script lang="ts">
     import { appState } from '$lib/state.svelte'
-    import { Editor } from '..'
+    import Editor from './Editor.svelte'
     import { addWriteup, updateWriteup, deleteWriteup, getWriteup, loadWriteups } from '$lib/stores/writeups'
     import { toast } from '$lib/utils/notification'
     import { createVoiceTypingController, getVoiceTypingSupport } from '$lib/features/voice'
@@ -25,8 +25,6 @@
     let voiceControllerVersion = 0
     let skipNextEditorSync = $state(true)
     let onKeyboardShortcut: ((event: KeyboardEvent) => void) | null = null
-
-    let editorContentToLoad = $derived(currentWriteupId === undefined ? '# ' : content)
 
     const AUTOSAVE_DELAY = 1200 // ms
     const VOICE_AUTOSAVE_DELAY = 2200 // ms
@@ -259,6 +257,7 @@
             }
         } catch (err) {
             console.error('Autosave failed', err)
+            toast.error('Autosave failed. Your draft has not been saved.', 4500)
         } finally {
             const elapsed = Date.now() - _saveShownSince
             const remaining = Math.max(0, MIN_SAVE_DISPLAY_MS - elapsed)
@@ -292,6 +291,8 @@
         const w = await getWriteup(id)
         if (!w) return
         content = w.content
+        skipNextEditorSync = true
+        editorApi?.setContent(w.content)
         currentWriteupId = w.id
         createdTimeInNum = w.createdAt ?? new Date(w.updatedAt).getTime()
         dirty = false
@@ -313,6 +314,8 @@
         currentWriteupId = undefined
         createdTimeInNum = Date.now()
         content = '# '
+        skipNextEditorSync = true
+        editorApi?.setContent('# ')
         dirty = false
         autosavedAt = null
     }
@@ -603,11 +606,9 @@
                 </div>
             {/if}
 
-            {#key createdTimeInNum ?? 'new'}
-                <div class="transition-opacity duration-200 ease-in-out ml-6 md:ml-40 2xl:ml-20">
-                    <Editor initialContent={editorContentToLoad} onInputChange={handleInputChange} {onEditorReady} />
-                </div>
-            {/key}
+            <div class="transition-opacity duration-200 ease-in-out ml-6 md:ml-40 2xl:ml-20">
+                <Editor initialContent={content} onInputChange={handleInputChange} {onEditorReady} />
+            </div>
         </div>
 
         {#if !loading}

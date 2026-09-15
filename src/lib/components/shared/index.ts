@@ -1,7 +1,4 @@
-import DeleteButton from "./DeleteButton.svelte"
-import Icon from "./Icon.svelte"
+import DeleteButton from './DeleteButton.svelte'
+import Icon from './Icon.svelte'
 
-export {
-    DeleteButton,
-    Icon
-}
+export { DeleteButton, Icon }

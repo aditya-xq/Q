@@ -6,47 +6,50 @@
     import { onDestroy, onMount } from 'svelte'
     import { appState, updateView } from '$lib/state.svelte'
     import { getAllSettings } from '$lib/utils/db'
-    let { children } = $props()
-    let handleKey: (e: KeyboardEvent) => void
-    let isLoading = $state(true)
+    import { observeProjects } from '$lib/utils/stores'
+    import { observeWriteups } from '$lib/stores/writeups'
+    import { observeQuickTasks } from '$lib/stores/quicktodo'
 
-    onMount(async () => {
+    let { children } = $props()
+    let handleKey: ((e: KeyboardEvent) => void) | undefined
+    let subscriptions: { unsubscribe: () => void }[] = []
+
+    onMount(() => {
         handleKey = (e: KeyboardEvent) => {
             if (e.altKey && e.key.toLowerCase() === 'q') updateView('quick-panel')
             else if (e.altKey && e.key.toLowerCase() === 'p') updateView('projects')
             else if (e.altKey && e.key.toLowerCase() === 'w') updateView('writer')
         }
 
-        window.addEventListener('keydown', handleKey)        
+        window.addEventListener('keydown', handleKey)
 
-        // Load all settings at once
-        const settings = await getAllSettings()
-        appState.keepQuickPanelOpen = settings.keepQuickPanelOpen as boolean ?? false
-        appState.showQuote = settings.showQuote as boolean ?? true
-        appState.showWeather = settings.showWeather as boolean ?? false
+        // Keep global state in sync across tabs and mutations.
+        subscriptions = [observeProjects(), observeWriteups(), observeQuickTasks()]
 
-        isLoading = false
+        void getAllSettings().then((settings) => {
+            appState.keepQuickPanelOpen = (settings.keepQuickPanelOpen as boolean) ?? false
+            appState.showQuote = (settings.showQuote as boolean) ?? true
+            appState.showWeather = (settings.showWeather as boolean) ?? false
+        })
     })
 
-    // At top level
     onDestroy(() => {
-        if (handleKey) {
-            window.removeEventListener('keydown', handleKey)
-        }
+        if (handleKey) window.removeEventListener('keydown', handleKey)
+        for (const subscription of subscriptions) subscription.unsubscribe()
     })
 </script>
 
 <svelte:head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>New Tab</title>
-    <meta charset="UTF-8" />
 </svelte:head>
 
 <!-- ===== Layout Container ===== -->
 <div class="flex h-screen text-slate-900 dark:text-slate-100 overflow-hidden bg-slate-50 dark:bg-slate-950">
     <!-- Top-Left Minimal "Queue" Label -->
-    <div class="fixed top-4 left-16 md:left-20 z-40 select-none font-light text-xl tracking-wide text-slate-400 dark:text-slate-600">
-        Queue 
+    <div
+        class="fixed top-4 left-16 md:left-20 z-40 select-none font-light text-xl tracking-wide text-slate-400 dark:text-slate-600"
+    >
+        Queue
     </div>
     <!-- Sidebar / Floating QuickTodo -->
     <div
@@ -61,8 +64,6 @@
     <Links />
     <!-- Main Content Wrapper -->
     <main class="flex-1 md:ml-16 overflow-y-auto relative transition-all duration-300">
-        {#if !isLoading}
-            {@render children()}
-        {/if}
+        {@render children()}
     </main>
 </div>

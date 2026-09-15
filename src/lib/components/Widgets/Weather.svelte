@@ -1,5 +1,6 @@
 <script lang="ts">
     import { appState } from '$lib/state.svelte'
+    import { hasPermission, isExtensionContext } from '$lib/utils/browser'
     import { fly } from 'svelte/transition'
     import { quintOut } from 'svelte/easing'
 
@@ -13,40 +14,17 @@
         vibe: string
         aqiCategory: string
         aqiColor: string
+        lat: number
+        lon: number
     }
 
     let weather = $state<Weather | null>(null)
     let loading = $state(false)
     let error = $state<string | null>(null)
+    let started = false
 
-    const CACHE_KEY = 'weather:status:v1'
+    const CACHE_KEY = 'weather:status:v2'
     const CACHE_TTL = 15 * 60 * 1000
-
-    const isExtensionContext = () => {
-        if (typeof window === 'undefined') return false
-        return window.location.protocol === 'chrome-extension:' || window.location.protocol === 'moz-extension:'
-    }
-
-    const getPermissionsApi = () => {
-        return (globalThis as any).chrome?.permissions ?? (globalThis as any).browser?.permissions
-    }
-
-    const ensureGeolocationPermission = async (): Promise<boolean> => {
-        if (!isExtensionContext()) return true
-
-        const permissionsApi = getPermissionsApi()
-        if (!permissionsApi?.contains) return true
-
-        try {
-            const hasPermission = await new Promise<boolean>((resolve) => {
-                permissionsApi.contains({ permissions: ['geolocation'] }, resolve)
-            })
-            return hasPermission
-        } catch (e) {
-            console.error('Permissions check error:', e)
-            return false
-        }
-    }
 
     const readCache = (): Weather | null => {
         try {
@@ -54,23 +32,41 @@
             if (!raw) return null
             const { ts, data } = JSON.parse(raw)
             return Date.now() - ts < CACHE_TTL ? data : null
-        } catch { 
-            return null 
+        } catch {
+            return null
         }
     }
 
     const writeCache = (data: Weather) => {
         try {
             sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }))
-        } catch {}
+        } catch {
+            /* storage unavailable (private mode / quota) */
+        }
     }
 
     const weatherMap: Record<number, string> = {
-        0: 'Clear', 1: 'Fair', 2: 'Partly Cloudy', 3: 'Overcast',
-        45: 'Foggy', 48: 'Foggy', 51: 'Drizzle', 53: 'Drizzle', 55: 'Drizzle',
-        61: 'Rain', 63: 'Rain', 65: 'Rain', 71: 'Snow', 73: 'Snow', 75: 'Snow',
-        80: 'Rain Showers', 81: 'Rain Showers', 82: 'Rain Showers',
-        95: 'Stormy', 96: 'Stormy', 99: 'Stormy'
+        0: 'Clear',
+        1: 'Fair',
+        2: 'Partly Cloudy',
+        3: 'Overcast',
+        45: 'Foggy',
+        48: 'Foggy',
+        51: 'Drizzle',
+        53: 'Drizzle',
+        55: 'Drizzle',
+        61: 'Rain',
+        63: 'Rain',
+        65: 'Rain',
+        71: 'Snow',
+        73: 'Snow',
+        75: 'Snow',
+        80: 'Rain Showers',
+        81: 'Rain Showers',
+        82: 'Rain Showers',
+        95: 'Stormy',
+        96: 'Stormy',
+        99: 'Stormy',
     }
 
     const getWeatherIcon = (code: number): string => {
@@ -94,9 +90,15 @@
     const fetchWeatherData = async (lat: number, lon: number) => {
         try {
             const [gRes, wRes, aRes] = await Promise.all([
-                fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`),
-                fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code&timezone=auto`),
-                fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi&timezone=auto`)
+                fetch(
+                    `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
+                ),
+                fetch(
+                    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code&timezone=auto`
+                ),
+                fetch(
+                    `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi&timezone=auto`
+                ),
             ])
 
             if (!gRes.ok || !wRes.ok || !aRes.ok) {
@@ -125,7 +127,9 @@
                 aqi: Math.round(aqiValue),
                 aqiCategory: label,
                 aqiColor: color,
-                vibe: current.temperature_2m > 25 ? 'Warm' : 'Cool'
+                vibe: current.temperature_2m > 25 ? 'Warm' : 'Cool',
+                lat,
+                lon,
             }
 
             writeCache(result)
@@ -140,12 +144,12 @@
     }
 
     const init = async () => {
-        if (!appState.showWeather) return
+        if (weather || loading) return
 
         const cached = readCache()
-        if (cached) { 
+        if (cached) {
             weather = cached
-            return 
+            return
         }
 
         loading = true
@@ -157,18 +161,17 @@
             return
         }
 
-        const permissionGranted = await ensureGeolocationPermission()
-        if (!permissionGranted) {
+        if (isExtensionContext() && !(await hasPermission('geolocation'))) {
             error = 'Location Access Denied'
             loading = false
             return
         }
 
         navigator.geolocation.getCurrentPosition(
-            async (pos) => {
-                await fetchWeatherData(pos.coords.latitude, pos.coords.longitude)
+            (pos) => {
+                void fetchWeatherData(pos.coords.latitude, pos.coords.longitude)
             },
-            (err) => { 
+            (err) => {
                 console.error('Geolocation error:', err)
                 error = 'Location Access Denied'
                 loading = false
@@ -177,59 +180,85 @@
         )
     }
 
-    // Initialize on mount
-    $effect(() => {
-        init()
-    })
+    export function refresh() {
+        error = null
+        loading = false
+        started = true
+        void init()
+    }
 
-    // Re-initialize when widget visibility changes
+    // Single reactive entry point: fetch only while the widget is enabled.
     $effect(() => {
-        if (appState.showWeather && !weather && !loading && !error) {
-            init()
+        if (!appState.showWeather) {
+            started = false
+            return
         }
+        if (started) return
+        started = true
+        void init()
     })
 </script>
 
 {#if appState.showWeather}
-    <div 
+    <div
         class="fixed bottom-28 left-4 right-4 md:bottom-auto md:top-6 md:right-24 md:left-auto z-40"
-        in:fly="{{ y: -20, duration: 500, easing: quintOut }}"
-        out:fly="{{ y: -20, duration: 300, easing: quintOut }}"
+        in:fly={{ y: -20, duration: 500, easing: quintOut }}
+        out:fly={{ y: -20, duration: 300, easing: quintOut }}
     >
         {#if loading}
-            <div class="flex items-center justify-center gap-3 px-5 py-2.5 bg-white/70 dark:bg-slate-950/70 backdrop-blur-lg rounded-full border border-slate-200/60 dark:border-slate-700/60 shadow-lg">
+            <div
+                class="flex items-center justify-center gap-3 px-5 py-2.5 bg-white/70 dark:bg-slate-950/70 backdrop-blur-lg rounded-full border border-slate-200/60 dark:border-slate-700/60 shadow-lg"
+            >
                 <div class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></div>
-                <span class="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Locating...</span>
+                <span class="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider"
+                    >Locating...</span
+                >
             </div>
-
         {:else if error}
-            <div class="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50/90 dark:bg-red-950/40 backdrop-blur-lg px-4 py-2 rounded-full border border-red-200/60 dark:border-red-800/60 shadow-lg text-center">
-                ⚠️ {error}
+            <div
+                class="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50/90 dark:bg-red-950/40 backdrop-blur-lg px-4 py-2 rounded-full border border-red-200/60 dark:border-red-800/60 shadow-lg text-center"
+            >
+                <span>⚠️ {error}</span>
+                <button onclick={refresh} class="ml-2 underline hover:no-underline" aria-label="Retry weather"
+                    >Retry</button
+                >
             </div>
-
         {:else if weather}
             <!-- Mobile Layout (< md) -->
-            <div class="md:hidden max-w-xs mx-auto bg-white/85 dark:bg-slate-950/90 backdrop-blur-xl px-4 py-3 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-xl">
+            <div
+                class="md:hidden max-w-xs mx-auto bg-white/85 dark:bg-slate-950/90 backdrop-blur-xl px-4 py-3 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-xl"
+            >
                 <!-- Top Row: Location & Temp -->
                 <div class="flex items-center justify-between mb-3">
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">
                             {weather.location}
                         </span>
-                        <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wide {weather.vibe === 'Warm' ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400' : 'bg-blue-500/20 text-blue-600 dark:text-blue-400'}">
+                        <span
+                            class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wide {weather.vibe ===
+                            'Warm'
+                                ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400'
+                                : 'bg-blue-500/20 text-blue-600 dark:text-blue-400'}"
+                        >
                             {weather.vibe}
                         </span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="text-2xl leading-none">{weather.icon}</span>
-                        <span class="text-2xl font-black text-slate-900 dark:text-slate-100 leading-none tabular-nums">{weather.temp}°</span>
+                        <span class="text-2xl font-black text-slate-900 dark:text-slate-100 leading-none tabular-nums"
+                            >{weather.temp}°</span
+                        >
                     </div>
                 </div>
 
                 <!-- Bottom Row: Condition, AQI, Humidity -->
-                <div class="flex items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400 capitalize">{weather.condition}</span>
-                    
+                <div
+                    class="flex items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800"
+                >
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400 capitalize"
+                        >{weather.condition}</span
+                    >
+
                     <div class="flex items-center gap-3">
                         <!-- AQI Compact -->
                         <div class="flex items-center gap-1.5">
@@ -241,24 +270,36 @@
 
                         <!-- Humidity -->
                         <div class="flex items-center gap-1.5">
-                            <svg class="w-3 h-3 text-blue-500 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 21c-4.418 0-8-3.582-8-8s8-11 8-11 8 6.582 8 11-3.582 8-8 8z"/>
+                            <svg
+                                class="w-3 h-3 text-blue-500 dark:text-blue-400"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path d="M12 21c-4.418 0-8-3.582-8-8s8-11 8-11 8 6.582 8 11-3.582 8-8 8z" />
                             </svg>
-                            <span class="text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">{weather.humidity}%</span>
+                            <span class="text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums"
+                                >{weather.humidity}%</span
+                            >
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Desktop Layout (≥ md) -->
-            <div class="hidden md:flex items-center gap-4 bg-white/85 dark:bg-slate-950/90 backdrop-blur-xl px-5 py-3 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-xl transition-all hover:shadow-2xl">
-                
+            <div
+                class="hidden md:flex items-center gap-4 bg-white/85 dark:bg-slate-950/90 backdrop-blur-xl px-5 py-3 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-xl transition-all hover:shadow-2xl"
+            >
                 <!-- Location & Vibe -->
                 <div class="flex items-center gap-2.5 border-r border-slate-300 dark:border-slate-700 pr-4">
                     <span class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">
                         {weather.location}
                     </span>
-                    <span class="px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wide {weather.vibe === 'Warm' ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400' : 'bg-blue-500/20 text-blue-600 dark:text-blue-400'}">
+                    <span
+                        class="px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wide {weather.vibe ===
+                        'Warm'
+                            ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400'
+                            : 'bg-blue-500/20 text-blue-600 dark:text-blue-400'}"
+                    >
                         {weather.vibe}
                     </span>
                 </div>
@@ -267,22 +308,30 @@
                 <div class="flex items-center gap-2.5">
                     <span class="text-xl leading-none">{weather.icon}</span>
                     <div class="flex flex-col gap-0.5">
-                        <span class="text-lg font-black text-slate-900 dark:text-slate-100 leading-none tabular-nums">{weather.temp}°</span>
-                        <span class="text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide leading-none">{weather.condition}</span>
+                        <span class="text-lg font-black text-slate-900 dark:text-slate-100 leading-none tabular-nums"
+                            >{weather.temp}°</span
+                        >
+                        <span
+                            class="text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide leading-none"
+                            >{weather.condition}</span
+                        >
                     </div>
                 </div>
 
                 <!-- AQI -->
                 <div class="flex flex-col items-center min-w-16 gap-1.5">
-                    <span class="text-[9px] font-black uppercase leading-none tracking-wide" style:color={weather.aqiColor}>
+                    <span
+                        class="text-[9px] font-black uppercase leading-none tracking-wide"
+                        style:color={weather.aqiColor}
+                    >
                         AQI {weather.aqi}
                     </span>
                     <div class="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div 
-                            class="h-full rounded-full transition-all duration-300" 
-                            style:background-color={weather.aqiColor} 
-                            style:width="{Math.min((weather.aqi / 200) * 100, 100)}%">
-                        </div>
+                        <div
+                            class="h-full rounded-full transition-all duration-300"
+                            style:background-color={weather.aqiColor}
+                            style:width="{Math.min((weather.aqi / 200) * 100, 100)}%"
+                        ></div>
                     </div>
                     <span class="text-[8px] font-bold uppercase tracking-wide" style:color={weather.aqiColor}>
                         {weather.aqiCategory}
@@ -292,11 +341,16 @@
                 <!-- Humidity -->
                 <div class="flex items-center gap-2 pl-4 border-l border-slate-300 dark:border-slate-700">
                     <svg class="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 21c-4.418 0-8-3.582-8-8s8-11 8-11 8 6.582 8 11-3.582 8-8 8z"/>
+                        <path d="M12 21c-4.418 0-8-3.582-8-8s8-11 8-11 8 6.582 8 11-3.582 8-8 8z" />
                     </svg>
                     <div class="flex flex-col gap-0.5">
-                        <span class="text-sm font-black text-slate-900 dark:text-slate-100 leading-none tabular-nums">{weather.humidity}%</span>
-                        <span class="text-[7px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide leading-none">Humidity</span>
+                        <span class="text-sm font-black text-slate-900 dark:text-slate-100 leading-none tabular-nums"
+                            >{weather.humidity}%</span
+                        >
+                        <span
+                            class="text-[7px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide leading-none"
+                            >Humidity</span
+                        >
                     </div>
                 </div>
             </div>

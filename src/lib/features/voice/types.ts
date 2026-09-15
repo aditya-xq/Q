@@ -27,6 +27,7 @@ export interface EditorApi {
     moveCursorToEnd: () => EditorRange
     focus: () => void
     getMarkdown: () => string
+    setContent: (markdown: string) => void
 }
 
 export interface VoiceControllerStatus {
