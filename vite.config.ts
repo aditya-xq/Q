@@ -10,20 +10,33 @@ export default defineConfig({
         tailwindcss(),
         sveltekit(),
         !isExtension &&
-        SvelteKitPWA({
-            registerType: 'autoUpdate',
-            manifest: {
-                name: 'Q',
-                short_name: 'Q',
-                start_url: '/',
-                display: 'standalone',
-                background_color: '#000000',
-                theme_color: '#000000',
-                icons: [
-                    { src: '/icons/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
-                    { src: '/icons/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' }
-                ]
-            }
-        })
-    ].filter(Boolean)
+            SvelteKitPWA({
+                registerType: 'autoUpdate',
+                manifest: {
+                    id: '/',
+                    name: 'Q - Your Productive New Tab',
+                    short_name: 'Q',
+                    description:
+                        'Turn every new tab into a focused productivity hub: quick todos, projects, and a distraction-free writer.',
+                    lang: 'en',
+                    start_url: '/',
+                    scope: '/',
+                    display: 'standalone',
+                    orientation: 'any',
+                    categories: ['productivity', 'utilities'],
+                    background_color: '#000000',
+                    theme_color: '#000000',
+                    icons: [
+                        { src: '/icons/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+                        { src: '/icons/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
+                        {
+                            src: '/icons/android-chrome-512x512.png',
+                            sizes: '512x512',
+                            type: 'image/png',
+                            purpose: 'maskable',
+                        },
+                    ],
+                },
+            }),
+    ].filter(Boolean),
 })

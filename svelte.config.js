@@ -10,23 +10,23 @@ const config = {
     kit: {
         appDir: 'app',
         adapter: isExtension
-        ? chromeAdapter({
-            // put extension artifacts into a dedicated folder
-            pages: 'build-extension',
-            assets: 'build-extension',
-            // optionally pick a different manifest in your static/ dir
-            manifest: 'manifest.json'
-        })
-        : staticAdapter({
-            // web default
-            pages: 'build',
-            assets: 'build',
-            fallback: 'index.html'
-        }),
+            ? chromeAdapter({
+                  // put extension artifacts into a dedicated folder
+                  pages: 'build-extension',
+                  assets: 'build-extension',
+                  // optionally pick a different manifest in your static/ dir
+                  manifest: 'manifest.json',
+              })
+            : staticAdapter({
+                  // web default
+                  pages: 'build',
+                  assets: 'build',
+                  fallback: 'index.html',
+              }),
         prerender: {
-            entries: ['*']
-        }
-    }
+            entries: ['*'],
+        },
+    },
 }
 
 export default config

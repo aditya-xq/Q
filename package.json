@@ -3,6 +3,11 @@
     "private": true,
     "version": "0.3.4",
     "type": "module",
+    "packageManager": "bun@1.3.14",
+    "engines": {
+        "bun": ">=1.1.0",
+        "node": ">=20"
+    },
     "scripts": {
         "dev": "vite dev",
         "build:ext": "BUILD_TARGET=extension bun run vite build",
@@ -14,11 +19,19 @@
         "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
         "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
         "lint": "eslint . && prettier --check .",
-        "format": "prettier --write ."
+        "format": "prettier --write .",
+        "verify": "bun run check && bun run lint",
+        "test": "playwright test",
+        "test:e2e": "playwright test",
+        "test:e2e:ui": "playwright test --ui",
+        "test:e2e:install": "playwright install chromium",
+        "test:e2e:live": "E2E_LIVE=1 playwright test --project=live",
+        "test:e2e:extension": "RUN_EXTENSION_E2E=1 E2E_NO_SERVER=1 playwright test --project=extension"
     },
     "devDependencies": {
         "@eslint/compat": "^1.4.1",
         "@eslint/js": "^9.39.2",
+        "@playwright/test": "^1.63.0",
         "@sveltejs/adapter-static": "^3.0.10",
         "@sveltejs/kit": "^2.49.2",
         "@sveltejs/vite-plugin-svelte": "^5.1.1",
@@ -34,6 +47,7 @@
         "prettier-plugin-svelte": "^3.4.1",
         "svelte": "^5.46.0",
         "svelte-check": "^4.3.4",
+        "sveltekit-adapter-chrome-extension": "^2.0.1",
         "tailwindcss": "^4.1.18",
         "typescript": "^5.9.3",
         "typescript-eslint": "^8.50.0",
@@ -41,7 +55,7 @@
     },
     "dependencies": {
         "@milkdown/crepe": "^7.17.3",
-        "dexie": "^4.2.1",
-        "sveltekit-adapter-chrome-extension": "^2.0.1"
+        "@milkdown/kit": "7.18.0",
+        "dexie": "^4.2.1"
     }
 }
