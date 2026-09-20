@@ -47,4 +47,62 @@ test.describe('Writer', () => {
         await page.getByText('Alpha note').first().click()
         await expect(editor).toContainText('Alpha note')
     })
+
+    test('shows an empty drafts list before any typing', async ({ page }) => {
+        await openViewShortcut(page, 'w')
+        await expect(page.locator('.milkdown .ProseMirror')).toBeVisible({ timeout: 20_000 })
+
+        await expect(page.getByText('No drafts yet')).toBeVisible()
+    })
+
+    test('updates an existing draft in place without duplicating it', async ({ page }) => {
+        await openViewShortcut(page, 'w')
+        const editor = page.locator('.milkdown .ProseMirror')
+        await expect(editor).toBeVisible({ timeout: 20_000 })
+
+        await editor.click()
+        await page.keyboard.type('Unique note')
+        await waitForAutosave(page)
+
+        await page.getByRole('button', { name: 'Create new draft' }).first().click()
+        await page.getByRole('button', { name: /Unique note/ }).click()
+
+        await editor.click()
+        await page.keyboard.type(' extended')
+        await waitForAutosave(page)
+
+        await expect(page.getByRole('button', { name: /Unique note/ })).toHaveCount(1)
+    })
+
+    test('deletes a draft', async ({ page }) => {
+        await openViewShortcut(page, 'w')
+        const editor = page.locator('.milkdown .ProseMirror')
+        await expect(editor).toBeVisible({ timeout: 20_000 })
+
+        await editor.click()
+        await page.keyboard.type('Delete me')
+        await waitForAutosave(page)
+
+        await page.getByRole('button', { name: /Delete me/ }).hover()
+        await page.getByRole('button', { name: 'Delete draft' }).first().click()
+        await page.getByRole('button', { name: 'Delete', exact: true }).first().click()
+
+        await expect(page.getByText('Delete me')).toHaveCount(0)
+    })
+
+    test('cancels deleting a draft', async ({ page }) => {
+        await openViewShortcut(page, 'w')
+        const editor = page.locator('.milkdown .ProseMirror')
+        await expect(editor).toBeVisible({ timeout: 20_000 })
+
+        await editor.click()
+        await page.keyboard.type('Keep draft')
+        await waitForAutosave(page)
+
+        await page.getByRole('button', { name: /Keep draft/ }).hover()
+        await page.getByRole('button', { name: 'Delete draft' }).first().click()
+        await page.getByRole('button', { name: 'Cancel' }).click()
+
+        await expect(page.getByText('Keep draft').first()).toBeVisible()
+    })
 })

@@ -19,6 +19,11 @@ test.describe('Navigation & deep links', () => {
         await expect(page.getByText('Select a project to view tasks')).toBeVisible()
     })
 
+    test('deep links are case-insensitive', async ({ page }) => {
+        await page.goto('/?view=PROJECTS')
+        await expect(page.getByText('Select a project to view tasks')).toBeVisible()
+    })
+
     test('unknown view falls back to home', async ({ page }) => {
         await page.goto('/?view=does-not-exist')
         await expect(page.getByText('Queue', { exact: true })).toBeVisible()
@@ -34,5 +39,22 @@ test.describe('Navigation & deep links', () => {
         await openHome(page)
         await page.keyboard.press('Alt+p')
         await expect(page).toHaveURL(/view=projects/)
+    })
+
+    test('Alt+W keyboard shortcut opens the writer', async ({ page }) => {
+        await openHome(page)
+        await page.keyboard.press('Alt+w')
+        await expect(page).toHaveURL(/view=writer/)
+        await expect(page.locator('.milkdown .ProseMirror')).toBeVisible({ timeout: 20_000 })
+    })
+
+    test('pressing the same shortcut toggles back home', async ({ page }) => {
+        await openHome(page)
+        await page.keyboard.press('Alt+p')
+        await expect(page).toHaveURL(/view=projects/)
+
+        await page.keyboard.press('Alt+p')
+        await expect(page).not.toHaveURL(/view=projects/)
+        await expect(page.getByRole('link', { name: /GitHub/ })).toBeVisible()
     })
 })
