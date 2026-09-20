@@ -76,6 +76,8 @@ bun run dev          # start the Vite dev server
 | `bun run dev`       | Vite dev server                                             |
 | `bun run check`     | SvelteKit + TypeScript typecheck (`svelte-check`)           |
 | `bun run lint`      | ESLint + Prettier check                                     |
+| `bun run verify`    | `check` + `lint` + unit tests                               |
+| `bun run test:unit` | Bun unit tests (`tests/**`)                                 |
 | `bun run format`    | Prettier write                                              |
 | `bun run build:web` | Static/PWA build → `build/`                                 |
 | `bun run build:ext` | MV3 extension build → `build-extension/`                    |
@@ -84,6 +86,13 @@ bun run dev          # start the Vite dev server
 The build target is selected with `BUILD_TARGET=web|extension` (wired into the build scripts and `svelte.config.js` / `vite.config.ts`).
 
 ### Testing
+
+Unit tests cover the pure modules (title derivation, voice text post-processing, URL/date/weather/view/task helpers) with [Bun's test runner](https://bun.sh/docs/cli/test):
+
+```bash
+bun run test:unit           # run unit tests
+bun run test:unit:coverage  # with coverage
+```
 
 End-to-end tests use [Playwright](https://playwright.dev/):
 

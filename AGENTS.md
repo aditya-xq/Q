@@ -18,12 +18,14 @@ bun install
 bun run dev            # Vite dev server
 bun run check          # svelte-check (typecheck) — must pass
 bun run lint           # eslint + prettier --check — must pass
-bun run verify         # check + lint
+bun run verify         # check + lint + unit tests
 bun run format         # prettier --write
 bun run build:web      # static/PWA build -> build/
 bun run build:ext      # MV3 extension build -> build-extension/
 bun run release        # syncs manifest version, builds, tags, releases
 
+bun run test:unit           # Bun unit tests (tests/**)
+bun run test:unit:coverage  # unit tests with coverage
 bun run test:e2e            # Playwright web e2e (builds + previews)
 bun run test:e2e:ui         # interactive UI mode
 bun run test:e2e:extension  # MV3 extension load test (headed Chromium)
@@ -33,7 +35,7 @@ bun run test:e2e:install    # one-time browser download
 
 `BUILD_TARGET=web|extension` selects the adapter in `svelte.config.js` / `vite.config.ts`; the build scripts depend on it.
 
-**Definition of done:** `bun run check` and `bun run lint` exit 0. Run `bun run test:e2e` after UI or data-flow changes.
+**Definition of done:** `bun run check` and `bun run lint` exit 0, and `bun run test:unit` passes. Run `bun run test:e2e` after UI or data-flow changes.
 
 ## Architecture Map
 
@@ -49,9 +51,13 @@ src/
     utils/
       db.ts            Dexie schema + init + settings helpers (single source of DB truth)
       stores.ts        Project/Task CRUD + observeProjects()
+      tasks.ts         Pure helpers: project/task sorting + grouping (unit-tested)
       constants.ts     Shared quick-link/category defaults, icons, URL helpers
       browser.ts       Typed chrome/browser API access (topSites, permissions)
       utils.ts         deriveTitle(), clickOutside action
+      datetime.ts      Pure date helpers (startOfDay/Week, isToday/Week, relative + autosave formatting)
+      weather.ts       Pure weather mapping/formatting (WMO codes, AQI, buildWeather)
+      view.ts          View query-param parsing (VALID_VIEWS, getViewFromUrl)
       notification.ts  toast/notify
     stores/
       writeups.ts      Writeup CRUD + observeWriteups()
@@ -59,6 +65,7 @@ src/
       quicklinks.ts    Quick link read/upsert helpers
     components/        UI (QuickTodo/, Projects/, Writer/, Widgets/, shared/)
     features/voice/    Browser-native SpeechRecognition -> editor text controller
+tests/                 Bun unit tests for pure modules (deriveTitle, textPostProcess, constants, ...)
 e2e/                   Playwright specs (web, extension, live)
 static/
   manifest.json        MV3 manifest (version must match package.json)
@@ -69,8 +76,9 @@ static/
 ### Data & state rules
 
 - IndexedDB is the source of truth. `QUICK_TODO_PROJECT_ID = -1` (`utils/constants.ts`) is a reserved pseudo-project; always exclude it from project lists.
-- Cross-tab/global sync uses Dexie `liveQuery` subscriptions created in `+layout.svelte` (`observeProjects`, `observeWriteups`, `observeQuickTasks`). Mutations write to Dexie and then refresh `appState`; do not query Dexie ad-hoc from components when a store helper exists.
-- `ensureDBReady()` guards every DB call; never call Dexie directly without it.
+- Cross-tab/global sync uses Dexie `liveQuery` subscriptions created in `+layout.svelte` (`observeProjects`, `observeWriteups`, `observeQuickTasks`). Mutations write to Dexie and rely on the observers to refresh `appState`; do not refresh `appState` manually or query Dexie ad-hoc from components when a store helper exists.
+- liveQuery queriers must issue their first Dexie read synchronously (no `await` of an external promise such as `ensureDBReady()` before `db.*`), or Dexie's query scope is lost and the subscription never re-fires. `ensureDBReady()` guards every other DB call.
+- `db.ts` schema (`version(2)`) indexes only queried columns; don't add indexes on free-text columns (`content`, `text`, etc.).
 - Svelte 5 runes only (`$state`, `$derived`, `$props`, `$effect`, `onMount`). Never write Svelte 4 `export let` / `$:` / `on:click`.
 - The writer/editor bundle is **lazy-loaded** in `+page.svelte` via dynamic `import()`; never statically import `WriterView`/`Editor` from the `$lib/components` barrel.
 
@@ -84,11 +92,20 @@ static/
 - Component shape: `<script lang="ts">`, template, optional `<style>`.
 - No comments unless a non-obvious decision needs explaining.
 
-## Testing (e2e)
+## Testing
+
+### Unit (`bun run test:unit`, `tests/**`)
+
+- Bun's built-in runner (`bun:test`); `bun test` must be scoped to `tests/` so it never picks up Playwright specs.
+- Only pure modules are unit-tested (no Svelte runes / Dexie / DOM). Current coverage: `deriveTitle`, `textPostProcess` (voice), `constants` URL/icon helpers, `browser`, `weather`, `datetime`, `view`, `tasks`.
+- Keep pure logic in `utils/*.ts` so it stays testable; add a `tests/<module>.test.ts` alongside non-trivial changes.
+
+### e2e (`bun run test:e2e`, `e2e/**`)
 
 - Config: `playwright.config.ts`. Projects: `chromium` (web, default), `extension` (opt-in headed), `live` (opt-in external).
 - Web tests run against `vite preview`; the `webServer` builds `build:web` first. Each test gets an isolated context, so IndexedDB starts empty.
 - `openHome()` / `openViewShortcut()` live in `e2e/helpers.ts`. Prefer accessible-role locators and stable ids (e.g. `input[id^="task-edit-"]`) over positional selectors.
+- Cover happy, unhappy (blank/duplicate input, cancel) and edge (reload persistence, ordering, toggling back) paths per view. Mobile specs set a viewport via `test.use`.
 - Live/extension suites are gated by `E2E_LIVE=1` / `RUN_EXTENSION_E2E=1` and must not run in the default `bun run test:e2e`.
 
 ## Self-Improvement Protocol
@@ -96,7 +113,7 @@ static/
 This file is living documentation. Every session:
 
 1. **Read first.** Read this file and `README.md`, then verify the sections you rely on against the code. Code wins over docs — fix the doc.
-2. **Work the definition of done.** `check` and `lint` must exit 0; run `test:e2e` for UI/data-flow changes. Never leave the tree redder than you found it.
+2. **Work the definition of done.** `check`, `lint` and `test:unit` must exit 0; run `test:e2e` for UI/data-flow changes. Never leave the tree redder than you found it.
 3. **Keep this file accurate.** When you change build/test commands, architecture, data flow, or conventions, update the matching section in the same change.
 4. **Be concise and concrete.** Short bullets; exact paths. No prose, no duplicated explanations; compress rather than split.
 5. **Prefer verifiable claims.** Only document what you confirmed by reading code or running a command.
