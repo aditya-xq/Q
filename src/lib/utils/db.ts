@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { NoteColor } from './notes'
+import { splitNoteText, type NoteColor, type PointLike } from './notes'
 
 export interface Writeup {
     id?: number
@@ -44,15 +44,16 @@ export interface Setting {
     value: string | number | boolean
 }
 
+export type NotePoint = PointLike
+
 export interface Note {
     id?: number
-    text: string
-    done: boolean
+    /** Ordered checklist points; each renders as a checkbox + text line. */
+    points: NotePoint[]
     color: NoteColor
     x: number
     y: number
     rotation: number
-    pinned: boolean
     createdAt: Date
     updatedAt: Date
 }
@@ -91,7 +92,34 @@ export class MyAppDB extends Dexie {
             settings: '&key',
             notes: '++id',
         })
+        // Notes gained per-point checkboxes: migrate `text`/`done` to `points`.
+        this.version(4)
+            .stores({
+                writeups: '++id, updatedAt',
+                projects: '++id',
+                tasks: '++id, projectId',
+                quicklinks: '++id, category',
+                settings: '&key',
+                notes: '++id',
+            })
+            .upgrade((tx) =>
+                tx
+                    .table<LegacyNote>('notes')
+                    .toCollection()
+                    .modify((stored) => {
+                        if (Array.isArray(stored.points) && stored.points.length > 0) return
+                        stored.points = splitNoteText(stored.text, Boolean(stored.done))
+                        delete stored.text
+                        delete stored.done
+                    })
+            )
     }
+}
+
+interface LegacyNote {
+    points?: NotePoint[]
+    text?: string
+    done?: boolean
 }
 
 export const db = new MyAppDB()

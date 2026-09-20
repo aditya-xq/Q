@@ -1,40 +1,45 @@
-import { db, ensureDBReady, type Note } from '$lib/utils/db'
+import { db, ensureDBReady, type Note, type NotePoint } from '$lib/utils/db'
 import { liveQuery, type Subscription } from 'dexie'
 import { appState } from '$lib/state.svelte'
-import { nextFreeNotePosition, noteRotation, pickNoteColor } from '$lib/utils/notes'
+import { noteRotation, noteStagePosition, pickNoteColor, splitNoteText } from '$lib/utils/notes'
 import { toast } from '$lib/utils/notification'
+
+type StoredNote = Omit<Note, 'points'> & { points?: NotePoint[]; text?: string; done?: boolean }
+
+/** Accept the v4 `points` shape and fall back to legacy `text`/`done` rows. */
+function normalizePoints(note: StoredNote): NotePoint[] {
+    if (Array.isArray(note.points) && note.points.length > 0) {
+        return note.points.map((point) => ({ text: point.text ?? '', done: Boolean(point.done) }))
+    }
+    return splitNoteText(note.text, Boolean(note.done))
+}
 
 export function observeNotes(): Subscription {
     // The read is issued synchronously so Dexie's liveQuery can track it.
     return liveQuery(() => db.notes.toArray()).subscribe({
         next: (notes) => {
-            // `pinned` was added after the table shipped; normalise legacy rows.
-            appState.notes = notes.map((note) => ({ ...note, pinned: note.pinned ?? false }))
+            appState.notes = notes.map((note) => ({ ...note, points: normalizePoints(note) }))
         },
         error: (error) => console.error('Note observation failed:', error),
     })
 }
 
 export async function addNote(input: {
-    text?: string
-    done?: boolean
+    points?: NotePoint[]
     color: Note['color']
     x: number
     y: number
     rotation: number
-    pinned?: boolean
 }): Promise<number | undefined> {
     try {
         await ensureDBReady()
         const now = new Date()
         return (await db.notes.add({
-            text: input.text ?? '',
-            done: input.done ?? false,
+            points: input.points && input.points.length > 0 ? input.points : [{ text: '', done: false }],
             color: input.color,
             x: input.x,
             y: input.y,
             rotation: input.rotation,
-            pinned: input.pinned ?? false,
             createdAt: now,
             updatedAt: now,
         })) as number
@@ -47,7 +52,7 @@ export async function addNote(input: {
 
 export async function updateNote(
     id: number,
-    patch: Partial<Pick<Note, 'text' | 'done' | 'color' | 'x' | 'y' | 'pinned'>>
+    patch: Partial<Pick<Note, 'points' | 'color' | 'x' | 'y'>>
 ): Promise<void> {
     try {
         await ensureDBReady()
@@ -68,12 +73,25 @@ export async function deleteNote(id: number): Promise<void> {
     }
 }
 
-/** Create a new note near the centre of the viewport and focus it. */
+// Notes that were just created and still need to glide to a parking slot.
+const stagedNoteIds = new Set<number>()
+
+/** Whether a note was created in this session and has not been parked yet. */
+export function isStagedNote(id: number): boolean {
+    return stagedNoteIds.has(id)
+}
+
+/** True exactly once for a freshly created note, when it should be parked. */
+export function consumeStagedNote(id: number): boolean {
+    return stagedNoteIds.delete(id)
+}
+
+/** Create a new note at the centre of the viewport and focus it. */
 export async function createNote(): Promise<number | undefined> {
     const viewportWidth = typeof window === 'undefined' ? 1280 : window.innerWidth
     const viewportHeight = typeof window === 'undefined' ? 800 : window.innerHeight
     const seed = Date.now()
-    const { x, y } = nextFreeNotePosition(appState.notes, viewportWidth, viewportHeight)
+    const { x, y } = noteStagePosition(viewportWidth, viewportHeight)
 
     const id = await addNote({
         color: pickNoteColor(seed),
@@ -82,6 +100,7 @@ export async function createNote(): Promise<number | undefined> {
         rotation: noteRotation(seed),
     })
     if (typeof id === 'number') {
+        stagedNoteIds.add(id)
         appState.composeNoteId = id
     }
     return id

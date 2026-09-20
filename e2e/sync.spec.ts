@@ -29,7 +29,8 @@ test.describe('Cross-tab sync', () => {
         await tabA.keyboard.press('Alt+q')
         const input = tabA.getByTestId('sticky-note').getByRole('textbox')
         await input.fill('Cross-tab note')
-        await input.press('Enter')
+        await tabA.keyboard.press('Enter')
+        await tabA.keyboard.press('Enter')
 
         await expect(tabB.getByTestId('sticky-note')).toHaveCount(1)
         await expect(tabB.getByTestId('sticky-note').getByRole('textbox')).toHaveValue('Cross-tab note')

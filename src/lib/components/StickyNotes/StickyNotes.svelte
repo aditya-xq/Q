@@ -2,7 +2,7 @@
     import { onDestroy } from 'svelte'
     import { appState } from '$lib/state.svelte'
     import type { Note } from '$lib/utils/db'
-    import { addNote, createNote } from '$lib/stores/notes'
+    import { addNote, isStagedNote } from '$lib/stores/notes'
     import StickyNote from './StickyNote.svelte'
 
     interface UndoEntry {
@@ -29,13 +29,12 @@
         clearTimeout(entry.timer)
         undoStack = undoStack.slice(0, -1)
         await addNote({
-            text: entry.note.text,
-            done: entry.note.done,
+            // Clone out of the Svelte state proxy so IndexedDB can structured-clone it.
+            points: entry.note.points.map((point) => ({ text: point.text, done: point.done })),
             color: entry.note.color,
             x: entry.note.x,
             y: entry.note.y,
             rotation: entry.note.rotation,
-            pinned: entry.note.pinned,
         })
     }
 
@@ -48,31 +47,15 @@
     })
 </script>
 
-{#each appState.notes as note (note.id)}
+{#each appState.notes as note, index (note.id)}
     <StickyNote
         {note}
         autoFocus={note.id === appState.composeNoteId}
+        staggerIndex={isStagedNote(note.id!) ? null : index}
         onFocused={clearCompose}
         onDeleted={handleDeleted}
     />
 {/each}
-
-{#if appState.notes.length === 0 && undoStack.length === 0}
-    <button
-        type="button"
-        class="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-full border border-slate-200/70 bg-white/60 px-3.5 py-1.5 text-[11px] font-medium tracking-wide text-slate-400 shadow-sm backdrop-blur-sm transition hover:text-slate-600 hover:shadow dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-500 dark:hover:text-slate-300"
-        onclick={() => void createNote()}
-        aria-label="Create a sticky note"
-        data-testid="sticky-note-hint"
-    >
-        <span class="hidden sm:inline">
-            Press <kbd class="rounded border border-slate-300/70 px-1 py-px text-[10px] dark:border-slate-700">Alt</kbd>
-            + <kbd class="rounded border border-slate-300/70 px-1 py-px text-[10px] dark:border-slate-700">Q</kbd> to jot
-            a note
-        </span>
-        <span class="sm:hidden">Tap to jot a note</span>
-    </button>
-{/if}
 
 {#if undoStack.length > 0}
     <div

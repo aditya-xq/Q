@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 type SeedWindow = Window & { __seeded?: boolean; __seedError?: string }
 
 // Creates a version-1 database (matching the pre-v2 schema) with representative data,
-// so the app's Dexie `version(3)` upgrade has something real to migrate.
+// so the app's Dexie `version(4)` upgrade has something real to migrate.
 const SEED_SCRIPT = `
 (() => {
     const req = indexedDB.open('MyAppDB', 1)
@@ -52,8 +52,43 @@ const SEED_SCRIPT = `
 })()
 `
 
+// Seeds a Dexie v3 database (IndexedDB version 30, since Dexie multiplies by 10)
+// with a legacy single-text note, so the v4 upgrade has to convert `text`/`done`
+// into per-point checkboxes.
+const SEED_V3_SCRIPT = `
+(() => {
+    const req = indexedDB.open('MyAppDB', 30)
+    req.onupgradeneeded = () => {
+        const db = req.result
+        db.createObjectStore('writeups', { keyPath: 'id', autoIncrement: true }).createIndex('updatedAt', 'updatedAt')
+        db.createObjectStore('projects', { keyPath: 'id', autoIncrement: true })
+        db.createObjectStore('tasks', { keyPath: 'id', autoIncrement: true }).createIndex('projectId', 'projectId')
+        db.createObjectStore('quicklinks', { keyPath: 'id', autoIncrement: true }).createIndex('category', 'category')
+        db.createObjectStore('settings', { keyPath: 'key' })
+        db.createObjectStore('notes', { keyPath: 'id', autoIncrement: true })
+    }
+    req.onerror = () => { window.__seedError = String(req.error) }
+    req.onsuccess = () => {
+        const db = req.result
+        const tx = db.transaction(['notes'], 'readwrite')
+        tx.objectStore('notes').add({
+            text: 'Legacy one\\nLegacy two',
+            done: true,
+            color: 'sky',
+            x: 120,
+            y: 120,
+            rotation: 0,
+            createdAt: new Date(2026, 0, 1),
+            updatedAt: new Date(2026, 0, 1),
+        })
+        tx.oncomplete = () => { window.__seeded = true }
+        tx.onerror = () => { window.__seedError = String(tx.error) }
+    }
+})()
+`
+
 test.describe('Database migration', () => {
-    test('upgrades a v1 database to v3 without losing data', async ({ page }) => {
+    test('upgrades a v1 database to v4 without losing data', async ({ page }) => {
         const isRoot = (url: URL) => url.pathname === '/'
         await page.route(isRoot, async (route) => {
             if (route.request().resourceType() !== 'document') {
@@ -75,7 +110,7 @@ test.describe('Database migration', () => {
         expect(await page.evaluate(() => (window as SeedWindow).__seedError ?? null)).toBeNull()
         await page.unrouteAll()
 
-        // Loading the app now triggers the Dexie v1 -> v3 upgrade.
+        // Loading the app now triggers the Dexie v1 -> v4 upgrade.
         await page.goto('/?view=projects')
         await expect(page.getByRole('heading', { name: 'Migrated Project', level: 1 })).toBeVisible()
         await expect(page.getByText('Migrated Task', { exact: true })).toBeVisible()
@@ -113,5 +148,54 @@ test.describe('Database migration', () => {
             })
         })
         expect(storeNames).toContain('notes')
+    })
+
+    test('migrates a legacy note into per-point checkboxes (v3 -> v4)', async ({ page }) => {
+        const isRoot = (url: URL) => url.pathname === '/'
+        await page.route(isRoot, async (route) => {
+            if (route.request().resourceType() !== 'document') {
+                await route.fallback()
+                return
+            }
+            await route.fulfill({
+                contentType: 'text/html',
+                body: `<!doctype html><html><head><meta charset="utf-8" /></head><body><script>${SEED_V3_SCRIPT}</script></body></html>`,
+            })
+        })
+
+        // Seed a v3 database before the app (which opens v4) ever runs.
+        await page.goto('/')
+        await page.waitForFunction(() => {
+            const w = window as SeedWindow
+            return w.__seeded === true || Boolean(w.__seedError)
+        })
+        expect(await page.evaluate(() => (window as SeedWindow).__seedError ?? null)).toBeNull()
+        await page.unrouteAll()
+
+        await page.goto('/')
+        const note = page.getByTestId('sticky-note')
+        await expect(note).toHaveCount(1)
+        await expect(note.getByRole('textbox')).toHaveCount(2)
+        await expect(note.getByRole('checkbox').nth(0)).toBeChecked()
+        await expect(note.getByRole('checkbox').nth(1)).toBeChecked()
+
+        const stored = await page.evaluate(async () => {
+            return await new Promise<Record<string, unknown>>((resolve, reject) => {
+                const request = indexedDB.open('MyAppDB')
+                request.onsuccess = () => {
+                    const db = request.result
+                    const all = db.transaction('notes', 'readonly').objectStore('notes').getAll()
+                    all.onsuccess = () => resolve(all.result[0] as Record<string, unknown>)
+                    all.onerror = () => reject(all.error)
+                }
+                request.onerror = () => reject(request.error)
+            })
+        })
+        expect(stored.points).toEqual([
+            { text: 'Legacy one', done: true },
+            { text: 'Legacy two', done: true },
+        ])
+        expect(stored.text).toBeUndefined()
+        expect(stored.done).toBeUndefined()
     })
 })

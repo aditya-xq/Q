@@ -1,52 +1,68 @@
 <script lang="ts">
     import { onDestroy, onMount, tick, untrack } from 'svelte'
-    import type { Note } from '$lib/utils/db'
-    import { deleteNote, updateNote } from '$lib/stores/notes'
-    import { clampToViewport, NOTE_COLORS, NOTE_HEIGHT, NOTE_WIDTH, type NoteColor } from '$lib/utils/notes'
-    import { nextNoteZ, NOTE_Z_BASE } from '$lib/state.svelte'
+    import type { Note, NotePoint } from '$lib/utils/db'
+    import { deleteNote, updateNote, consumeStagedNote } from '$lib/stores/notes'
+    import {
+        clampToViewport,
+        cleanPoints,
+        hasPointContent,
+        nextFreeNoteSlot,
+        NOTE_COLORS,
+        NOTE_HEIGHT,
+        NOTE_WIDTH,
+        type NoteColor,
+        type Rect,
+    } from '$lib/utils/notes'
+    import { appState, nextNoteZ, NOTE_Z_BASE } from '$lib/state.svelte'
     import { NOTE_THEME } from './noteTheme'
 
     interface Props {
         note: Note
         autoFocus?: boolean
+        /** Position used for the staggered entrance, or null for notes created this session. */
+        staggerIndex?: number | null
         onDeleted?: (note: Note) => void
         onFocused?: () => void
     }
 
-    let { note, autoFocus = false, onDeleted, onFocused }: Props = $props()
+    let { note, autoFocus = false, staggerIndex = null, onDeleted, onFocused }: Props = $props()
 
-    interface Dust {
+    // Frozen once at mount: a later change (e.g. the note no longer being staged)
+    // must never re-trigger the finished note-pop animation.
+    const enterDelay = untrack(() => (staggerIndex === null ? 0 : Math.min(staggerIndex * 70, 420)))
+
+    interface Point extends NotePoint {
         id: number
-        left: number
-        top: number
-        size: number
-        dx: number
-        dy: number
-        rot: number
-        delay: number
-        dur: number
-        color: string
     }
 
-    let textareaEl = $state<HTMLTextAreaElement | undefined>(undefined)
+    const FLIGHT_MS = 700
+    /** Must match the `note-vanish` exit animation length. */
+    const DISMISS_MS = 240
+
     let noteEl = $state<HTMLElement | undefined>(undefined)
-    let cardEl = $state<HTMLElement | undefined>(undefined)
     let colorButtonEl = $state<HTMLButtonElement | undefined>(undefined)
     let paletteEl = $state<HTMLElement | undefined>(undefined)
-    // Local editable copies seeded from the stored note; synced below.
-    let draft = $state(untrack(() => note.text))
-    let lastCommitted = untrack(() => note.text)
+    let nextPointId = 1
+
+    function makePoints(list: readonly NotePoint[]): Point[] {
+        const source = list.length > 0 ? list : [{ text: '', done: false }]
+        return source.map((point) => ({ id: nextPointId++, text: point.text, done: point.done }))
+    }
+
+    // Local editable copy seeded from the stored note; synced below.
+    let points = $state<Point[]>(untrack(() => makePoints(note.points)))
+    let lastCommitted = untrack(() => JSON.stringify(note.points))
     let x = $state(untrack(() => note.x))
     let y = $state(untrack(() => note.y))
     let z = $state(NOTE_Z_BASE)
     let dragging = $state(false)
     let exiting = $state(false)
+    let flying = $state(false)
     let editing = $state(false)
-    let dust = $state<Dust[]>([])
     let paletteOpen = $state(false)
     let paletteIndex = $state(0)
     let liveMessage = $state('')
-    let skipSave = false
+    let didAutoFocus = false
     let moved = false
     let grabX = 0
     let grabY = 0
@@ -54,14 +70,16 @@
 
     let theme = $derived(NOTE_THEME[note.color as NoteColor] ?? NOTE_THEME.amber)
     let paletteId = $derived(`note-colour-${note.id ?? 'new'}`)
+    // Always visible while drafting, so the double-Enter gesture is discoverable.
+    let showFinishHint = $derived(editing)
 
     $effect(() => {
-        const incoming = note.text
-        // Only adopt external changes; never clobber the draft mid-save (avoids a flicker).
+        const incoming = JSON.stringify(note.points)
+        // Only adopt external changes; never clobber the draft mid-edit (avoids a flicker).
         if (!editing && incoming !== lastCommitted) {
             lastCommitted = incoming
-            draft = incoming
-            void tick().then(fitTextarea)
+            points = makePoints(note.points)
+            void tick().then(reflow)
         }
     })
 
@@ -78,25 +96,21 @@
     })
 
     $effect(() => {
-        if (autoFocus && textareaEl) {
-            textareaEl.focus()
-            textareaEl.setSelectionRange(textareaEl.value.length, textareaEl.value.length)
-            onFocused?.()
+        if (autoFocus && !didAutoFocus) {
+            didAutoFocus = true
+            void focusPoint(points[0].id).then(() => onFocused?.())
         }
     })
 
-    // Keep the note on screen and persist the clamp when the window changes.
+    // Refit and pull the note back on screen when the window changes.
     onMount(() => {
-        const reclamp = () => {
-            if (dragging) return
-            const { width, height } = noteSize()
-            const position = clampToViewport(x, y, window.innerWidth, window.innerHeight, width, height)
-            x = position.x
-            y = position.y
+        reflow()
+        const onResize = () => {
+            reflow()
+            schedulePositionSave()
         }
-        reclamp()
-        window.addEventListener('resize', reclamp)
-        return () => window.removeEventListener('resize', reclamp)
+        window.addEventListener('resize', onResize)
+        return () => window.removeEventListener('resize', onResize)
     })
 
     onDestroy(() => {
@@ -110,21 +124,49 @@
         }
     }
 
-    function fitTextarea() {
-        const node = textareaEl
-        if (!node) return
+    function fitTextarea(node: HTMLTextAreaElement) {
         node.style.height = 'auto'
         node.style.height = `${node.scrollHeight}px`
     }
 
-    function autosize(node: HTMLTextAreaElement) {
+    function fitAll() {
+        for (const node of noteEl?.querySelectorAll<HTMLTextAreaElement>('textarea') ?? []) {
+            fitTextarea(node)
+        }
+    }
+
+    /** Pull the note back inside the viewport (no-op while dragging). */
+    function clampIntoView() {
+        if (dragging) return
+        const { width, height } = noteSize()
+        const position = clampToViewport(x, y, window.innerWidth, window.innerHeight, width, height)
+        x = position.x
+        y = position.y
+    }
+
+    /** Refit the points and pull the note back on screen after it changes size. */
+    function reflow() {
+        fitAll()
+        clampIntoView()
+    }
+
+    function autosize(node: HTMLTextAreaElement, onResize?: () => void) {
         const fit = () => {
-            node.style.height = 'auto'
-            node.style.height = `${node.scrollHeight}px`
+            fitTextarea(node)
+            onResize?.()
         }
         fit()
         node.addEventListener('input', fit)
         return { destroy: () => node.removeEventListener('input', fit) }
+    }
+
+    async function focusPoint(id: number, caret?: number) {
+        await tick()
+        const node = noteEl?.querySelector<HTMLTextAreaElement>(`[data-point-id="${id}"]`)
+        if (!node) return
+        node.focus()
+        const position = caret ?? node.value.length
+        node.setSelectionRange(position, position)
     }
 
     function bringToFront() {
@@ -132,7 +174,7 @@
     }
 
     function onPointerDown(event: PointerEvent) {
-        if (exiting || note.pinned) return
+        if (exiting) return
         bringToFront()
         dragging = true
         moved = false
@@ -178,7 +220,6 @@
             closePalette()
             return
         }
-        if (note.pinned) return
         const step = event.shiftKey ? 10 : 1
         let dx = 0
         let dy = 0
@@ -230,102 +271,145 @@
         paletteEl?.querySelectorAll<HTMLButtonElement>('button')[paletteIndex]?.focus()
     }
 
-    function togglePinned() {
+    function togglePointDone(index: number) {
+        const point = points[index]
+        if (!point) return
         bringToFront()
-        liveMessage = note.pinned ? 'Note unpinned' : 'Note pinned'
-        void updateNote(note.id!, { pinned: !note.pinned })
+        point.done = !point.done
+        const payload = cleanPoints(points)
+        if (payload.length === 0) return
+        lastCommitted = JSON.stringify(payload)
+        void updateNote(note.id!, { points: payload })
     }
 
-    function toggleDone() {
-        bringToFront()
-        void updateNote(note.id!, { done: !note.done })
-    }
+    function onPointKeydown(event: KeyboardEvent, index: number) {
+        const point = points[index]
+        if (!point) return
+        const node = event.currentTarget as HTMLTextAreaElement
 
-    function onKeydown(event: KeyboardEvent) {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault()
-            textareaEl?.blur()
-        } else if (event.key === 'Escape') {
-            event.preventDefault()
-            skipSave = true
-            if (!note.text.trim()) {
-                void dismiss()
+            // A second Enter on an empty point finishes the note and drops the blank.
+            if (point.text.trim() === '') {
+                if (points.length > 1) points.splice(index, 1)
+                void finish()
                 return
             }
-            draft = note.text
-            void tick().then(fitTextarea)
-            textareaEl?.blur()
+            // Split at the caret so Enter behaves like a real list item.
+            const caret = node.selectionStart ?? point.text.length
+            const created = { id: nextPointId++, text: point.text.slice(caret), done: false }
+            point.text = point.text.slice(0, caret)
+            points.splice(index + 1, 0, created)
+            void focusPoint(created.id, 0).then(reflow)
+            return
+        }
+
+        if (event.key === 'Escape') {
+            event.preventDefault()
+            cancelEdit()
+            return
+        }
+
+        if (event.key === 'Backspace' && point.text === '' && points.length > 1) {
+            event.preventDefault()
+            points.splice(index, 1)
+            const next = points[Math.max(0, index - 1)]
+            if (next) void focusPoint(next.id)
+            return
+        }
+
+        // Move between points only at the text boundaries, so wrapped points
+        // (Shift+Enter) still navigate their own caret normally.
+        if (event.key === 'ArrowUp' && index > 0 && node.selectionStart === 0 && node.selectionEnd === 0) {
+            event.preventDefault()
+            void focusPoint(points[index - 1].id)
+        } else if (
+            event.key === 'ArrowDown' &&
+            index < points.length - 1 &&
+            node.selectionStart === node.value.length
+        ) {
+            event.preventDefault()
+            void focusPoint(points[index + 1].id)
         }
     }
 
-    async function onBlur() {
+    function onPointBlur(event: FocusEvent) {
+        const next = event.relatedTarget as Node | null
+        // Focus staying inside the note (another point, the palette) is not a commit.
+        if (next && noteEl?.contains(next)) return
+        void finish()
+    }
+
+    function cancelEdit() {
         editing = false
-        if (skipSave) {
-            skipSave = false
-            return
-        }
-        const text = draft.trim()
-        if (!text) {
+        if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
+        if (!hasPointContent(note.points)) {
             void dismiss()
             return
         }
-        if (text !== note.text) {
-            await updateNote(note.id!, { text })
+        points = makePoints(note.points)
+        void tick().then(reflow)
+    }
+
+    async function finish() {
+        if (!editing) return
+        editing = false
+        const payload = cleanPoints(points)
+        if (payload.length === 0) {
+            void dismiss()
+            return
         }
-        lastCommitted = text
-    }
-
-    function prefersReducedMotion() {
-        return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    }
-
-    function buildDust(colors: string[]): Dust[] {
-        const particles: Dust[] = []
-        for (let i = 0; i < 48; i++) {
-            particles.push({
-                id: i,
-                left: Math.random() * 100,
-                top: Math.random() * 100,
-                size: 2 + Math.random() * 5,
-                dx: (Math.random() - 0.5) * 96,
-                dy: -18 - Math.random() * 78,
-                rot: (Math.random() - 0.5) * 240,
-                delay: Math.random() * 120,
-                dur: 380 + Math.random() * 240,
-                color: colors[Math.floor(Math.random() * colors.length)],
-            })
+        const serialized = JSON.stringify(payload)
+        const raw = JSON.stringify(points.map((point) => ({ text: point.text, done: point.done })))
+        if (serialized !== JSON.stringify(note.points)) await updateNote(note.id!, { points: payload })
+        lastCommitted = serialized
+        if (raw !== serialized) {
+            points = makePoints(payload)
+            void tick().then(reflow)
         }
-        return particles
+        void settleIntoBoard()
     }
 
-    /** Resolve when the dissolve animation finishes (or after a safety fallback). */
-    function waitForDissolve(): Promise<void> {
-        const node = cardEl
-        if (!node) return Promise.resolve()
-        const target = node
-        return new Promise<void>((resolve) => {
-            function finish() {
-                clearTimeout(fallback)
-                target.removeEventListener('animationend', onAnimationEnd)
-                resolve()
-            }
-            function onAnimationEnd(event: AnimationEvent) {
-                // Ignore bubbled dust-particle animations.
-                if (event.target === target) finish()
-            }
-            const fallback = setTimeout(finish, 1200)
-            target.addEventListener('animationend', onAnimationEnd)
+    /** Glide a freshly created note from the centre to its first free parking slot. */
+    async function settleIntoBoard() {
+        if (!consumeStagedNote(note.id!)) return
+        const { width, height } = noteSize()
+        // Exclude this note itself (it sits at the centre while staged) from the occupancy check.
+        const others = appState.notes.filter((other) => other.id !== note.id)
+        const target = nextFreeNoteSlot(others, noteObstacles(), window.innerWidth, window.innerHeight, width, height)
+        if (target.x === x && target.y === y) return
+        // Enable the transition before moving, otherwise the note jumps instead of gliding.
+        flying = true
+        await tick()
+        x = target.x
+        y = target.y
+        void updateNote(note.id!, { x, y })
+        await wait(FLIGHT_MS)
+        flying = false
+    }
+
+    /** Bounding boxes of the home content that notes must not cover. */
+    function noteObstacles(): Rect[] {
+        if (typeof document === 'undefined') return []
+        return Array.from(document.querySelectorAll('[data-note-obstacle]')).map((node) => {
+            const rect = node.getBoundingClientRect()
+            return { x: rect.left, y: rect.top, width: rect.width, height: rect.height }
         })
+    }
+
+    function wait(ms: number): Promise<void> {
+        return new Promise((resolve) => setTimeout(resolve, ms))
     }
 
     async function dismiss() {
         if (exiting) return
         exiting = true
         dragging = false
-        if (!prefersReducedMotion()) {
-            dust = buildDust(theme.dust)
-        }
-        await waitForDissolve()
+        editing = false
+        paletteOpen = false
+        consumeStagedNote(note.id!)
+        // A little past DISMISS_MS so the fade completes before the row unmounts.
+        await wait(DISMISS_MS + 60)
         await deleteNote(note.id!)
         onDeleted?.(note)
     }
@@ -333,38 +417,38 @@
 
 <div
     bind:this={noteEl}
-    class="fixed"
+    class={`fixed ${flying ? 'note-flying' : ''}`}
     style:left={`${x}px`}
     style:top={`${y}px`}
     style:z-index={z}
     data-testid="sticky-note"
     data-color={note.color}
-    data-pinned={note.pinned}
     role="group"
-    aria-label={note.done ? 'Sticky note (done)' : 'Sticky note'}
+    aria-label="Sticky note"
 >
     <div
-        bind:this={cardEl}
         class={`sticky-note relative rounded-xl border shadow-lg ${theme.paper} ${theme.border} ${
             exiting ? 'sticky-note--exiting' : ''
         } ${dragging ? 'sticky-note--dragging' : ''}`}
         style:--rot={`${note.rotation}deg`}
-        style:width={`min(${NOTE_WIDTH}px, calc(100vw - 24px))`}
+        style:--enter-delay={`${enterDelay}ms`}
+        style:width="min(clamp(220px, 17vw, 300px), calc(100vw - 24px))"
     >
-        <!-- Handle, colour, pin, delete -->
-        <div class="flex items-center justify-between px-2 pt-1.5 pb-0.5">
+        <!-- The whole bar is the drag surface; the buttons opt out. -->
+        <div
+            class="flex cursor-grab touch-none items-center justify-between px-2 pt-1.5 pb-0.5 active:cursor-grabbing"
+            data-testid="sticky-note-bar"
+            onpointerdown={onPointerDown}
+            onpointermove={onPointerMove}
+            onpointerup={onPointerUp}
+            onpointercancel={onPointerUp}
+        >
             <button
                 type="button"
-                class={`flex h-6 w-6 items-center justify-center rounded-md text-[11px] tracking-[0.15em] ${theme.accent} opacity-40 transition hover:bg-black/5 hover:opacity-80 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-slate-900/30 focus-visible:outline-none dark:hover:bg-white/10 dark:focus-visible:ring-slate-100/30 ${
-                    note.pinned ? 'cursor-default' : 'cursor-grab touch-none active:cursor-grabbing'
-                }`}
+                class={`flex h-6 w-6 items-center justify-center rounded-md text-[11px] tracking-[0.15em] ${theme.accent} opacity-40 transition hover:bg-black/5 hover:opacity-80 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-slate-900/30 focus-visible:outline-none dark:hover:bg-white/10 dark:focus-visible:ring-slate-100/30`}
                 data-testid="sticky-note-handle"
-                aria-label={note.pinned ? 'Note pinned in place' : 'Move note (drag or arrow keys)'}
-                title={note.pinned ? 'Pinned' : 'Drag or use arrow keys'}
-                onpointerdown={onPointerDown}
-                onpointermove={onPointerMove}
-                onpointerup={onPointerUp}
-                onpointercancel={onPointerUp}
+                aria-label="Move note (drag the bar or use arrow keys)"
+                title="Drag the bar or use arrow keys"
                 onkeydown={onHandleKeydown}
             >
                 <span aria-hidden="true">⠿</span>
@@ -375,7 +459,7 @@
                     <button
                         bind:this={colorButtonEl}
                         type="button"
-                        class={`flex h-6 w-6 items-center justify-center rounded-md ${theme.accent} opacity-50 transition hover:bg-black/5 hover:opacity-90 dark:hover:bg-white/10`}
+                        class={`flex h-6 w-6 cursor-pointer items-center justify-center rounded-md ${theme.accent} opacity-50 transition hover:bg-black/5 hover:opacity-90 dark:hover:bg-white/10`}
                         aria-label="Change note colour"
                         aria-expanded={paletteOpen}
                         aria-controls={paletteId}
@@ -401,7 +485,7 @@
                             {#each NOTE_COLORS as option, index (option)}
                                 <button
                                     type="button"
-                                    class={`h-4 w-4 rounded-full ring-1 ring-black/10 transition hover:scale-110 ${
+                                    class={`h-4 w-4 cursor-pointer rounded-full ring-1 ring-black/10 transition hover:scale-110 ${
                                         option === note.color ? 'ring-2 ring-slate-900/60 dark:ring-slate-100/70' : ''
                                     }`}
                                     style:background={NOTE_THEME[option].swatch}
@@ -419,28 +503,7 @@
 
                 <button
                     type="button"
-                    class={`flex h-6 w-6 items-center justify-center rounded-md ${theme.accent} transition hover:bg-black/5 dark:hover:bg-white/10 ${
-                        note.pinned ? 'opacity-90' : 'opacity-40 hover:opacity-80'
-                    }`}
-                    aria-label={note.pinned ? 'Unpin note' : 'Pin note in place'}
-                    aria-pressed={note.pinned}
-                    onpointerdown={(event) => event.stopPropagation()}
-                    onclick={togglePinned}
-                >
-                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill={note.pinned ? 'currentColor' : 'none'}>
-                        <path
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M12 17v5M9 3h6l-1 6 3 3H7l3-3-1-6z"
-                        />
-                    </svg>
-                </button>
-
-                <button
-                    type="button"
-                    class={`flex h-6 w-6 items-center justify-center rounded-md ${theme.accent} opacity-40 transition hover:bg-black/5 hover:opacity-100 dark:hover:bg-white/10`}
+                    class={`flex h-6 w-6 cursor-pointer items-center justify-center rounded-md ${theme.accent} opacity-40 transition hover:bg-black/5 hover:opacity-100 dark:hover:bg-white/10`}
                     aria-label="Delete note"
                     onpointerdown={(event) => event.stopPropagation()}
                     onclick={(event) => {
@@ -448,75 +511,90 @@
                         void dismiss()
                     }}
                 >
-                    ✕
+                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M10 11v6M14 11v6"
+                        />
+                    </svg>
                 </button>
             </div>
         </div>
 
-        <div class="flex items-start gap-2.5 px-3 pb-3">
-            <label class="mt-1 flex-shrink-0 cursor-pointer" title={note.done ? 'Mark not done' : 'Mark done'}>
-                <input type="checkbox" class="peer sr-only" checked={note.done} onchange={toggleDone} />
-                <span
-                    class={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all ${
-                        note.done
-                            ? 'border-transparent bg-slate-900/70 dark:bg-slate-100/80'
-                            : 'border-slate-900/25 dark:border-slate-100/30'
-                    }`}
-                >
-                    {#if note.done}
-                        <svg class="h-3 w-3 text-white dark:text-slate-900" viewBox="0 0 24 24" fill="none">
-                            <path
-                                stroke="currentColor"
-                                stroke-width="3"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M5 13l4 4L19 7"
-                            />
-                        </svg>
-                    {/if}
-                </span>
-                <span class="sr-only">{note.done ? 'Mark note not done' : 'Mark note done'}</span>
-            </label>
+        <div class="flex flex-col gap-1 px-3 pb-3">
+            {#each points as point, index (point.id)}
+                <div class="flex items-start gap-2.5">
+                    <label
+                        class="mt-1 flex-shrink-0 cursor-pointer"
+                        title={point.done ? 'Mark point not done' : 'Mark point done'}
+                    >
+                        <input
+                            type="checkbox"
+                            class="peer sr-only"
+                            checked={point.done}
+                            aria-label={point.text.trim() || `Point ${index + 1}`}
+                            onchange={() => togglePointDone(index)}
+                        />
+                        <span
+                            class={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all ${
+                                point.done
+                                    ? 'border-transparent bg-slate-900/70 dark:bg-slate-100/80'
+                                    : 'border-slate-900/25 dark:border-slate-100/30'
+                            }`}
+                        >
+                            {#if point.done}
+                                <svg class="h-3 w-3 text-white dark:text-slate-900" viewBox="0 0 24 24" fill="none">
+                                    <path
+                                        stroke="currentColor"
+                                        stroke-width="3"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M5 13l4 4L19 7"
+                                    />
+                                </svg>
+                            {/if}
+                        </span>
+                    </label>
 
-            <textarea
-                bind:this={textareaEl}
-                bind:value={draft}
-                use:autosize
-                rows={1}
-                placeholder="Jot something…"
-                class={`w-full resize-none overflow-y-auto bg-transparent text-sm leading-snug ${theme.accent} max-h-[40vh] placeholder:text-slate-900/30 focus:outline-none dark:placeholder:text-slate-100/30 ${
-                    note.done ? 'line-through opacity-60' : ''
-                }`}
-                onfocus={() => {
-                    editing = true
-                    bringToFront()
-                }}
-                onblur={onBlur}
-                onkeydown={onKeydown}
-            ></textarea>
+                    <textarea
+                        data-point-id={point.id}
+                        bind:value={point.text}
+                        use:autosize={clampIntoView}
+                        rows={1}
+                        aria-label={`Point ${index + 1}`}
+                        placeholder={index === 0 ? 'Jot a point…' : ''}
+                        class={`w-full resize-none overflow-y-auto bg-transparent text-sm leading-snug ${theme.accent} max-h-[40vh] placeholder:text-slate-900/30 focus:outline-none dark:placeholder:text-slate-100/30 ${
+                            point.done ? 'line-through opacity-60' : ''
+                        }`}
+                        onfocus={() => {
+                            editing = true
+                            bringToFront()
+                        }}
+                        onblur={onPointBlur}
+                        onkeydown={(event) => onPointKeydown(event, index)}
+                    ></textarea>
+                </div>
+            {/each}
+
+            {#if showFinishHint}
+                <p
+                    class={`pr-0.5 text-right text-[10px] font-medium tracking-wide ${theme.accent} opacity-50`}
+                    role="status"
+                    data-testid="sticky-note-finish-hint"
+                >
+                    Press
+                    <kbd class="rounded border border-slate-900/20 px-1 py-px text-[9px] dark:border-slate-100/20">
+                        Enter
+                    </kbd>
+                    twice to finish
+                </p>
+            {/if}
         </div>
 
         <span class="sr-only" aria-live="polite">{liveMessage}</span>
-
-        {#if dust.length}
-            <div class="pointer-events-none absolute inset-0 overflow-visible" aria-hidden="true">
-                {#each dust as particle (particle.id)}
-                    <span
-                        class="dust"
-                        style:left={`${particle.left}%`}
-                        style:top={`${particle.top}%`}
-                        style:width={`${particle.size}px`}
-                        style:height={`${particle.size}px`}
-                        style:background={particle.color}
-                        style:--dx={`${particle.dx}px`}
-                        style:--dy={`${particle.dy}px`}
-                        style:--dust-rot={`${particle.rot}deg`}
-                        style:--delay={`${particle.delay}ms`}
-                        style:--dur={`${particle.dur}ms`}
-                    ></span>
-                {/each}
-            </div>
-        {/if}
     </div>
 </div>
 
@@ -526,7 +604,8 @@
         transition:
             transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
             box-shadow 220ms ease;
-        animation: note-pop 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        animation: note-pop 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation-delay: var(--enter-delay, 0ms);
         box-shadow: 0 10px 22px -12px rgba(15, 23, 42, 0.5);
     }
 
@@ -541,46 +620,35 @@
         box-shadow: 0 22px 36px -16px rgba(15, 23, 42, 0.6);
     }
 
+    /* Graceful glide when a finished note parks itself. */
+    .note-flying {
+        transition:
+            left 700ms cubic-bezier(0.22, 1, 0.36, 1),
+            top 700ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .note-flying .sticky-note {
+        transform: rotate(calc(var(--rot, 0deg) * 0.35)) scale(1.04);
+        box-shadow: 0 26px 44px -20px rgba(15, 23, 42, 0.6);
+    }
+
+    /* Quick, quiet exit: the note recedes with a short fade and shrink. */
     .sticky-note--exiting {
-        animation: note-dissolve 560ms ease-in forwards;
         pointer-events: none;
+        animation: note-vanish 240ms ease-in forwards;
     }
 
     @keyframes note-pop {
         from {
             opacity: 0;
-            transform: rotate(var(--rot, 0deg)) scale(0.85);
+            transform: rotate(var(--rot, 0deg)) translateY(14px) scale(0.94);
         }
     }
 
-    @keyframes note-dissolve {
-        0% {
-            opacity: 1;
-            filter: blur(0);
-            transform: rotate(var(--rot, 0deg)) scale(1);
-        }
-        100% {
+    @keyframes note-vanish {
+        to {
             opacity: 0;
-            filter: blur(7px);
-            transform: rotate(var(--rot, 0deg)) translateY(-14px) scale(1.06);
-        }
-    }
-
-    .dust {
-        position: absolute;
-        border-radius: 9999px;
-        opacity: 0;
-        animation: dust-fly var(--dur, 500ms) ease-out var(--delay, 0ms) forwards;
-    }
-
-    @keyframes dust-fly {
-        0% {
-            opacity: 0.95;
-            transform: translate3d(0, 0, 0) scale(1);
-        }
-        100% {
-            opacity: 0;
-            transform: translate3d(var(--dx, 0), var(--dy, -30px), 0) rotate(var(--dust-rot, 0deg)) scale(0.2);
+            transform: rotate(var(--rot, 0deg)) scale(0.9);
         }
     }
 
@@ -593,12 +661,20 @@
             transform: rotate(var(--rot, 0deg));
         }
 
+        /* Re-enable the exit as a plain fade (no scale). */
         .sticky-note--exiting {
-            animation: note-fade 180ms ease forwards;
+            animation: note-fade 200ms ease forwards;
         }
 
-        .dust {
-            display: none;
+        /* Still a glide, just short and without the lift. */
+        .note-flying {
+            transition:
+                left 240ms ease-out,
+                top 240ms ease-out;
+        }
+
+        .note-flying .sticky-note {
+            transform: rotate(var(--rot, 0deg));
         }
     }
 

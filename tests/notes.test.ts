@@ -1,11 +1,15 @@
 import { describe, expect, test } from 'bun:test'
 import {
     clampToViewport,
-    nextFreeNotePosition,
+    cleanPoints,
+    hasPointContent,
+    nextFreeNoteSlot,
     NOTE_COLORS,
-    nextNotePosition,
+    noteSlots,
+    noteStagePosition,
     noteRotation,
     pickNoteColor,
+    splitNoteText,
 } from '$lib/utils/notes'
 
 describe('clampToViewport', () => {
@@ -19,45 +23,44 @@ describe('clampToViewport', () => {
     })
 })
 
-describe('nextNotePosition', () => {
-    test('cascades successive notes by a fixed step', () => {
-        const first = nextNotePosition(0, 1000, 800)
-        const second = nextNotePosition(1, 1000, 800)
-        expect(second.x - first.x).toBe(28)
-        expect(second.y - first.y).toBe(28)
+describe('noteStagePosition', () => {
+    test('centres the note in the viewport', () => {
+        expect(noteStagePosition(1000, 800)).toEqual({ x: (1000 - 236) / 2, y: (800 - 148) / 2 })
     })
 
-    test('stays inside the viewport for a long run of notes', () => {
-        for (let index = 0; index < 40; index++) {
-            const { x, y } = nextNotePosition(index, 1000, 800)
-            expect(x).toBeGreaterThanOrEqual(12)
-            expect(y).toBeGreaterThanOrEqual(12)
-            expect(x).toBeLessThanOrEqual(1000 - 236 - 12)
-            expect(y).toBeLessThanOrEqual(800 - 148 - 12)
+    test('clamps inside a tiny viewport', () => {
+        expect(noteStagePosition(100, 100)).toEqual({ x: 12, y: 12 })
+    })
+})
+
+describe('noteSlots', () => {
+    test('returns a grid inside the safe margins', () => {
+        const slots = noteSlots(1000, 800)
+        expect(slots.length).toBeGreaterThan(0)
+        for (const slot of slots) {
+            expect(slot.x).toBeGreaterThanOrEqual(76)
+            expect(slot.y).toBeGreaterThanOrEqual(56)
+            expect(slot.x + 236).toBeLessThanOrEqual(1000 - 76)
+            expect(slot.y + 148).toBeLessThanOrEqual(800 - 12)
         }
     })
 })
 
-describe('nextFreeNotePosition', () => {
-    test('returns the first cascade slot when nothing is occupied', () => {
-        expect(nextFreeNotePosition([], 1000, 800)).toEqual(nextNotePosition(0, 1000, 800))
+describe('nextFreeNoteSlot', () => {
+    test('parks below the reserved content when there is room', () => {
+        const content = { x: 300, y: 180, width: 400, height: 220 }
+        const slot = nextFreeNoteSlot([], [content], 1000, 800)
+        expect(slot.y).toBeGreaterThanOrEqual(content.y + content.height)
     })
 
-    test('skips slots already occupied by another note', () => {
-        const occupied = [nextNotePosition(0, 1000, 800)]
-        expect(nextFreeNotePosition(occupied, 1000, 800)).toEqual(nextNotePosition(1, 1000, 800))
+    test('skips a slot occupied by an existing note', () => {
+        const first = nextFreeNoteSlot([], [], 1000, 800)
+        expect(nextFreeNoteSlot([first], [], 1000, 800)).not.toEqual(first)
     })
 
-    test('keeps advancing past several occupied slots', () => {
-        const occupied = [0, 1, 2].map((index) => nextNotePosition(index, 1000, 800))
-        expect(nextFreeNotePosition(occupied, 1000, 800)).toEqual(nextNotePosition(3, 1000, 800))
-    })
-
-    test('still returns a clamped position when every slot is occupied', () => {
-        const occupied = Array.from({ length: 40 }, (_, index) => nextNotePosition(index, 1000, 800))
-        const position = nextFreeNotePosition(occupied, 1000, 800)
-        expect(position.x).toBeGreaterThanOrEqual(12)
-        expect(position.y).toBeGreaterThanOrEqual(12)
+    test('falls back to the stage position when everything is blocked', () => {
+        const occupied = noteSlots(1000, 800)
+        expect(nextFreeNoteSlot(occupied, [], 1000, 800)).toEqual(noteStagePosition(1000, 800))
     })
 })
 
@@ -83,5 +86,45 @@ describe('noteRotation', () => {
             expect(rotation).toBeGreaterThanOrEqual(-3)
             expect(rotation).toBeLessThanOrEqual(3)
         }
+    })
+})
+
+describe('splitNoteText', () => {
+    test('splits legacy newline text into points sharing the done flag', () => {
+        expect(splitNoteText('one\ntwo', true)).toEqual([
+            { text: 'one', done: true },
+            { text: 'two', done: true },
+        ])
+    })
+
+    test('falls back to a single empty point for empty or missing text', () => {
+        expect(splitNoteText('', false)).toEqual([{ text: '', done: false }])
+        expect(splitNoteText(undefined, false)).toEqual([{ text: '', done: false }])
+    })
+})
+
+describe('cleanPoints', () => {
+    test('trims text and drops blanks while keeping order and done', () => {
+        expect(
+            cleanPoints([
+                { text: '  one ', done: false },
+                { text: '   ', done: true },
+                { text: 'two', done: true },
+            ])
+        ).toEqual([
+            { text: 'one', done: false },
+            { text: 'two', done: true },
+        ])
+    })
+
+    test('returns an empty list when every point is blank', () => {
+        expect(cleanPoints([{ text: ' ', done: false }])).toEqual([])
+    })
+})
+
+describe('hasPointContent', () => {
+    test('ignores whitespace-only points', () => {
+        expect(hasPointContent([{ text: '  ' }])).toBe(false)
+        expect(hasPointContent([{ text: '  ' }, { text: 'x' }])).toBe(true)
     })
 })
