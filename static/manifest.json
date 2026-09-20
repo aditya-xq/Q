@@ -4,7 +4,7 @@
     "version": "0.3.4",
     "description": "An extension that converts your new tab into a productivity powerhouse.",
     "minimum_chrome_version": "114",
-    "permissions": ["topSites", "geolocation"],
+    "permissions": ["topSites", "geolocation", "clipboardWrite"],
     "chrome_url_overrides": {
         "newtab": "index.html"
     },

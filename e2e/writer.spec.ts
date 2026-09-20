@@ -2,6 +2,31 @@ import { expect, test } from '@playwright/test'
 import { openViewShortcut, waitForAutosave } from './helpers'
 
 test.describe('Writer', () => {
+    test.describe('copy markdown', () => {
+        test.use({ permissions: ['clipboard-read', 'clipboard-write'] })
+
+        test('copies the current draft markdown and resets the button label', async ({ page }) => {
+            await openViewShortcut(page, 'w')
+            const editor = page.locator('.milkdown .ProseMirror')
+            await expect(editor).toBeVisible({ timeout: 20_000 })
+
+            await editor.click()
+            await page.keyboard.type('Clipboard note')
+
+            const copyButton = page.getByRole('button', { name: 'Copy markdown to clipboard' })
+            await copyButton.click()
+
+            await expect(copyButton.getByText('Copied', { exact: true })).toBeVisible()
+            await expect(page.getByText('Markdown copied to clipboard')).toBeVisible()
+
+            const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
+            expect(clipboardText).toContain('Clipboard note')
+
+            // The label flips back after the confirmation window.
+            await expect(copyButton.getByText('Copy', { exact: true })).toBeVisible({ timeout: 5_000 })
+        })
+    })
+
     test('writes, autosaves and lists the draft', async ({ page }) => {
         await openViewShortcut(page, 'w')
 

@@ -25,6 +25,8 @@
     let voiceSupported = $state(true)
     let voiceTogglePending = $state(false)
     let voiceControllerVersion = 0
+    let copied = $state(false)
+    let copyResetTimer: number | undefined
     let skipNextEditorSync = $state(true)
     let onKeyboardShortcut: ((event: KeyboardEvent) => void) | null = null
 
@@ -214,6 +216,22 @@
         }
     }
 
+    async function copyMarkdown() {
+        const markdown = editorApi?.getMarkdown() ?? content
+        try {
+            await navigator.clipboard.writeText(markdown)
+            copied = true
+            toast.success('Markdown copied to clipboard', 2500)
+            if (copyResetTimer) clearTimeout(copyResetTimer)
+            copyResetTimer = window.setTimeout(() => {
+                copyResetTimer = undefined
+                copied = false
+            }, 2000)
+        } catch {
+            toast.error('Failed to copy markdown', 3500)
+        }
+    }
+
     function isVoiceShortcut(event: KeyboardEvent) {
         const key = event.key.toLowerCase()
         return (event.ctrlKey || event.metaKey) && event.altKey && !event.shiftKey && key === 'v'
@@ -373,6 +391,10 @@
             onKeyboardShortcut = null
         }
         clearAutosaveTimer()
+        if (copyResetTimer) {
+            clearTimeout(copyResetTimer)
+            copyResetTimer = undefined
+        }
         if (voiceController) {
             const controllerToDestroy = voiceController
             voiceController = null
@@ -477,6 +499,48 @@
                                 </svg>
                             {/if}
                             <span class="text-xs font-medium">{isVoiceRunning ? 'Stop' : 'Voice'}</span>
+                        </div>
+                    </button>
+
+                    <button
+                        class={`group rounded-md sm:rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 border transition-all shadow-sm active:scale-95 ${
+                            copied
+                                ? 'bg-emerald-100 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300'
+                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                        }`}
+                        onclick={copyMarkdown}
+                        aria-label="Copy markdown to clipboard"
+                    >
+                        <div class="flex items-center gap-1.5 sm:gap-2">
+                            {#if copied}
+                                <svg
+                                    class="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    aria-hidden="true"
+                                >
+                                    <path d="M20 6L9 17l-5-5"></path>
+                                </svg>
+                            {:else}
+                                <svg
+                                    class="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    aria-hidden="true"
+                                >
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+                                </svg>
+                            {/if}
+                            <span class="text-xs font-medium">{copied ? 'Copied' : 'Copy'}</span>
                         </div>
                     </button>
 
