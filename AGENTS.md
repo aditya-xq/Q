@@ -55,6 +55,7 @@ src/
       constants.ts     Shared quick-link/category defaults, icons, URL helpers
       browser.ts       Typed chrome/browser API access (topSites, permissions)
       utils.ts         deriveTitle(), clickOutside action
+      writeup.ts       Derived draft title + Writeup -> WriteupSummary projection (unit-tested)
       datetime.ts      Pure date helpers (startOfDay/Week, isToday/Week, relative + autosave formatting)
       weather.ts       Pure weather mapping/formatting (WMO codes, AQI, buildWeather)
       view.ts          View query-param parsing (VALID_VIEWS, getViewFromUrl)
@@ -78,6 +79,7 @@ static/
 - IndexedDB is the source of truth. `QUICK_TODO_PROJECT_ID = -1` (`utils/constants.ts`) is a reserved pseudo-project; always exclude it from project lists.
 - Cross-tab/global sync uses Dexie `liveQuery` subscriptions created in `+layout.svelte` (`observeProjects`, `observeWriteups`, `observeQuickTasks`). Mutations write to Dexie and rely on the observers to refresh `appState`; do not refresh `appState` manually or query Dexie ad-hoc from components when a store helper exists.
 - liveQuery queriers must issue their first Dexie read synchronously (no `await` of an external promise such as `ensureDBReady()` before `db.*`), or Dexie's query scope is lost and the subscription never re-fires. `ensureDBReady()` guards every other DB call.
+- `appState.writeups` holds `WriteupSummary[]` (title + timestamps, no body); `title` is derived and stored on save, and legacy rows derive it on read. Fetch full `content` on demand via `getWriteup()`.
 - `db.ts` schema (`version(2)`) indexes only queried columns; don't add indexes on free-text columns (`content`, `text`, etc.).
 - Svelte 5 runes only (`$state`, `$derived`, `$props`, `$effect`, `onMount`). Never write Svelte 4 `export let` / `$:` / `on:click`.
 - The writer/editor bundle is **lazy-loaded** in `+page.svelte` via dynamic `import()`; never statically import `WriterView`/`Editor` from the `$lib/components` barrel.
@@ -97,7 +99,7 @@ static/
 ### Unit (`bun run test:unit`, `tests/**`)
 
 - Bun's built-in runner (`bun:test`); `bun test` must be scoped to `tests/` so it never picks up Playwright specs.
-- Only pure modules are unit-tested (no Svelte runes / Dexie / DOM). Current coverage: `deriveTitle`, `textPostProcess` (voice), `constants` URL/icon helpers, `browser`, `weather`, `datetime`, `view`, `tasks`.
+- Only pure modules are unit-tested (no Svelte runes / Dexie / DOM). Current coverage: `deriveTitle`, `textPostProcess` (voice), `constants` URL/icon helpers, `browser`, `weather`, `datetime`, `view`, `tasks`, `writeup`.
 - Keep pure logic in `utils/*.ts` so it stays testable; add a `tests/<module>.test.ts` alongside non-trivial changes.
 
 ### e2e (`bun run test:e2e`, `e2e/**`)
@@ -106,6 +108,7 @@ static/
 - Web tests run against `vite preview`; the `webServer` builds `build:web` first. Each test gets an isolated context, so IndexedDB starts empty.
 - `openHome()` / `openViewShortcut()` live in `e2e/helpers.ts`. Prefer accessible-role locators and stable ids (e.g. `input[id^="task-edit-"]`) over positional selectors.
 - Cover happy, unhappy (blank/duplicate input, cancel) and edge (reload persistence, ordering, toggling back) paths per view. Mobile specs set a viewport via `test.use`.
+- `migration.spec.ts` seeds a v1 IndexedDB and asserts the v2 upgrade; `sync.spec.ts` opens two tabs for cross-tab sync; `weather.spec.ts` mocks the weather/fetch + geolocation APIs.
 - Live/extension suites are gated by `E2E_LIVE=1` / `RUN_EXTENSION_E2E=1` and must not run in the default `bun run test:e2e`.
 
 ## Self-Improvement Protocol

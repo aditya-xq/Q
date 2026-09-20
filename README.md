@@ -87,7 +87,7 @@ The build target is selected with `BUILD_TARGET=web|extension` (wired into the b
 
 ### Testing
 
-Unit tests cover the pure modules (title derivation, voice text post-processing, URL/date/weather/view/task helpers) with [Bun's test runner](https://bun.sh/docs/cli/test):
+Unit tests cover the pure modules (title/draft-title derivation, voice text post-processing, URL/date/weather/view/task helpers) with [Bun's test runner](https://bun.sh/docs/cli/test):
 
 ```bash
 bun run test:unit           # run unit tests
