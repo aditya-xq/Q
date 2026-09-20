@@ -2,7 +2,6 @@
     import { onMount, onDestroy } from 'svelte'
     import { Crepe } from '@milkdown/crepe'
     import { editorViewCtx } from '@milkdown/kit/core'
-    import { Selection } from '@milkdown/kit/prose/state'
     import { replaceAll } from '@milkdown/kit/utils'
     import '@milkdown/crepe/theme/common/style.css'
     import '@milkdown/crepe/theme/nord-dark.css'
@@ -66,20 +65,6 @@
         })
     }
 
-    function moveCursorToEnd(): EditorRange {
-        if (!crepe) return { from: 1, to: 1 }
-        return crepe.editor.action((ctx) => {
-            const view = ctx.get(editorViewCtx)
-            const transaction = view.state.tr.setSelection(Selection.atEnd(view.state.doc))
-            view.dispatch(transaction.scrollIntoView())
-            view.focus()
-            return {
-                from: view.state.selection.from,
-                to: view.state.selection.to,
-            }
-        })
-    }
-
     function getMarkdown() {
         return crepe?.getMarkdown() ?? value
     }
@@ -97,7 +82,6 @@
         return {
             getSelectionRange,
             replaceRange,
-            moveCursorToEnd,
             focus,
             getMarkdown,
             setContent,

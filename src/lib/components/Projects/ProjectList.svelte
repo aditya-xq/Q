@@ -5,18 +5,23 @@
     import { fly, slide } from 'svelte/transition'
     import { DeleteButton } from '../shared'
 
-    let { selectedProjectId, onProjectSelection } = $props()
+    let {
+        selectedProjectId,
+        onProjectSelection,
+    }: {
+        selectedProjectId: number | null
+        onProjectSelection: (id: number) => void
+    } = $props()
 
     let newProjectTitle = $state('')
     let isAddingProject = $state(false)
 
     async function addNewProject() {
         if (newProjectTitle.trim() !== '') {
-            await addProject(newProjectTitle)
+            const id = await addProject(newProjectTitle)
             newProjectTitle = ''
             isAddingProject = false
-            selectedProjectId = appState.projectStore[0]?.id ?? null
-            onProjectSelection(selectedProjectId)
+            onProjectSelection(id)
         }
     }
 
@@ -59,25 +64,20 @@
             <div class="p-1.5 sm:p-2 space-y-1">
                 {#each appState.projectStore as project (project.id)}
                     <div
-                        role="button"
-                        tabindex="0"
-                        aria-current={selectedProjectId === project.id ? 'true' : undefined}
-                        class={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200 group relative cursor-pointer ${
+                        class={`group relative rounded-lg transition-all duration-200 ${
                             selectedProjectId === project.id
                                 ? 'bg-slate-200/80 dark:bg-slate-800/80 shadow-sm ring-1 ring-slate-300/50 dark:ring-slate-700/50'
                                 : 'hover:bg-slate-100/80 dark:hover:bg-slate-800/70'
                         }`}
-                        onclick={() => onProjectSelection(project.id as number)}
-                        onkeydown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault()
-                                onProjectSelection(project.id as number)
-                            }
-                        }}
                         transition:fly={{ y: -10, duration: 300, easing: quintOut }}
                     >
-                        <div class="flex items-center justify-between gap-2">
-                            <div class="grow min-w-0">
+                        <button
+                            type="button"
+                            aria-current={selectedProjectId === project.id ? 'true' : undefined}
+                            class="block w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg cursor-pointer"
+                            onclick={() => onProjectSelection(project.id as number)}
+                        >
+                            <div class="pr-9">
                                 <h3
                                     class={`font-medium text-sm sm:text-base truncate ${
                                         selectedProjectId === project.id
@@ -92,12 +92,9 @@
                                     {project.tasks.length === 1 ? 'task' : 'tasks'}
                                 </p>
                             </div>
-                            <div class="shrink-0">
-                                <DeleteButton
-                                    label="project"
-                                    handleDelete={() => deleteProject(project.id as number)}
-                                />
-                            </div>
+                        </button>
+                        <div class="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2">
+                            <DeleteButton label="project" handleDelete={() => deleteProject(project.id as number)} />
                         </div>
                     </div>
                 {/each}

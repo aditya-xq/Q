@@ -51,6 +51,14 @@ export class MyAppDB extends Dexie {
             quicklinks: '++id, category, name, url',
             settings: '&key',
         })
+        // Drop indexes on large free-text columns that are never queried.
+        this.version(2).stores({
+            writeups: '++id, updatedAt',
+            projects: '++id',
+            tasks: '++id, projectId',
+            quicklinks: '++id, category',
+            settings: '&key',
+        })
     }
 }
 
@@ -124,13 +132,6 @@ export async function getAllSettings(): Promise<Record<string, boolean | string 
         },
         {} as Record<string, boolean | string | number>
     )
-}
-
-// Helper function to get a setting with type safety
-export async function getSetting<T = boolean | string | number>(key: string, defaultValue?: T): Promise<T | undefined> {
-    await ensureDBReady()
-    const setting = await db.settings.get(key)
-    return setting ? (setting.value as T) : defaultValue
 }
 
 // Helper function to set a setting

@@ -1,7 +1,8 @@
 <script lang="ts">
     import { FrequentSites, Notification, ProjectGrid, Quote, Weather } from '$lib/components'
-    import { appState, type View } from '$lib/state.svelte'
+    import { appState } from '$lib/state.svelte'
     import { getTopSites, type BrowserSite } from '$lib/utils/browser'
+    import { getViewFromUrl } from '$lib/utils/view'
     import type { Component } from 'svelte'
     import { onMount } from 'svelte'
     import { fade, fly } from 'svelte/transition'
@@ -9,7 +10,6 @@
 
     let frequentSites = $state<BrowserSite[]>([])
     let WriterView = $state<Component | null>(null)
-    const validViews = new Set<View>(['home', 'quick-panel', 'projects', 'writer'])
 
     const fallbackSites: BrowserSite[] = [
         { url: 'https://github.com', title: 'GitHub' },
@@ -21,13 +21,6 @@
         { url: 'https://medium.com', title: 'Medium' },
         { url: 'https://netflix.com', title: 'Netflix' },
     ]
-
-    function getViewFromUrl(url: URL): View {
-        const viewParam = url.searchParams.get('view')
-        if (!viewParam) return 'home'
-        const normalized = viewParam.toLowerCase() as View
-        return validViews.has(normalized) ? normalized : 'home'
-    }
 
     function syncViewFromUrl() {
         if (typeof window === 'undefined') return

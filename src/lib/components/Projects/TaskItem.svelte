@@ -12,6 +12,7 @@
 
     let editing = $state(false)
     let editedText = $state('')
+    let editInput = $state<HTMLInputElement | undefined>(undefined)
 
     $effect(() => {
         if (!editing) editedText = task.text
@@ -30,11 +31,8 @@
     }
 
     $effect(() => {
-        if (editing) {
-            setTimeout(() => {
-                const input = document.getElementById(`task-edit-${task.id}`)
-                if (input) input.focus()
-            }, 10)
+        if (editing && editInput) {
+            editInput.focus()
         }
     })
 </script>
@@ -66,6 +64,7 @@
             {#if editing}
                 <input
                     id={`task-edit-${task.id}`}
+                    bind:this={editInput}
                     type="text"
                     bind:value={editedText}
                     class="w-full rounded-lg py-2 px-3 text-base bg-slate-100/80 dark:bg-slate-800/80 border-0 text-slate-700 dark:text-slate-200

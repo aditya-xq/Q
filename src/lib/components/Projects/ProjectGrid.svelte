@@ -1,7 +1,6 @@
 <script lang="ts">
-    import { loadProjects } from '$lib/utils/stores'
-    import { onMount, onDestroy } from 'svelte'
     import { appState } from '$lib/state.svelte'
+    import { createMobileDrawer } from '$lib/utils/mobileDrawer.svelte'
     import { fade, slide, fly } from 'svelte/transition'
     import { quintOut } from 'svelte/easing'
     import TaskItem from './TaskItem.svelte'
@@ -12,17 +11,21 @@
 
     let selectedProjectId = $state<number | null>(null)
     let showCompleted = $state(false)
+    // Tracks ids seen in the store so a freshly created (not-yet-observed) project
+    // is not mistaken for a deleted one.
+    let knownProjectIds = new Set<number>()
 
-    onMount(() => {
-        void loadProjects()
-    })
-
-    // Auto-select the first project once loaded, and recover if the current one disappears.
+    // Auto-select the first project once loaded, and recover if the current one is deleted.
     $effect(() => {
-        const stillExists = appState.projectStore.some((project) => project.id === selectedProjectId)
-        if (!stillExists && appState.projectStore.length > 0) {
-            selectedProjectId = appState.projectStore[0].id as number
+        const currentIds = new Set(appState.projectStore.map((project) => project.id as number))
+        if (selectedProjectId === null) {
+            if (appState.projectStore.length > 0) {
+                selectedProjectId = appState.projectStore[0].id as number
+            }
+        } else if (!currentIds.has(selectedProjectId) && knownProjectIds.has(selectedProjectId)) {
+            selectedProjectId = appState.projectStore[0]?.id ?? null
         }
+        knownProjectIds = currentIds
     })
 
     function onToggleComplete() {
@@ -47,39 +50,7 @@
     )
 
     // Mobile sidebar state
-    let mobileMenuOpen = $state(false)
-    let isAnimating = $state(false)
-
-    function toggleMobileMenu() {
-        if (mobileMenuOpen) {
-            closeMobileMenu()
-        } else {
-            openMobileMenu()
-        }
-    }
-
-    function openMobileMenu() {
-        mobileMenuOpen = true
-        document.body.style.overflow = 'hidden'
-
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                isAnimating = true
-            })
-        })
-    }
-
-    function closeMobileMenu() {
-        isAnimating = false
-        setTimeout(() => {
-            mobileMenuOpen = false
-            document.body.style.overflow = ''
-        }, 300)
-    }
-
-    onDestroy(() => {
-        document.body.style.overflow = ''
-    })
+    const drawer = createMobileDrawer()
 </script>
 
 <div class={`container mx-auto px-3 sm:px-4 md:px-8 transition-all duration-300 ease-in-out ${quickPanelPadding}`}>
@@ -95,7 +66,7 @@
             <div class="md:hidden flex items-center justify-end mb-3 sm:mb-4">
                 <button
                     class="group relative rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm hover:shadow active:scale-95"
-                    onclick={toggleMobileMenu}
+                    onclick={drawer.toggleDrawer}
                     aria-label="Open projects"
                 >
                     <div class="flex items-center gap-1.5 sm:gap-2">
@@ -216,14 +187,14 @@
         </div>
 
         <!-- Mobile Projects Sidebar -->
-        {#if mobileMenuOpen}
+        {#if drawer.open}
             <!-- Backdrop -->
             <div
                 class="md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-300"
-                class:opacity-0={!isAnimating}
-                class:opacity-100={isAnimating}
-                onclick={closeMobileMenu}
-                onkeydown={closeMobileMenu}
+                class:opacity-0={!drawer.animating}
+                class:opacity-100={drawer.animating}
+                onclick={drawer.closeDrawer}
+                onkeydown={drawer.closeDrawer}
                 aria-label="Close projects panel"
                 role="button"
                 tabindex="-1"
@@ -232,8 +203,8 @@
             <!-- Sliding panel from right -->
             <div
                 class="md:hidden fixed right-0 top-0 bottom-0 w-84 max-w-[85vw] bg-slate-50 dark:bg-slate-950 z-50 shadow-2xl overflow-y-auto border-l border-slate-200 dark:border-slate-800 transition-transform duration-300 ease-out"
-                class:translate-x-0={isAnimating}
-                class:translate-x-full={!isAnimating}
+                class:translate-x-0={drawer.animating}
+                class:translate-x-full={!drawer.animating}
             >
                 <!-- Header with close button -->
                 <div
@@ -248,7 +219,7 @@
                     </div>
                     <button
                         class="rounded-lg p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors active:scale-95"
-                        onclick={closeMobileMenu}
+                        onclick={drawer.closeDrawer}
                         aria-label="Close projects panel"
                     >
                         <svg
@@ -273,7 +244,7 @@
                         {selectedProjectId}
                         onProjectSelection={(id: number) => {
                             onProjectSelection(id)
-                            closeMobileMenu()
+                            drawer.closeDrawer()
                         }}
                     />
                 </div>

@@ -13,9 +13,10 @@
     let quickLinks = $state<QuickLink[]>(DEFAULT_QUICK_LINKS.map((link) => ({ ...link })))
     let savingState = $state(Array(categoryConfigs.length).fill(false))
     let savedState = $state(Array(categoryConfigs.length).fill(false))
-    let saveTimeouts = $state<(ReturnType<typeof setTimeout> | null)[]>(Array(categoryConfigs.length).fill(null))
+    let saveTimeouts: (ReturnType<typeof setTimeout> | null)[] = Array(categoryConfigs.length).fill(null)
     let customUrls = $state(Array(categoryConfigs.length).fill(''))
     let showSettings = $state(false)
+    let panelEl = $state<HTMLElement | undefined>(undefined)
 
     const hasUnsavedChanges = $derived(savingState.some(Boolean) || savedState.some(Boolean))
 
@@ -36,23 +37,21 @@
                 customUrls[index] = link.url
             }
         })
-
-        if (typeof window !== 'undefined') {
-            handleKey = (e: KeyboardEvent) => {
-                if (e.altKey && e.key.toLowerCase() === 's') toggleSettingsView()
-            }
-            handleClickOutside = (e: MouseEvent) => {
-                const settingsElement = document.querySelector('[data-settings-panel]')
-                if (settingsElement && !settingsElement.contains(e.target as Node)) {
-                    showSettings = false
-                }
-            }
-            window.addEventListener('keydown', handleKey)
-            window.addEventListener('mousedown', handleClickOutside)
-        }
     }
 
-    onMount(loadSettings)
+    onMount(() => {
+        handleKey = (e: KeyboardEvent) => {
+            if (e.altKey && e.key.toLowerCase() === 's') toggleSettingsView()
+        }
+        handleClickOutside = (e: MouseEvent) => {
+            if (panelEl && !panelEl.contains(e.target as Node)) {
+                showSettings = false
+            }
+        }
+        window.addEventListener('keydown', handleKey)
+        window.addEventListener('mousedown', handleClickOutside)
+        void loadSettings()
+    })
 
     onDestroy(() => {
         if (typeof window === 'undefined') return
@@ -139,7 +138,7 @@
     }
 </script>
 
-<div class="fixed bottom-3 sm:bottom-5 left-2 sm:left-3 z-1000" data-settings-panel>
+<div class="fixed bottom-3 sm:bottom-5 left-2 sm:left-3 z-1000" data-settings-panel bind:this={panelEl}>
     {#if showSettings}
         <div
             class="absolute bottom-full mb-2 sm:mb-3 w-[calc(100vw-1rem)] sm:w-[calc(100vw-2.5rem)] max-w-xl origin-bottom-left"

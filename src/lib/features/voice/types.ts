@@ -24,7 +24,6 @@ export interface EditorRange {
 export interface EditorApi {
     getSelectionRange: () => EditorRange
     replaceRange: (range: EditorRange, text: string) => EditorRange
-    moveCursorToEnd: () => EditorRange
     focus: () => void
     getMarkdown: () => string
     setContent: (markdown: string) => void
@@ -46,7 +45,6 @@ export interface VoiceTypingController {
     stop: () => Promise<void>
     destroy: () => Promise<void>
     isActive: () => boolean
-    updateConfig: (partial: Partial<VoiceTypingConfig>) => void
 }
 
 export const DEFAULT_VOICE_CONFIG: VoiceTypingConfig = {

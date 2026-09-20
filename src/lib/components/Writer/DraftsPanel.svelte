@@ -1,43 +1,12 @@
 <script lang="ts">
     import { appState } from '$lib/state.svelte'
     import { deriveTitle } from '$lib/utils/utils'
+    import { formatRelative, isThisWeek, isToday } from '$lib/utils/datetime'
     import { DeleteButton } from '../shared'
     import { slide } from 'svelte/transition'
     import { cubicOut } from 'svelte/easing'
-    import { SvelteDate } from 'svelte/reactivity'
 
     let { createNewDraft, currentWriteupId, openDraft, removeDraft } = $props()
-
-    // --- Date Logic ---
-    function startOfDay(d: Date) {
-        const x = new SvelteDate(d.getTime())
-        x.setHours(0, 0, 0, 0)
-        return x
-    }
-
-    function startOfWeek(d: Date) {
-        const x = startOfDay(d)
-        const day = x.getDay() // 0 (Sun) - 6
-        const diff = (day + 6) % 7 // make Monday start of week
-        x.setDate(x.getDate() - diff)
-        return x
-    }
-
-    function isToday(date: Date) {
-        return date.getTime() >= startOfDay(new SvelteDate(Date.now())).getTime()
-    }
-
-    function isThisWeek(date: Date) {
-        return date.getTime() >= startOfWeek(new SvelteDate(Date.now())).getTime()
-    }
-
-    function formatRelative(date: Date) {
-        const diff = Math.floor((Date.now() - date.getTime()) / 1000)
-        if (diff < 60) return 'Just now'
-        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-    }
 
     // --- Derived State ---
     let writeups = $derived(appState.writeups || [])
@@ -113,7 +82,7 @@
                                 onclick={() => openDraft(w.id)}
                             >
                                 <span class="truncate text-sm font-medium text-slate-800 dark:text-slate-200">
-                                    {deriveTitle(w.content) || 'Untitled Draft'}
+                                    {deriveTitle(w.content, { fallback: 'Untitled Draft' })}
                                 </span>
                                 <span class="truncate text-xs text-slate-300 group-hover:text-slate-400">
                                     {formatRelative(new Date(w.updatedAt))}
@@ -199,7 +168,7 @@
                                 onclick={() => openDraft(w.id)}
                             >
                                 <span class="truncate text-sm font-medium text-slate-800 dark:text-slate-200">
-                                    {deriveTitle(w.content) || 'Untitled Draft'}
+                                    {deriveTitle(w.content, { fallback: 'Untitled Draft' })}
                                 </span>
                                 <span class="truncate text-xs text-slate-300 group-hover:text-slate-400">
                                     {formatRelative(new Date(w.updatedAt))}

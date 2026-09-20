@@ -121,10 +121,6 @@ export class NativeSpeechTypingController implements VoiceTypingController {
         this.config = { ...DEFAULT_VOICE_CONFIG, ...(config ?? {}) }
     }
 
-    updateConfig(partial: Partial<VoiceTypingConfig>) {
-        this.config = { ...this.config, ...partial }
-    }
-
     isActive() {
         return this.active
     }

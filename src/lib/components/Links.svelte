@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte'
     import { liveQuery } from 'dexie'
-    import type { QuickLink } from '$lib/utils/db'
+    import { db, type QuickLink } from '$lib/utils/db'
     import {
         DEFAULT_QUICK_LINKS,
         FAVICON_FALLBACK,
@@ -9,7 +9,6 @@
         extractNameFromUrl,
         getQuickLinkIcon,
     } from '$lib/utils/constants'
-    import { getAllQuickLinks } from '$lib/stores/quicklinks'
 
     let quickLinks = $state<QuickLink[]>([])
     let isOpen = $state(false)
@@ -22,7 +21,8 @@
 
     onMount(() => {
         const subscription = liveQuery(async () => {
-            const stored = await getAllQuickLinks()
+            // The Dexie read is issued synchronously so liveQuery can track it.
+            const stored = await db.quicklinks.toArray()
             const filtered = stored.filter((link) =>
                 (QUICK_LINK_CATEGORIES as readonly string[]).includes(link.category)
             )

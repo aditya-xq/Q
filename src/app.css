@@ -106,25 +106,25 @@
 }
 
 /* Dark mode support */
-:global(.dark) [data-tooltip]::before {
+.dark [data-tooltip]::before {
     background-color: rgb(51 65 85);
 }
 
-:global(.dark) [data-tooltip]::after {
+.dark [data-tooltip]::after {
     border-left-color: rgb(51 65 85);
 }
 
-:global(.dark) [data-tooltip][data-tooltip-position='top']::after {
+.dark [data-tooltip][data-tooltip-position='top']::after {
     border-left-color: transparent;
     border-top-color: rgb(51 65 85);
 }
 
-:global(.dark) [data-tooltip][data-tooltip-position='bottom']::after {
+.dark [data-tooltip][data-tooltip-position='bottom']::after {
     border-left-color: transparent;
     border-bottom-color: rgb(51 65 85);
 }
 
-:global(.dark) [data-tooltip][data-tooltip-position='right']::after {
+.dark [data-tooltip][data-tooltip-position='right']::after {
     border-left-color: transparent;
     border-right-color: rgb(51 65 85);
 }

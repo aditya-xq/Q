@@ -1,22 +1,9 @@
 <script lang="ts">
     import { appState } from '$lib/state.svelte'
     import { hasPermission, isExtensionContext } from '$lib/utils/browser'
+    import { buildWeather, type Weather } from '$lib/utils/weather'
     import { fly } from 'svelte/transition'
     import { quintOut } from 'svelte/easing'
-
-    interface Weather {
-        temp: number
-        condition: string
-        location: string
-        icon: string
-        humidity: number
-        aqi: number
-        vibe: string
-        aqiCategory: string
-        aqiColor: string
-        lat: number
-        lon: number
-    }
 
     let weather = $state<Weather | null>(null)
     let loading = $state(false)
@@ -43,48 +30,6 @@
         } catch {
             /* storage unavailable (private mode / quota) */
         }
-    }
-
-    const weatherMap: Record<number, string> = {
-        0: 'Clear',
-        1: 'Fair',
-        2: 'Partly Cloudy',
-        3: 'Overcast',
-        45: 'Foggy',
-        48: 'Foggy',
-        51: 'Drizzle',
-        53: 'Drizzle',
-        55: 'Drizzle',
-        61: 'Rain',
-        63: 'Rain',
-        65: 'Rain',
-        71: 'Snow',
-        73: 'Snow',
-        75: 'Snow',
-        80: 'Rain Showers',
-        81: 'Rain Showers',
-        82: 'Rain Showers',
-        95: 'Stormy',
-        96: 'Stormy',
-        99: 'Stormy',
-    }
-
-    const getWeatherIcon = (code: number): string => {
-        if (code === 0) return '☀️'
-        if (code <= 3) return '⛅'
-        if (code >= 95) return '⛈️'
-        if (code >= 71 && code <= 75) return '❄️'
-        if (code >= 51 && code <= 65) return '🌧️'
-        if (code >= 80 && code <= 82) return '🌧️'
-        if (code >= 45 && code <= 48) return '🌫️'
-        return '☁️'
-    }
-
-    const getAqiMeta = (aqi: number) => {
-        if (aqi <= 50) return { label: 'Good', color: '#10b981' }
-        if (aqi <= 100) return { label: 'Moderate', color: '#f59e0b' }
-        if (aqi <= 150) return { label: 'Sensitive', color: '#f97316' }
-        return { label: 'Poor', color: '#ef4444' }
     }
 
     const fetchWeatherData = async (lat: number, lon: number) => {
@@ -114,23 +59,15 @@
                 throw new Error('No weather data available')
             }
 
-            const humidity = current.relative_humidity_2m ?? 0
-            const aqiValue = aData.current?.us_aqi ?? 0
-            const { label, color } = getAqiMeta(aqiValue)
-
-            const result: Weather = {
-                temp: Math.round(current.temperature_2m),
-                condition: weatherMap[current.weather_code] ?? 'Cloudy',
-                icon: getWeatherIcon(current.weather_code),
+            const result = buildWeather({
+                temperature: current.temperature_2m,
+                humidity: current.relative_humidity_2m ?? 0,
+                weatherCode: current.weather_code,
+                aqi: aData.current?.us_aqi ?? 0,
                 location: gData.city || gData.locality || gData.countryName || 'Unknown',
-                humidity: Math.round(humidity),
-                aqi: Math.round(aqiValue),
-                aqiCategory: label,
-                aqiColor: color,
-                vibe: current.temperature_2m > 25 ? 'Warm' : 'Cool',
                 lat,
                 lon,
-            }
+            })
 
             writeCache(result)
             weather = result

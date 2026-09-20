@@ -10,10 +10,8 @@ export async function loadWriteups(): Promise<void> {
 
 // Keep writeups in sync across tabs / mutations.
 export function observeWriteups(): Subscription {
-    return liveQuery(async () => {
-        await ensureDBReady()
-        return db.writeups.orderBy('updatedAt').reverse().toArray()
-    }).subscribe({
+    // Reads are issued synchronously so Dexie's liveQuery can track them.
+    return liveQuery(() => db.writeups.orderBy('updatedAt').reverse().toArray()).subscribe({
         next: (writeups) => {
             appState.writeups = writeups
         },
@@ -24,22 +22,18 @@ export function observeWriteups(): Subscription {
 export async function addWriteup(content: string, createdAt: number): Promise<number> {
     await ensureDBReady()
     const updatedAt = new Date()
-    const id = (await db.writeups.add({ content, updatedAt, createdAt })) as number
-    await loadWriteups()
-    return id
+    return (await db.writeups.add({ content, updatedAt, createdAt })) as number
 }
 
 export async function updateWriteup(id: number, content: string): Promise<void> {
     await ensureDBReady()
     const updatedAt = new Date()
     await db.writeups.update(id, { content, updatedAt })
-    await loadWriteups()
 }
 
 export async function deleteWriteup(id: number): Promise<void> {
     await ensureDBReady()
     await db.writeups.delete(id)
-    await loadWriteups()
 }
 
 export async function getWriteup(id: number): Promise<Writeup | undefined> {

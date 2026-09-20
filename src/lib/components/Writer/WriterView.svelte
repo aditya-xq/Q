@@ -7,6 +7,8 @@
     import { type EditorApi, type VoiceEngineState, type VoiceTypingController } from '$lib/features/voice/types'
     import { onDestroy, onMount } from 'svelte'
     import DraftsPanel from './DraftsPanel.svelte'
+    import { createMobileDrawer } from '$lib/utils/mobileDrawer.svelte'
+    import { formatAutosaveTime } from '$lib/utils/datetime'
 
     let content = $state('# ')
     let currentWriteupId = $state<number | undefined>(undefined)
@@ -62,21 +64,6 @@
 
     function buildVoiceUnavailableMessage() {
         return 'Browser voice typing is unavailable in this browser. Use Chrome, Edge, or Safari.'
-    }
-
-    function ordinal(n: number) {
-        const s = ['th', 'st', 'nd', 'rd']
-        const v = n % 100
-        return n + (s[(v - 20) % 10] || s[v] || s[0])
-    }
-
-    function formatAutosaveTime(d: Date | null) {
-        if (!d) return ''
-        const day = ordinal(d.getDate())
-        const month = d.toLocaleString(undefined, { month: 'short' })
-        const year = d.getFullYear()
-        const time = d.toLocaleString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true })
-        return `${day} ${month} ${year}, ${time}`
     }
 
     let saveStatusText = $derived(
@@ -399,39 +386,7 @@
     let quickPanelPadding = $derived(appState?.keepQuickPanelOpen ? 'lg:pl-56' : '')
 
     // Mobile sidebar state
-    let mobileMenuOpen = $state(false)
-    let isAnimating = $state(false)
-
-    function toggleMobileMenu() {
-        if (mobileMenuOpen) {
-            closeMobileMenu()
-        } else {
-            openMobileMenu()
-        }
-    }
-
-    function openMobileMenu() {
-        mobileMenuOpen = true
-        document.body.style.overflow = 'hidden'
-
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                isAnimating = true
-            })
-        })
-    }
-
-    function closeMobileMenu() {
-        isAnimating = false
-        setTimeout(() => {
-            mobileMenuOpen = false
-            document.body.style.overflow = ''
-        }, 300)
-    }
-
-    onDestroy(() => {
-        document.body.style.overflow = ''
-    })
+    const drawer = createMobileDrawer()
 </script>
 
 <div class={`container mx-auto p-3 sm:p-4 md:p-6 transition-all duration-300 ease-in-out ${quickPanelPadding}`}>
@@ -566,7 +521,7 @@
                             </button>
                             <button
                                 class="group relative rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm hover:shadow active:scale-95"
-                                onclick={toggleMobileMenu}
+                                onclick={drawer.toggleDrawer}
                                 aria-label="Open drafts"
                             >
                                 <div class="flex items-center gap-1.5 sm:gap-2">
@@ -616,13 +571,13 @@
                 <DraftsPanel {createNewDraft} {currentWriteupId} {openDraft} {removeDraft} />
             </div>
 
-            {#if mobileMenuOpen}
+            {#if drawer.open}
                 <div
                     class="md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-300"
-                    class:opacity-0={!isAnimating}
-                    class:opacity-100={isAnimating}
-                    onclick={closeMobileMenu}
-                    onkeydown={closeMobileMenu}
+                    class:opacity-0={!drawer.animating}
+                    class:opacity-100={drawer.animating}
+                    onclick={drawer.closeDrawer}
+                    onkeydown={drawer.closeDrawer}
                     aria-label="Close drafts panel"
                     role="button"
                     tabindex="-1"
@@ -630,8 +585,8 @@
 
                 <div
                     class="md:hidden fixed right-0 top-0 bottom-0 w-84 max-w-[85vw] bg-slate-50 dark:bg-slate-950 z-50 shadow-2xl overflow-y-auto border-l border-slate-200 dark:border-slate-800 transition-transform duration-300 ease-out"
-                    class:translate-x-0={isAnimating}
-                    class:translate-x-full={!isAnimating}
+                    class:translate-x-0={drawer.animating}
+                    class:translate-x-full={!drawer.animating}
                 >
                     <div
                         class="sticky top-0 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 px-3 sm:px-4 py-3 sm:py-3.5 flex justify-between items-center z-10"
@@ -658,7 +613,7 @@
                         </div>
                         <button
                             class="rounded-lg p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors active:scale-95"
-                            onclick={closeMobileMenu}
+                            onclick={drawer.closeDrawer}
                             aria-label="Close drafts panel"
                         >
                             <svg
@@ -683,7 +638,7 @@
                             {currentWriteupId}
                             openDraft={(id: number) => {
                                 openDraft(id)
-                                closeMobileMenu()
+                                drawer.closeDrawer()
                             }}
                             {removeDraft}
                         />
