@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { openHome, openViewShortcut } from './helpers'
+import { openHome } from './helpers'
 
 test.describe('Navigation & deep links', () => {
     test('projects button syncs the URL deep link', async ({ page }) => {
@@ -7,6 +7,16 @@ test.describe('Navigation & deep links', () => {
         await page.getByRole('button', { name: 'Projects (Alt + P)' }).click()
         await expect(page).toHaveURL(/view=projects/)
         await expect(page.getByRole('heading', { name: 'Projects' })).toBeVisible()
+    })
+
+    test('Home button activates the home view', async ({ page }) => {
+        await openHome(page)
+        await page.getByRole('button', { name: 'Projects (Alt + P)' }).click()
+        await expect(page).toHaveURL(/view=projects/)
+
+        await page.getByRole('button', { name: 'Home', exact: true }).click()
+        await expect(page).not.toHaveURL(/view=projects/)
+        await expect(page.getByRole('link', { name: /GitHub/ })).toBeVisible()
     })
 
     test('deep link opens the writer', async ({ page }) => {
@@ -28,11 +38,6 @@ test.describe('Navigation & deep links', () => {
         await page.goto('/?view=does-not-exist')
         await expect(page.getByText('Queue', { exact: true })).toBeVisible()
         await expect(page.getByRole('link', { name: /GitHub/ })).toBeVisible()
-    })
-
-    test('Alt+Q opens the quick panel', async ({ page }) => {
-        await openViewShortcut(page, 'q')
-        await expect(page.getByPlaceholder('Add a task and press Enter...')).toBeVisible()
     })
 
     test('Alt+P keyboard shortcut opens projects', async ({ page }) => {

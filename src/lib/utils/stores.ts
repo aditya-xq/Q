@@ -1,22 +1,18 @@
 import { appState } from '$lib/state.svelte'
 import { db, ensureDBReady } from './db'
-import { QUICK_TODO_PROJECT_ID } from './constants'
 import { groupTasksByProject, sortProjectsByCreatedAtDesc, type ProjectWithTasks } from './tasks'
 import { liveQuery, type Subscription } from 'dexie'
 
-export { QUICK_TODO_PROJECT_ID }
 export type { ProjectWithTasks }
 
-// Ensure the QuickTodo project exists in the database
-export async function ensureQuickTodoProject() {
-    await ensureDBReady()
-    return QUICK_TODO_PROJECT_ID
-}
+// Legacy Quick Todo rows lived under a reserved project id. The feature was removed;
+// keep any existing rows out of the project lists instead of deleting user data.
+const LEGACY_QUICK_TODO_PROJECT_ID = -1
 
 function readProjects(): Promise<ProjectWithTasks[]> {
     // Reads are issued synchronously so Dexie's liveQuery can track them.
-    const projectsPromise = db.projects.where('id').notEqual(QUICK_TODO_PROJECT_ID).toArray()
-    const tasksPromise = db.tasks.where('projectId').notEqual(QUICK_TODO_PROJECT_ID).toArray()
+    const projectsPromise = db.projects.where('id').notEqual(LEGACY_QUICK_TODO_PROJECT_ID).toArray()
+    const tasksPromise = db.tasks.where('projectId').notEqual(LEGACY_QUICK_TODO_PROJECT_ID).toArray()
     return Promise.all([projectsPromise, tasksPromise]).then(([projects, tasks]) =>
         groupTasksByProject(sortProjectsByCreatedAtDesc(projects), tasks)
     )

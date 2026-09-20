@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Links, QuickTodo, Settings } from '$lib/components'
+    import { Links, Settings, SideNav } from '$lib/components'
     import { cubicOut } from 'svelte/easing'
     import { slide } from 'svelte/transition'
     import '../app.css'
@@ -8,7 +8,7 @@
     import { getAllSettings } from '$lib/utils/db'
     import { observeProjects } from '$lib/utils/stores'
     import { observeWriteups } from '$lib/stores/writeups'
-    import { observeQuickTasks } from '$lib/stores/quicktodo'
+    import { createNote, observeNotes } from '$lib/stores/notes'
 
     let { children } = $props()
     let handleKey: ((e: KeyboardEvent) => void) | undefined
@@ -16,18 +16,24 @@
 
     onMount(() => {
         handleKey = (e: KeyboardEvent) => {
-            if (e.altKey && e.key.toLowerCase() === 'q') updateView('quick-panel')
-            else if (e.altKey && e.key.toLowerCase() === 'p') updateView('projects')
-            else if (e.altKey && e.key.toLowerCase() === 'w') updateView('writer')
+            if (!e.altKey || e.repeat) return
+            const key = e.key.toLowerCase()
+            if (key === 'q') {
+                if (appState.view !== 'home') updateView('home')
+                void createNote()
+            } else if (key === 'p') {
+                updateView('projects')
+            } else if (key === 'w') {
+                updateView('writer')
+            }
         }
 
         window.addEventListener('keydown', handleKey)
 
         // Keep global state in sync across tabs and mutations.
-        subscriptions = [observeProjects(), observeWriteups(), observeQuickTasks()]
+        subscriptions = [observeProjects(), observeWriteups(), observeNotes()]
 
         void getAllSettings().then((settings) => {
-            appState.keepQuickPanelOpen = (settings.keepQuickPanelOpen as boolean) ?? false
             appState.showQuote = (settings.showQuote as boolean) ?? true
             appState.showWeather = (settings.showWeather as boolean) ?? false
         })
@@ -51,14 +57,14 @@
     >
         Queue
     </div>
-    <!-- Sidebar / Floating QuickTodo -->
+    <!-- Sidebar / Floating Navigation -->
     <div
         class={`fixed left-0 md:top-0 h-full md:w-16 z-51 flex flex-col items-center pt-4 pb-6 
             md:border-r border-slate-200 dark:border-slate-800 shadow-xl`}
         in:slide={{ axis: 'x', duration: 400, easing: cubicOut }}
         out:slide={{ axis: 'x', duration: 300 }}
     >
-        <QuickTodo />
+        <SideNav />
     </div>
     <Settings />
     <Links />

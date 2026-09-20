@@ -97,12 +97,6 @@
         showSettings = !showSettings
     }
 
-    async function toggleKeepQuickPanelOpen() {
-        const newVal = !appState.keepQuickPanelOpen
-        await setSetting('keepQuickPanelOpen', newVal)
-        appState.keepQuickPanelOpen = newVal
-    }
-
     const ensureGeolocationPermission = async (): Promise<boolean> => {
         if (!isExtensionContext()) return true
         if (await hasPermission('geolocation')) return true
@@ -239,36 +233,6 @@
                             {/if}
                         </section>
                     {/each}
-
-                    <!-- Quick Panel Toggle -->
-                    <section class="hidden md:block pt-2 sm:pt-3 border-t border-slate-700">
-                        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                            <div class="flex items-center gap-2 sm:min-w-32">
-                                <span class="text-base sm:text-lg">📌</span>
-                                <h2
-                                    class="text-xs sm:text-sm font-semibold text-gray-200 uppercase tracking-wide whitespace-nowrap"
-                                >
-                                    Quick Panel
-                                </h2>
-                            </div>
-
-                            <div class="flex items-center gap-2 sm:gap-3 pl-6 sm:pl-0">
-                                <p class="text-xs sm:text-sm text-gray-300">Keep open</p>
-                                <button
-                                    onclick={toggleKeepQuickPanelOpen}
-                                    aria-pressed={appState.keepQuickPanelOpen}
-                                    aria-label="Toggle keep quick panel open"
-                                    class="relative inline-flex items-center h-5 sm:h-6 rounded-full w-9 sm:w-11 transition-colors duration-200 focus:outline-none
-										{appState.keepQuickPanelOpen ? 'bg-sky-500' : 'bg-white/5'}"
-                                >
-                                    <span
-                                        class="absolute left-0.5 top-0.5 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-white shadow transition-transform duration-200
-										{appState.keepQuickPanelOpen ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'}"
-                                    ></span>
-                                </button>
-                            </div>
-                        </div>
-                    </section>
 
                     <!-- Widgets Toggle -->
                     <section class="pt-2 sm:pt-3 border-t border-slate-700">

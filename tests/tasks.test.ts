@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import type { Project, Task } from '$lib/utils/db'
-import { groupTasksByProject, sortProjectsByCreatedAtDesc, sortQuickTasks } from '$lib/utils/tasks'
+import { groupTasksByProject, sortProjectsByCreatedAtDesc } from '$lib/utils/tasks'
 
 function makeTask(overrides: Partial<Task> & { id: number; projectId: number }): Task {
     return {
@@ -15,28 +15,6 @@ function makeTask(overrides: Partial<Task> & { id: number; projectId: number }):
 function makeProject(overrides: Partial<Project> & { id: number }): Project {
     return { title: `project-${overrides.id}`, createdAt: new Date(0), ...overrides }
 }
-
-describe('sortQuickTasks', () => {
-    test('orders incomplete before completed, newest first within each group', () => {
-        const tasks: Task[] = [
-            makeTask({ id: 1, projectId: -1, completed: true, createdAt: new Date(3000) }),
-            makeTask({ id: 2, projectId: -1, completed: false, createdAt: new Date(1000) }),
-            makeTask({ id: 3, projectId: -1, completed: false, createdAt: new Date(2000) }),
-        ]
-
-        const sorted = sortQuickTasks(tasks).map((t) => t.id)
-        expect(sorted).toEqual([3, 2, 1])
-    })
-
-    test('returns the same array reference (in-place sort)', () => {
-        const tasks: Task[] = [makeTask({ id: 1, projectId: -1 })]
-        expect(sortQuickTasks(tasks)).toBe(tasks)
-    })
-
-    test('handles an empty list', () => {
-        expect(sortQuickTasks([])).toEqual([])
-    })
-})
 
 describe('sortProjectsByCreatedAtDesc', () => {
     test('orders projects newest first', () => {
@@ -69,7 +47,7 @@ describe('groupTasksByProject', () => {
         expect(grouped[0].tasks).toEqual([])
     })
 
-    test('drops tasks whose project is not in the list (e.g. quick todo)', () => {
+    test('drops tasks whose project is not in the list', () => {
         const projects: Project[] = [makeProject({ id: 1 })]
         const tasks: Task[] = [
             makeTask({ id: 1, projectId: -1 }),

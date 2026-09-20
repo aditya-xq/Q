@@ -8,8 +8,8 @@ export async function openHome(page: Page): Promise<void> {
     await page.waitForLoadState('networkidle')
 }
 
-/** Open the app and trigger a global view shortcut (Alt+Q / Alt+P / Alt+W). */
-export async function openViewShortcut(page: Page, key: 'q' | 'p' | 'w'): Promise<void> {
+/** Open the app and trigger a global view shortcut (Alt+P / Alt+W). */
+export async function openViewShortcut(page: Page, key: 'p' | 'w'): Promise<void> {
     await openHome(page)
     await page.keyboard.press(`Alt+${key}`)
 }

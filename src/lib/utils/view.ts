@@ -1,6 +1,6 @@
 import type { View } from '$lib/state.svelte'
 
-export const VALID_VIEWS: ReadonlySet<View> = new Set<View>(['home', 'quick-panel', 'projects', 'writer'])
+export const VALID_VIEWS: ReadonlySet<View> = new Set<View>(['home', 'projects', 'writer'])
 
 export function parseViewParam(value: string | null | undefined): View {
     if (!value) return 'home'

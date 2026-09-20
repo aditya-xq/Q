@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { appState } from '$lib/state.svelte'
     import Editor from './Editor.svelte'
     import { addWriteup, updateWriteup, deleteWriteup, getWriteup, loadWriteups } from '$lib/stores/writeups'
     import { toast } from '$lib/utils/notification'
@@ -405,13 +404,11 @@
         }
     })
 
-    let quickPanelPadding = $derived(appState?.keepQuickPanelOpen ? 'lg:pl-56' : '')
-
     // Mobile sidebar state
     const drawer = createMobileDrawer()
 </script>
 
-<div class={`container mx-auto p-3 sm:p-4 md:p-6 transition-all duration-300 ease-in-out ${quickPanelPadding}`}>
+<div class="container mx-auto p-3 sm:p-4 md:p-6 transition-all duration-300 ease-in-out">
     <p class="sr-only" aria-live="polite">{voiceStatusText}</p>
 
     <div class="flex gap-4 lg:gap-8 relative">

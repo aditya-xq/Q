@@ -36,7 +36,6 @@
         selectedProjectId = id
     }
 
-    let quickPanelPadding = $derived(appState?.keepQuickPanelOpen ? 'lg:pl-84' : '')
     let selectedProject = $derived(appState.projectStore.find((p) => p.id === selectedProjectId))
     let activeTasks = $derived(
         selectedProject?.tasks
@@ -53,7 +52,7 @@
     const drawer = createMobileDrawer()
 </script>
 
-<div class={`container mx-auto px-3 sm:px-4 md:px-8 transition-all duration-300 ease-in-out ${quickPanelPadding}`}>
+<div class="container mx-auto px-3 sm:px-4 md:px-8 transition-all duration-300 ease-in-out">
     <div class="flex gap-4 lg:gap-6 h-[calc(100vh-6rem)] sm:h-[calc(100vh-8rem)] relative">
         <!-- Desktop Left Sidebar - Project List -->
         <div class="hidden md:block">

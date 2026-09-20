@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 type SeedWindow = Window & { __seeded?: boolean; __seedError?: string }
 
 // Creates a version-1 database (matching the pre-v2 schema) with representative data,
-// so the app's Dexie `version(2)` upgrade has something real to migrate.
+// so the app's Dexie `version(3)` upgrade has something real to migrate.
 const SEED_SCRIPT = `
 (() => {
     const req = indexedDB.open('MyAppDB', 1)
@@ -53,7 +53,7 @@ const SEED_SCRIPT = `
 `
 
 test.describe('Database migration', () => {
-    test('upgrades a v1 database to v2 without losing data', async ({ page }) => {
+    test('upgrades a v1 database to v3 without losing data', async ({ page }) => {
         const isRoot = (url: URL) => url.pathname === '/'
         await page.route(isRoot, async (route) => {
             if (route.request().resourceType() !== 'document') {
@@ -75,7 +75,7 @@ test.describe('Database migration', () => {
         expect(await page.evaluate(() => (window as SeedWindow).__seedError ?? null)).toBeNull()
         await page.unrouteAll()
 
-        // Loading the app now triggers the Dexie v1 -> v2 upgrade.
+        // Loading the app now triggers the Dexie v1 -> v3 upgrade.
         await page.goto('/?view=projects')
         await expect(page.getByRole('heading', { name: 'Migrated Project', level: 1 })).toBeVisible()
         await expect(page.getByText('Migrated Task', { exact: true })).toBeVisible()
@@ -100,5 +100,18 @@ test.describe('Database migration', () => {
         expect(indexNames).toContain('updatedAt')
         expect(indexNames).not.toContain('content')
         expect(indexNames).not.toContain('createdAt')
+
+        // v3 adds the sticky notes store.
+        const storeNames = await page.evaluate(async () => {
+            return await new Promise<string[]>((resolve, reject) => {
+                const request = indexedDB.open('MyAppDB')
+                request.onsuccess = () => {
+                    const db = request.result
+                    resolve(Array.from(db.objectStoreNames))
+                }
+                request.onerror = () => reject(request.error)
+            })
+        })
+        expect(storeNames).toContain('notes')
     })
 })

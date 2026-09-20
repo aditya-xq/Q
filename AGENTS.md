@@ -44,10 +44,10 @@ src/
   routes/
     +layout.svelte     App shell: sidebars, global Alt+Q/P/W keys, DB liveQuery subscriptions
     +layout.ts         prerender = true
-    +page.svelte       View router (home|quick-panel|projects|writer) + deep-link sync; lazy-imports WriterView
+    +page.svelte       View router (home|projects|writer) + deep-link sync; home board (StickyNotes); lazy-imports WriterView
     +error.svelte      Error page
   lib/
-    state.svelte.ts    Global rune state: appState (view, projectStore, writeups, quickTasks, flags), notifications
+    state.svelte.ts    Global rune state: appState (view, projectStore, writeups, notes, composeNoteId, flags), notifications
     utils/
       db.ts            Dexie schema + init + settings helpers (single source of DB truth)
       stores.ts        Project/Task CRUD + observeProjects()
@@ -59,12 +59,13 @@ src/
       datetime.ts      Pure date helpers (startOfDay/Week, isToday/Week, relative + autosave formatting)
       weather.ts       Pure weather mapping/formatting (WMO codes, AQI, buildWeather)
       view.ts          View query-param parsing (VALID_VIEWS, getViewFromUrl)
+      notes.ts         Pure sticky-note helpers: clamping, cascade + free-slot placement, colour, tilt (unit-tested)
       notification.ts  toast/notify
     stores/
       writeups.ts      Writeup CRUD + observeWriteups()
-      quicktodo.ts     Quick Todo task CRUD + observeQuickTasks()
+      notes.ts         Sticky-note CRUD + observeNotes() + createNote()
       quicklinks.ts    Quick link read/upsert helpers
-    components/        UI (QuickTodo/, Projects/, Writer/, Widgets/, shared/)
+    components/        UI (SideNav + SideNavButton, StickyNotes/, Links, Settings, Projects/, Writer/, Widgets/, shared/)
     features/voice/    Browser-native SpeechRecognition -> editor text controller
 tests/                 Bun unit tests for pure modules (deriveTitle, textPostProcess, constants, ...)
 e2e/                   Playwright specs (web, extension, live)
@@ -76,11 +77,12 @@ static/
 
 ### Data & state rules
 
-- IndexedDB is the source of truth. `QUICK_TODO_PROJECT_ID = -1` (`utils/constants.ts`) is a reserved pseudo-project; always exclude it from project lists.
-- Cross-tab/global sync uses Dexie `liveQuery` subscriptions created in `+layout.svelte` (`observeProjects`, `observeWriteups`, `observeQuickTasks`). Mutations write to Dexie and rely on the observers to refresh `appState`; do not refresh `appState` manually or query Dexie ad-hoc from components when a store helper exists.
+- IndexedDB is the source of truth. `utils/stores.ts` hides the legacy Quick Todo pseudo-project (id `-1`) from project lists without deleting it; `< 0` ids are never user projects.
+- Cross-tab/global sync uses Dexie `liveQuery` subscriptions created in `+layout.svelte` (`observeProjects`, `observeWriteups`, `observeNotes`). Mutations write to Dexie and rely on the observers to refresh `appState`; do not refresh `appState` manually or query Dexie ad-hoc from components when a store helper exists.
 - liveQuery queriers must issue their first Dexie read synchronously (no `await` of an external promise such as `ensureDBReady()` before `db.*`), or Dexie's query scope is lost and the subscription never re-fires. `ensureDBReady()` guards every other DB call.
+- Sticky notes are a **home-only board**: `appState.notes` is observed from Dexie, positions are viewport pixels clamped by `utils/notes.ts`, and `Alt+Q` (global, in `+layout.svelte`) switches to Home and calls `createNote()` (which takes the first non-overlapping cascade slot). Notes must never change the URL/view beyond that Home switch. Per-note UX: drag or arrow-key nudge (Shift = 10px), pin-to-lock (`Note.pinned` is optional on disk and normalised in `observeNotes()`), a colour palette (roving-tabindex toolbar), and dissolve + undo delete (undo keeps the last 5). All `stores/notes.ts` mutations catch failures and toast, so callers may ignore rejections. `nextNoteZ()`/`NOTE_Z_BASE` live in `state.svelte.ts` so `utils/notes.ts` stays pure.
 - `appState.writeups` holds `WriteupSummary[]` (title + timestamps, no body); `title` is derived and stored on save, and legacy rows derive it on read. Fetch full `content` on demand via `getWriteup()`.
-- `db.ts` schema (`version(2)`) indexes only queried columns; don't add indexes on free-text columns (`content`, `text`, etc.).
+- `db.ts` schema (`version(3)`, adds the `notes` table) indexes only queried columns; don't add indexes on free-text columns (`content`, `text`, etc.).
 - Svelte 5 runes only (`$state`, `$derived`, `$props`, `$effect`, `onMount`). Never write Svelte 4 `export let` / `$:` / `on:click`.
 - The writer/editor bundle is **lazy-loaded** in `+page.svelte` via dynamic `import()`; never statically import `WriterView`/`Editor` from the `$lib/components` barrel.
 
@@ -99,7 +101,7 @@ static/
 ### Unit (`bun run test:unit`, `tests/**`)
 
 - Bun's built-in runner (`bun:test`); `bun test` must be scoped to `tests/` so it never picks up Playwright specs.
-- Only pure modules are unit-tested (no Svelte runes / Dexie / DOM). Current coverage: `deriveTitle`, `textPostProcess` (voice), `constants` URL/icon helpers, `browser`, `weather`, `datetime`, `view`, `tasks`, `writeup`.
+- Only pure modules are unit-tested (no Svelte runes / Dexie / DOM). Current coverage: `deriveTitle`, `textPostProcess` (voice), `constants` URL/icon helpers, `browser`, `weather`, `datetime`, `view`, `tasks`, `notes`, `writeup`.
 - Keep pure logic in `utils/*.ts` so it stays testable; add a `tests/<module>.test.ts` alongside non-trivial changes.
 
 ### e2e (`bun run test:e2e`, `e2e/**`)
@@ -108,7 +110,7 @@ static/
 - Web tests run against `vite preview`; the `webServer` builds `build:web` first. Each test gets an isolated context, so IndexedDB starts empty.
 - `openHome()` / `openViewShortcut()` live in `e2e/helpers.ts`. Prefer accessible-role locators and stable ids (e.g. `input[id^="task-edit-"]`) over positional selectors.
 - Cover happy, unhappy (blank/duplicate input, cancel) and edge (reload persistence, ordering, toggling back) paths per view. Mobile specs set a viewport via `test.use`.
-- `migration.spec.ts` seeds a v1 IndexedDB and asserts the v2 upgrade; `sync.spec.ts` opens two tabs for cross-tab sync; `weather.spec.ts` mocks the weather/fetch + geolocation APIs.
+- `migration.spec.ts` seeds a v1 IndexedDB and asserts the v3 upgrade; `sync.spec.ts` opens two tabs for cross-tab sync; `weather.spec.ts` mocks the weather/fetch + geolocation APIs; `stickynotes.spec.ts` covers create/drag/dissolve/undo on the home board.
 - Live/extension suites are gated by `E2E_LIVE=1` / `RUN_EXTENSION_E2E=1` and must not run in the default `bun run test:e2e`.
 
 ## Self-Improvement Protocol

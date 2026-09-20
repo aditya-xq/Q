@@ -4,15 +4,6 @@ export interface ProjectWithTasks extends Project {
     tasks: Task[]
 }
 
-export function sortQuickTasks(tasks: Task[]): Task[] {
-    return tasks.sort((a, b) => {
-        if (a.completed === b.completed) {
-            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        }
-        return a.completed ? 1 : -1
-    })
-}
-
 export function sortProjectsByCreatedAtDesc(projects: Project[]): Project[] {
     return projects.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 }

@@ -28,7 +28,7 @@ test.describe('Chrome extension (MV3)', () => {
             await page.goto(`chrome-extension://${extensionId}/index.html`)
 
             await expect(page.getByText('Queue', { exact: true })).toBeVisible()
-            await expect(page.getByRole('button', { name: 'Quick Todo (Alt + Q)' })).toBeVisible()
+            await expect(page.getByRole('button', { name: 'Settings (Alt + S)' })).toBeVisible()
         } finally {
             await context.close()
         }

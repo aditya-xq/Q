@@ -9,19 +9,6 @@ async function openTwoTabs(context: BrowserContext) {
 }
 
 test.describe('Cross-tab sync', () => {
-    test('quick tasks added in one tab appear in another', async ({ context }) => {
-        const { tabA, tabB } = await openTwoTabs(context)
-
-        await tabA.keyboard.press('Alt+q')
-        const input = tabA.getByPlaceholder('Add a task and press Enter...')
-        await input.fill('Cross-tab task')
-        await input.press('Enter')
-        await expect(tabA.getByText('Cross-tab task')).toBeVisible()
-
-        await tabB.keyboard.press('Alt+q')
-        await expect(tabB.getByText('Cross-tab task')).toBeVisible()
-    })
-
     test('projects created in one tab appear in another', async ({ context }) => {
         const { tabA, tabB } = await openTwoTabs(context)
 
@@ -36,21 +23,15 @@ test.describe('Cross-tab sync', () => {
         await expect(tabB.getByRole('heading', { name: 'Shared Project', level: 1 })).toBeVisible()
     })
 
-    test('deleting a quick task in one tab removes it in another', async ({ context }) => {
+    test('sticky notes added in one tab appear in another', async ({ context }) => {
         const { tabA, tabB } = await openTwoTabs(context)
 
         await tabA.keyboard.press('Alt+q')
-        const inputA = tabA.getByPlaceholder('Add a task and press Enter...')
-        await inputA.fill('Disposable task')
-        await inputA.press('Enter')
+        const input = tabA.getByTestId('sticky-note').getByRole('textbox')
+        await input.fill('Cross-tab note')
+        await input.press('Enter')
 
-        await tabB.keyboard.press('Alt+q')
-        await expect(tabB.getByText('Disposable task')).toBeVisible()
-
-        await tabB.getByText('Disposable task').first().hover()
-        await tabB.getByRole('button', { name: 'Delete task' }).first().click()
-
-        await expect(tabA.getByText('Disposable task')).toHaveCount(0)
-        await expect(tabB.getByText('Disposable task')).toHaveCount(0)
+        await expect(tabB.getByTestId('sticky-note')).toHaveCount(1)
+        await expect(tabB.getByTestId('sticky-note').getByRole('textbox')).toHaveValue('Cross-tab note')
     })
 })

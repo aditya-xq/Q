@@ -1,14 +1,14 @@
-import type { WriteupSummary, Task } from './utils/db'
+import type { Note, WriteupSummary } from './utils/db'
 import type { ProjectWithTasks } from './utils/stores'
 
-export type View = 'projects' | 'writer' | 'home' | 'quick-panel'
+export type View = 'projects' | 'writer' | 'home'
 
 interface AppState {
     projectStore: ProjectWithTasks[]
     writeups: WriteupSummary[]
-    quickTasks: Task[]
+    notes: Note[]
     view: View
-    keepQuickPanelOpen?: boolean
+    composeNoteId?: number
     showQuote?: boolean
     showWeather?: boolean
 }
@@ -23,8 +23,7 @@ export const appState: AppState = $state({
     projectStore: [],
     view: 'home',
     writeups: [],
-    quickTasks: [],
-    keepQuickPanelOpen: false,
+    notes: [],
     showQuote: true,
     showWeather: false,
 })
@@ -53,4 +52,15 @@ export function updateView(view: View) {
     const nextView = appState.view === view ? 'home' : view
     appState.view = nextView
     syncViewParam(nextView)
+}
+
+export const NOTE_Z_BASE = 30
+const NOTE_Z_TOP = 48
+
+let noteZTop = NOTE_Z_BASE
+
+/** Raise-to-front counter for sticky notes, kept below the app chrome (rails/nav). */
+export function nextNoteZ(): number {
+    noteZTop = noteZTop >= NOTE_Z_TOP ? NOTE_Z_BASE : noteZTop + 1
+    return noteZTop
 }

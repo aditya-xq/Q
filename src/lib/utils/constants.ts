@@ -7,8 +7,6 @@ export interface QuickLinkCategoryConfig {
     urls: Record<string, string>
 }
 
-export const QUICK_TODO_PROJECT_ID = -1
-
 export const QUICK_LINK_CATEGORIES = ['Email', 'Messaging', 'OTT', 'AI', 'Social', 'Custom'] as const
 
 export const CATEGORY_CONFIGS: QuickLinkCategoryConfig[] = [

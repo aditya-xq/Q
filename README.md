@@ -14,17 +14,17 @@ Transform every new tab into a focused productivity hub. Stay organized, write d
 
 ## What You Get
 
-| Feature                 | Description                                            |
-| ----------------------- | ------------------------------------------------------ |
-| Quick Todo              | Capture tasks the moment you open a new tab            |
-| Projects                | Organize work streams in one place                     |
-| Writer Mode             | Distraction-free writing when you need to focus        |
-| Voice Typing            | Dictate into the editor with native speech recognition |
-| Quick Links & Top Sites | One-click access to your most visited sites            |
-| Weather Widget          | Check conditions at a glance                           |
-| Daily Inspiration       | Quotes and facts to spark curiosity                    |
-| Deep Links              | Share a view with `?view=projects` / `?view=writer`    |
-| Customizable            | Tailor Q to match your workflow                        |
+| Feature                 | Description                                             |
+| ----------------------- | ------------------------------------------------------- |
+| Sticky Notes            | Jot a note and stick it anywhere on the board (Alt + Q) |
+| Projects                | Organize work streams in one place                      |
+| Writer Mode             | Distraction-free writing when you need to focus         |
+| Voice Typing            | Dictate into the editor with native speech recognition  |
+| Quick Links & Top Sites | One-click access to your most visited sites             |
+| Weather Widget          | Check conditions at a glance                            |
+| Daily Inspiration       | Quotes and facts to spark curiosity                     |
+| Deep Links              | Share a view with `?view=projects` / `?view=writer`     |
+| Customizable            | Tailor Q to match your workflow                         |
 
 ---
 
@@ -87,7 +87,7 @@ The build target is selected with `BUILD_TARGET=web|extension` (wired into the b
 
 ### Testing
 
-Unit tests cover the pure modules (title/draft-title derivation, voice text post-processing, URL/date/weather/view/task helpers) with [Bun's test runner](https://bun.sh/docs/cli/test):
+Unit tests cover the pure modules (title/draft-title derivation, voice text post-processing, URL/date/weather/view/task/note helpers) with [Bun's test runner](https://bun.sh/docs/cli/test):
 
 ```bash
 bun run test:unit           # run unit tests
@@ -121,6 +121,7 @@ Q asks for minimal permissions:
 
 - Top Sites
 - Geolocation
+- Clipboard Write (for copying drafts)
 
 ---
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { FrequentSites, Notification, ProjectGrid, Quote, Weather } from '$lib/components'
+    import { FrequentSites, Notification, ProjectGrid, Quote, StickyNotes, Weather } from '$lib/components'
     import { appState } from '$lib/state.svelte'
     import { getTopSites, type BrowserSite } from '$lib/utils/browser'
     import { getViewFromUrl } from '$lib/utils/view'
@@ -69,7 +69,7 @@
     <!-- Notifications -->
     <Notification />
     <!-- App Views -->
-    {#if appState.view !== 'home' && appState.view !== 'quick-panel'}
+    {#if appState.view !== 'home'}
         <div
             class="w-full mx-auto transition-all duration-500 ease-out"
             style="opacity: 1;"
@@ -95,9 +95,7 @@
             class={`flex flex-col items-center justify-center flex-1 w-full ${appState.showQuote ? '-mt-44' : '-mt-24'} md:mr-6 px-4 sm:px-6 lg:px-8 transition-all duration-500 ease-out`}
             in:fade={{ duration: 400, easing: cubicOut }}
         >
-            <div
-                class={`${appState.view === 'quick-panel' || appState.keepQuickPanelOpen ? 'max-w-6xl pl-86' : 'max-w-3xl'} text-center space-y-8 transition-all duration-400 ease-in-out`}
-            >
+            <div class="max-w-3xl w-full text-center space-y-8 transition-all duration-400 ease-in-out">
                 <Weather />
                 <div in:fly={{ y: 20, duration: 400, delay: 300, easing: cubicOut }}>
                     {#if appState.showQuote}<Quote />{/if}
@@ -105,6 +103,7 @@
                 </div>
             </div>
         </div>
+        <StickyNotes />
     {/if}
 </div>
 

@@ -12,7 +12,7 @@ describe('parseViewParam', () => {
         expect(parseViewParam('home')).toBe('home')
         expect(parseViewParam('projects')).toBe('projects')
         expect(parseViewParam('PROJECTS')).toBe('projects')
-        expect(parseViewParam('Quick-Panel')).toBe('quick-panel')
+        expect(parseViewParam('WRITER')).toBe('writer')
         expect(parseViewParam('writer')).toBe('writer')
     })
 
@@ -36,6 +36,6 @@ describe('getViewFromUrl', () => {
 
 describe('VALID_VIEWS', () => {
     test('contains exactly the supported views', () => {
-        expect([...VALID_VIEWS].sort()).toEqual(['home', 'projects', 'quick-panel', 'writer'])
+        expect([...VALID_VIEWS].sort()).toEqual(['home', 'projects', 'writer'])
     })
 })

@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import { QUICK_TODO_PROJECT_ID } from './constants'
+import type { NoteColor } from './notes'
 
 export interface Writeup {
     id?: number
@@ -44,12 +44,26 @@ export interface Setting {
     value: string | number | boolean
 }
 
+export interface Note {
+    id?: number
+    text: string
+    done: boolean
+    color: NoteColor
+    x: number
+    y: number
+    rotation: number
+    pinned: boolean
+    createdAt: Date
+    updatedAt: Date
+}
+
 export class MyAppDB extends Dexie {
     writeups!: Table<Writeup, number>
     projects!: Table<Project, number>
     tasks!: Table<Task, number>
     quicklinks!: Table<QuickLink, number>
     settings!: Table<Setting, string>
+    notes!: Table<Note, number>
 
     constructor() {
         super('MyAppDB')
@@ -67,6 +81,15 @@ export class MyAppDB extends Dexie {
             tasks: '++id, projectId',
             quicklinks: '++id, category',
             settings: '&key',
+        })
+        // Sticky notes board.
+        this.version(3).stores({
+            writeups: '++id, updatedAt',
+            projects: '++id',
+            tasks: '++id, projectId',
+            quicklinks: '++id, category',
+            settings: '&key',
+            notes: '++id',
         })
     }
 }
@@ -86,17 +109,6 @@ export async function initializeDatabase() {
             // Ensure database connection is open and ready
             await db.open()
 
-            // Check if the QuickTodo project already exists
-            const quickTodoProject = await db.projects.get(QUICK_TODO_PROJECT_ID)
-
-            if (!quickTodoProject) {
-                await db.projects.put({
-                    id: QUICK_TODO_PROJECT_ID,
-                    title: 'Quick Todo',
-                    createdAt: new Date(),
-                })
-            }
-
             // Initialize default settings if they don't exist
             await initializeDefaultSettings()
         } catch (error) {
@@ -113,7 +125,6 @@ export async function initializeDatabase() {
 // Initialize default settings in a single round-trip
 async function initializeDefaultSettings() {
     const defaultSettings: Setting[] = [
-        { key: 'keepQuickPanelOpen', value: false },
         { key: 'showQuote', value: true },
         { key: 'showWeather', value: false },
     ]

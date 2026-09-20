@@ -5,7 +5,6 @@ test.describe('Home', () => {
     test('renders shell, quick links and frequent sites', async ({ page }) => {
         await openHome(page)
 
-        await expect(page.getByRole('button', { name: 'Quick Todo (Alt + Q)' })).toBeVisible()
         await expect(page.getByRole('button', { name: 'Gmail' })).toBeVisible()
         await expect(page.getByRole('button', { name: 'Settings (Alt + S)' })).toBeVisible()
         await expect(page.getByRole('link', { name: /GitHub/ })).toBeVisible()

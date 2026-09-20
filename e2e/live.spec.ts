@@ -13,7 +13,7 @@ test.describe('Live deployment', () => {
     test('home page loads and hydrates', async ({ page }) => {
         await page.goto('/')
         await expect(page.getByText('Queue', { exact: true })).toBeVisible({ timeout: 20_000 })
-        await expect(page.getByRole('button', { name: 'Quick Todo (Alt + Q)' })).toBeVisible()
+        await expect(page.getByRole('button', { name: 'Settings (Alt + S)' })).toBeVisible()
         await expect(page.getByRole('link', { name: /GitHub/ })).toBeVisible()
     })
 

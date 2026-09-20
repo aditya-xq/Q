@@ -17,18 +17,15 @@ test.describe('Mobile drawers', () => {
         await expect(page.getByRole('button', { name: 'New Project' })).toBeHidden()
     })
 
-    test('quick todo menu opens the panel and closes back home', async ({ page }) => {
+    test('mobile menu navigates between views', async ({ page }) => {
         await page.goto('/')
         await page.waitForLoadState('networkidle')
 
         await page.getByRole('button', { name: 'Toggle Menu' }).click()
-        await page.getByRole('button', { name: 'Quick Todo (Alt + Q)' }).click()
+        await page.getByRole('button', { name: 'Projects (Alt + P)' }).click()
 
-        const input = page.getByPlaceholder('Add a task and press Enter...')
-        await expect(input).toBeVisible()
-
-        await page.getByRole('button', { name: 'Close Panel' }).click()
-        await expect(input).toBeHidden()
+        await expect(page).toHaveURL(/view=projects/)
+        await expect(page.getByRole('button', { name: 'Open projects' })).toBeVisible()
     })
 
     test('writer drafts drawer opens', async ({ page }) => {

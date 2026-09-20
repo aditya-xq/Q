@@ -64,22 +64,4 @@ test.describe('Settings', () => {
 
         await expect(page.getByText('Saved')).toHaveCount(0)
     })
-
-    test('toggles keep-quick-panel-open and persists it', async ({ page }) => {
-        await openHome(page)
-        await openSettings(page)
-
-        const toggle = page.getByRole('button', { name: 'Toggle keep quick panel open' })
-        await expect(toggle).toHaveAttribute('aria-pressed', 'false')
-        await toggle.click()
-        await expect(toggle).toHaveAttribute('aria-pressed', 'true')
-        await expect(page.getByPlaceholder('Add a task and press Enter...')).toBeVisible()
-
-        await page.reload()
-        await openSettings(page)
-        await expect(page.getByRole('button', { name: 'Toggle keep quick panel open' })).toHaveAttribute(
-            'aria-pressed',
-            'true'
-        )
-    })
 })

@@ -17,7 +17,7 @@ export default defineConfig({
                     name: 'Q - Your Productive New Tab',
                     short_name: 'Q',
                     description:
-                        'Turn every new tab into a focused productivity hub: quick todos, projects, and a distraction-free writer.',
+                        'Turn every new tab into a focused productivity hub: projects and a distraction-free writer.',
                     lang: 'en',
                     start_url: '/',
                     scope: '/',
