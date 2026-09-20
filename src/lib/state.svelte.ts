@@ -1,11 +1,11 @@
-import type { Writeup, Task } from './utils/db'
+import type { WriteupSummary, Task } from './utils/db'
 import type { ProjectWithTasks } from './utils/stores'
 
 export type View = 'projects' | 'writer' | 'home' | 'quick-panel'
 
 interface AppState {
     projectStore: ProjectWithTasks[]
-    writeups: Writeup[]
+    writeups: WriteupSummary[]
     quickTasks: Task[]
     view: View
     keepQuickPanelOpen?: boolean

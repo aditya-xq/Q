@@ -1,6 +1,5 @@
 <script lang="ts">
     import { appState } from '$lib/state.svelte'
-    import { deriveTitle } from '$lib/utils/utils'
     import { formatRelative, isThisWeek, isToday } from '$lib/utils/datetime'
     import { DeleteButton } from '../shared'
     import { slide } from 'svelte/transition'
@@ -82,7 +81,7 @@
                                 onclick={() => openDraft(w.id)}
                             >
                                 <span class="truncate text-sm font-medium text-slate-800 dark:text-slate-200">
-                                    {deriveTitle(w.content, { fallback: 'Untitled Draft' })}
+                                    {w.title}
                                 </span>
                                 <span class="truncate text-xs text-slate-300 group-hover:text-slate-400">
                                     {formatRelative(new Date(w.updatedAt))}
@@ -139,7 +138,7 @@
                                                     ? 'font-medium text-slate-900 dark:text-slate-100'
                                                     : ''}"
                                             >
-                                                {deriveTitle(w.content)}
+                                                {w.title}
                                             </span>
                                             <span class="truncate text-[10px] text-slate-400">
                                                 {new Date(w.updatedAt).toLocaleDateString()}
@@ -168,7 +167,7 @@
                                 onclick={() => openDraft(w.id)}
                             >
                                 <span class="truncate text-sm font-medium text-slate-800 dark:text-slate-200">
-                                    {deriveTitle(w.content, { fallback: 'Untitled Draft' })}
+                                    {w.title}
                                 </span>
                                 <span class="truncate text-xs text-slate-300 group-hover:text-slate-400">
                                     {formatRelative(new Date(w.updatedAt))}

@@ -4,6 +4,15 @@ import { QUICK_TODO_PROJECT_ID } from './constants'
 export interface Writeup {
     id?: number
     content: string
+    title: string
+    updatedAt: Date
+    createdAt: number
+}
+
+// Lightweight projection held in app state so draft bodies are not kept in memory.
+export interface WriteupSummary {
+    id: number
+    title: string
     updatedAt: Date
     createdAt: number
 }
