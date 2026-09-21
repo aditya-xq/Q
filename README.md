@@ -71,17 +71,18 @@ bun run dev          # start the Vite dev server
 
 ### Scripts
 
-| Command             | Description                                                 |
-| ------------------- | ----------------------------------------------------------- |
-| `bun run dev`       | Vite dev server                                             |
-| `bun run check`     | SvelteKit + TypeScript typecheck (`svelte-check`)           |
-| `bun run lint`      | ESLint + Prettier check                                     |
-| `bun run verify`    | `check` + `lint` + unit tests                               |
-| `bun run test:unit` | Bun unit tests (`tests/**`)                                 |
-| `bun run format`    | Prettier write                                              |
-| `bun run build:web` | Static/PWA build → `build/`                                 |
-| `bun run build:ext` | MV3 extension build → `build-extension/`                    |
-| `bun run release`   | Sync manifest version, build both targets, tag, and release |
+| Command                | Description                                                 |
+| ---------------------- | ----------------------------------------------------------- |
+| `bun run dev`          | Vite dev server                                             |
+| `bun run check`        | SvelteKit + TypeScript typecheck (`svelte-check`)           |
+| `bun run lint`         | ESLint + Prettier check                                     |
+| `bun run verify`       | `check` + `lint` + unit tests                               |
+| `bun run test:unit`    | Bun unit tests (`tests/**`)                                 |
+| `bun run format`       | Prettier write                                              |
+| `bun run build:web`    | Static/PWA build → `build/`                                 |
+| `bun run build:ext`    | MV3 extension build → `build-extension/`                    |
+| `bun run release`      | Sync manifest version, build both targets, tag, and release |
+| `bun run publish:edge` | Upload + submit `q-extension.zip` to the Edge Add-ons store |
 
 The build target is selected with `BUILD_TARGET=web|extension` (wired into the build scripts and `svelte.config.js` / `vite.config.ts`).
 
@@ -105,6 +106,16 @@ bun run test:e2e:live       # smoke test against https://q.xqbuilds.com
 ```
 
 Override targets with `E2E_BASE_URL` and `LIVE_BASE_URL`.
+
+### Releasing
+
+1. Bump `version` in `package.json`.
+2. Commit your changes (the release script requires a clean working tree).
+3. Run `bun run release`.
+
+The script syncs `static/manifest.json`, builds both targets, packages `q-web.zip` and `q-extension.zip`, pushes a `vX.Y.Z` tag, and creates a GitHub release. When the Microsoft Edge Add-ons credentials are configured, it also uploads `q-extension.zip` and submits it for review.
+
+Edge credentials live in `.env` (gitignored; copy `.env.example`): `EDGE_EXTENSION_PUBLISH_API_KEY` and `EDGE_EXTENSION_CLIENT_ID` from Partner Center → Microsoft Edge → **Publish API**, plus `EDGE_EXTENSION_PRODUCT_ID` (a GUID, not the store listing id) from the extension's **Overview** page. Use `bun run release --skip-edge` to skip the store upload, or `bun run publish:edge` to retry it after a failed release.
 
 ### Contributing
 

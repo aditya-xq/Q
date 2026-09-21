@@ -22,7 +22,8 @@ bun run verify         # check + lint + unit tests
 bun run format         # prettier --write
 bun run build:web      # static/PWA build -> build/
 bun run build:ext      # MV3 extension build -> build-extension/
-bun run release        # syncs manifest version, builds, tags, releases
+bun run release        # syncs manifest, builds, tags, GitHub release, Edge store publish
+bun run publish:edge   # retry just the Edge store upload + submit of q-extension.zip
 
 bun run test:unit           # Bun unit tests (tests/**)
 bun run test:unit:coverage  # unit tests with coverage
@@ -34,6 +35,8 @@ bun run test:e2e:install    # one-time browser download
 ```
 
 `BUILD_TARGET=web|extension` selects the adapter in `svelte.config.js` / `vite.config.ts`; the build scripts depend on it.
+
+`bun run release` reads `version` from `package.json`, syncs `static/manifest.json`, builds both targets, packages `q-web.zip`/`q-extension.zip`, tags `vX.Y.Z`, creates the GitHub release, then (unless `--skip-edge`) uploads the extension and submits it for review via `scripts/edge-publish.js` using the `EDGE_EXTENSION_*` vars in `.env`. Use `bun run publish:edge` to retry only the store upload.
 
 **Definition of done:** `bun run check` and `bun run lint` exit 0, and `bun run test:unit` passes. Run `bun run test:e2e` after UI or data-flow changes.
 
@@ -124,4 +127,4 @@ This file is living documentation. Every session:
 4. **Be concise and concrete.** Short bullets; exact paths. No prose, no duplicated explanations; compress rather than split.
 5. **Prefer verifiable claims.** Only document what you confirmed by reading code or running a command.
 6. **Small, reversible steps.** One logical change per commit-worthy edit; follow the repo's commit style in `git log`.
-7. **Never commit secrets.** `.env` is gitignored and holds `EDGE_EXTENSION_PUBLISH_API_KEY`; never print or commit its value.
+7. **Never commit secrets.** `.env` is gitignored and holds the `EDGE_EXTENSION_PUBLISH_API_KEY`, `EDGE_EXTENSION_CLIENT_ID` and `EDGE_EXTENSION_PRODUCT_ID` Edge Publish API credentials (see `.env.example`); never print or commit their values.

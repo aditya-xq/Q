@@ -15,6 +15,7 @@
         "preview:web": "bun run build:web && vite preview",
         "preview": "vite preview",
         "release": "bun scripts/release.js",
+        "publish:edge": "bun scripts/edge-publish.js",
         "prepare": "svelte-kit sync || echo ''",
         "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
         "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",

@@ -1,12 +1,15 @@
 import { execSync } from 'child_process'
 import { readFileSync, writeFileSync } from 'fs'
 import path from 'path'
+import { hasEdgeCredentials, publishToEdge } from './edge-publish.js'
 
 // Helper to run commands
 const run = (command) => {
     console.log(`> ${command}`)
     execSync(command, { stdio: 'inherit' })
 }
+
+const skipEdge = process.argv.includes('--skip-edge')
 
 try {
     // 1. Get version from package.json
@@ -55,6 +58,21 @@ try {
 
     // 7. Create GitHub release with both artifacts
     run(`gh release create ${tagName} ${webZip} ${extZip} --generate-notes`)
+
+    // 8. Publish the extension to the Microsoft Edge Add-ons store
+    if (skipEdge) {
+        console.log('⏭️  Skipping Edge publish (--skip-edge)')
+    } else if (!hasEdgeCredentials()) {
+        console.log('⚠️  Skipping Edge publish: set the EDGE_EXTENSION_* credentials in .env (see .env.example)')
+    } else {
+        try {
+            await publishToEdge({ zipPath: extZip, notes: `Automated release ${tagName}` })
+        } catch (error) {
+            console.error(`❌ Edge store publish failed: ${error.message}`)
+            console.error(`   The GitHub release ${tagName} is already published. Retry with: bun run publish:edge`)
+            process.exit(1)
+        }
+    }
 
     console.log(`✅ Release ${tagName} created successfully!`)
 } catch (error) {
