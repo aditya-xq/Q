@@ -1,4 +1,15 @@
-export const NOTE_COLORS = ['amber', 'rose', 'sky', 'emerald', 'violet', 'orange'] as const
+export const NOTE_COLORS = [
+    'amber',
+    'orange',
+    'rose',
+    'violet',
+    'indigo',
+    'sky',
+    'teal',
+    'emerald',
+    'lime',
+    'slate',
+] as const
 
 export type NoteColor = (typeof NOTE_COLORS)[number]
 
@@ -174,9 +185,9 @@ export function nextFreeNoteSlot(
     return noteStagePosition(viewportWidth, viewportHeight, width, height)
 }
 
-/** Deterministic slight tilt in degrees (-3..3). */
+/** Deterministic slight tilt in degrees (-2..2). */
 export function noteRotation(seed: number): number {
-    return (Math.abs(Math.trunc(seed)) % 7) - 3
+    return (Math.abs(Math.trunc(seed)) % 5) - 2
 }
 
 export interface PointLike {

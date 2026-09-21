@@ -245,6 +245,8 @@ test.describe('Sticky notes', () => {
 
         await page.reload()
         await expect(page.getByText('Queue', { exact: true })).toBeVisible()
+        // The note enters with a pop animation; measure once it has settled.
+        await waitForSettled(page.getByTestId('sticky-note'))
         const persisted = await page.getByTestId('sticky-note').boundingBox()
         if (!persisted) throw new Error('note not measurable')
         expect(Math.abs(persisted.x - after.x)).toBeLessThan(4)
@@ -321,7 +323,9 @@ test.describe('Sticky notes', () => {
         const target = current === 'rose' ? 'emerald' : 'rose'
 
         await note.getByRole('button', { name: 'Change note colour' }).click()
-        await expect(page.getByRole('button', { name: /^Colour / })).toHaveCount(6)
+        await expect(page.getByRole('button', { name: /^Colour / })).toHaveCount(10)
+        await expect(page.getByRole('button', { name: 'Colour teal' })).toBeVisible()
+        await expect(page.getByRole('button', { name: 'Colour slate' })).toBeVisible()
         await page.getByRole('button', { name: `Colour ${target}` }).click()
         await expect(note).toHaveAttribute('data-color', target)
 
@@ -357,6 +361,7 @@ test.describe('Sticky notes', () => {
 
         await page.reload()
         await expect(page.getByText('Queue', { exact: true })).toBeVisible()
+        await waitForSettled(page.getByTestId('sticky-note'))
         const persisted = await page.getByTestId('sticky-note').boundingBox()
         if (!persisted) throw new Error('note not measurable')
         expect(Math.abs(persisted.x - after.x)).toBeLessThan(2)
@@ -426,7 +431,51 @@ test.describe('Sticky notes', () => {
         await undo.getByRole('button', { name: 'Undo' }).click()
         await expect(notes).toHaveCount(2)
     })
+
+    test('several notes park clear of each other and the home content', async ({ page }) => {
+        await openHome(page)
+
+        for (const text of ['Alpha', 'Bravo', 'Charlie']) {
+            await page.keyboard.press('Alt+q')
+            await writeNote(page, page.getByTestId('sticky-note').last(), text)
+        }
+
+        const notes = page.getByTestId('sticky-note')
+        await expect(notes).toHaveCount(3)
+
+        const boxes = []
+        for (let index = 0; index < 3; index++) {
+            const box = await notes.nth(index).boundingBox()
+            if (box) boxes.push(box)
+        }
+        expect(boxes).toHaveLength(3)
+
+        const overlaps = (a: DOMRectLike, b: DOMRectLike) =>
+            a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y
+
+        // No two notes cover each other.
+        for (let index = 0; index < boxes.length; index++) {
+            for (let other = index + 1; other < boxes.length; other++) {
+                expect(overlaps(boxes[index], boxes[other])).toBe(false)
+            }
+        }
+
+        // None covers the home content column.
+        const obstacle = await page.locator('[data-note-obstacle]').boundingBox()
+        if (obstacle) {
+            for (const box of boxes) {
+                expect(overlaps(box, obstacle)).toBe(false)
+            }
+        }
+    })
 })
+
+interface DOMRectLike {
+    x: number
+    y: number
+    width: number
+    height: number
+}
 
 test.describe('Sticky notes (reduced motion)', () => {
     test.use({ reducedMotion: 'reduce' })
@@ -441,5 +490,168 @@ test.describe('Sticky notes (reduced motion)', () => {
         await note.getByRole('button', { name: 'Delete note' }).click()
         await expect(note).toHaveCount(0, { timeout: 3000 })
         await expect(page.getByTestId('sticky-note-undo')).toBeVisible()
+    })
+})
+
+/** Type the points of a mobile card, commit with a double Enter and wait for the save. */
+async function writeCard(page: Page, card: Locator, ...points: string[]) {
+    await card
+        .getByRole('textbox')
+        .first()
+        .fill(points[0] ?? '')
+    for (const point of points.slice(1)) {
+        await page.keyboard.press('Enter')
+        await card.getByRole('textbox').last().fill(point)
+    }
+    await page.keyboard.press('Enter')
+    await page.keyboard.press('Enter')
+    // The commit is async; wait for IndexedDB so reload assertions are not racy.
+    await expect
+        .poll(async () => (await readNotes(page)).map((note) => note.points.map((point) => point.text).join('|')))
+        .toContain(points.join('|'))
+}
+
+test.describe('Sticky notes (mobile stack)', () => {
+    test.use({ viewport: { width: 390, height: 844 } })
+
+    test('the notes button opens an empty sheet and creating a note focuses a card', async ({ page }) => {
+        await openHome(page)
+
+        // The free-floating board and its desktop hint are gone on mobile.
+        await expect(page.getByTestId('sticky-note-hint')).toBeHidden()
+        await expect(page.getByTestId('sticky-note')).toHaveCount(0)
+
+        const fab = page.getByTestId('notes-fab')
+        await expect(fab).toBeVisible()
+        await fab.click()
+
+        const sheet = page.getByTestId('notes-sheet')
+        await expect(sheet).toBeVisible()
+        await expect(sheet.getByRole('button', { name: 'Close notes' })).toBeVisible()
+
+        await sheet.getByRole('button', { name: 'Jot a note' }).click()
+
+        const card = page.getByTestId('sticky-note')
+        await expect(card).toHaveCount(1)
+        await expect(card).toHaveAttribute('data-variant', 'card')
+        await expect(card.getByRole('textbox').first()).toBeFocused()
+
+        await writeCard(page, card, 'Mobile note')
+        await expect(card.getByRole('textbox')).toHaveValue('Mobile note')
+        await expect(page.getByTestId('notes-fab-count')).toHaveText('1')
+    })
+
+    test('a card persists across reload and reopens from the notes button', async ({ page }) => {
+        await openHome(page)
+        await page.getByTestId('notes-fab').click()
+        await page.getByTestId('notes-new').click()
+
+        const card = page.getByTestId('sticky-note')
+        await writeCard(page, card, 'Survives reload')
+
+        await page.reload()
+        await expect(page.getByText('Queue', { exact: true })).toBeVisible()
+        await expect(page.getByTestId('sticky-note')).toHaveCount(0)
+
+        await page.getByTestId('notes-fab').click()
+        await expect(page.getByTestId('sticky-note').getByRole('textbox')).toHaveValue('Survives reload')
+    })
+
+    test('the sheet closes on backdrop, close button and Escape', async ({ page }) => {
+        await openHome(page)
+        const sheet = page.getByTestId('notes-sheet')
+
+        await page.getByTestId('notes-fab').click()
+        await expect(sheet).toBeVisible()
+        await page.keyboard.press('Escape')
+        await expect(sheet).toHaveCount(0)
+
+        await page.getByTestId('notes-fab').click()
+        await page.getByTestId('notes-close').click()
+        await expect(sheet).toHaveCount(0)
+
+        await page.getByTestId('notes-fab').click()
+        await expect(sheet).toBeVisible()
+        // Click the backdrop away from the nav/quick-link controls.
+        await page.getByTestId('notes-backdrop').click({ position: { x: 200, y: 60 } })
+        await expect(sheet).toHaveCount(0)
+    })
+
+    test('deleting a card offers undo which restores it', async ({ page }) => {
+        await openHome(page)
+        await page.getByTestId('notes-fab').click()
+        await page.getByTestId('notes-new').click()
+
+        const card = page.getByTestId('sticky-note')
+        await writeCard(page, card, 'Throwaway')
+
+        await card.getByRole('button', { name: 'Delete note' }).click()
+        await expect(card).toHaveCount(0, { timeout: 5000 })
+
+        const undo = page.getByTestId('sticky-note-undo')
+        await expect(undo).toBeVisible()
+        await undo.getByRole('button', { name: 'Undo' }).click()
+
+        await expect(page.getByTestId('sticky-note').getByRole('textbox')).toHaveValue('Throwaway')
+    })
+
+    test('Escape closes the colour palette before the sheet', async ({ page }) => {
+        await openHome(page)
+        await page.getByTestId('notes-fab').click()
+        await page.getByTestId('notes-new').click()
+
+        const card = page.getByTestId('sticky-note')
+        await writeCard(page, card, 'Palette')
+
+        await card.getByRole('button', { name: 'Change note colour' }).click()
+        const palette = page.getByRole('toolbar', { name: 'Note colour' })
+        await expect(palette).toBeVisible()
+
+        // First Escape only dismisses the palette.
+        await page.keyboard.press('Escape')
+        await expect(palette).toHaveCount(0)
+        await expect(page.getByTestId('notes-sheet')).toBeVisible()
+
+        // The next Escape closes the sheet.
+        await page.keyboard.press('Escape')
+        await expect(page.getByTestId('notes-sheet')).toHaveCount(0)
+    })
+
+    test('a card point toggles and its colour persists across reload', async ({ page }) => {
+        await openHome(page)
+        await page.getByTestId('notes-fab').click()
+        await page.getByTestId('notes-new').click()
+
+        const card = page.getByTestId('sticky-note')
+        await writeCard(page, card, 'First point', 'Second point')
+
+        const checkboxes = card.getByRole('checkbox')
+        await expect(checkboxes).toHaveCount(2)
+        await card.locator('label:has(input[type="checkbox"])').nth(1).click()
+        await expect(checkboxes.nth(1)).toBeChecked()
+        await expect.poll(async () => (await readNotes(page)).some((note) => note.points[1]?.done === true)).toBe(true)
+
+        await card.getByRole('button', { name: 'Change note colour' }).click()
+        await page.getByRole('button', { name: 'Colour emerald' }).click()
+        await expect(card).toHaveAttribute('data-color', 'emerald')
+
+        await page.reload()
+        await expect(page.getByText('Queue', { exact: true })).toBeVisible()
+        await page.getByTestId('notes-fab').click()
+
+        const reloaded = page.getByTestId('sticky-note')
+        await expect(reloaded).toHaveAttribute('data-color', 'emerald')
+        await expect(reloaded.getByRole('checkbox').nth(1)).toBeChecked()
+    })
+
+    test('an empty card is discarded when the sheet closes', async ({ page }) => {
+        await openHome(page)
+        await page.getByTestId('notes-fab').click()
+        await page.getByTestId('notes-new').click()
+        await expect(page.getByTestId('sticky-note')).toHaveCount(1)
+
+        await page.getByTestId('notes-close').click()
+        await expect(page.getByTestId('sticky-note')).toHaveCount(0, { timeout: 5000 })
+        await expect(page.getByTestId('notes-fab-count')).toHaveCount(0)
     })
 })

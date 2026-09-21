@@ -83,8 +83,8 @@ describe('noteRotation', () => {
     test('stays within the intended tilt range', () => {
         for (let index = 0; index < 30; index++) {
             const rotation = noteRotation(index)
-            expect(rotation).toBeGreaterThanOrEqual(-3)
-            expect(rotation).toBeLessThanOrEqual(3)
+            expect(rotation).toBeGreaterThanOrEqual(-2)
+            expect(rotation).toBeLessThanOrEqual(2)
         }
     })
 })

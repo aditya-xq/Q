@@ -14,17 +14,17 @@ Transform every new tab into a focused productivity hub. Stay organized, write d
 
 ## What You Get
 
-| Feature                 | Description                                                 |
-| ----------------------- | ----------------------------------------------------------- |
-| Sticky Notes            | Jot a multi-point checklist and stick it anywhere (Alt + Q) |
-| Projects                | Organize work streams in one place                          |
-| Writer Mode             | Distraction-free writing when you need to focus             |
-| Voice Typing            | Dictate into the editor with native speech recognition      |
-| Quick Links & Top Sites | One-click access to your most visited sites                 |
-| Weather Widget          | Check conditions at a glance                                |
-| Daily Inspiration       | Quotes and facts to spark curiosity                         |
-| Deep Links              | Share a view with `?view=projects` / `?view=writer`         |
-| Customizable            | Tailor Q to match your workflow                             |
+| Feature                 | Description                                                                                         |
+| ----------------------- | --------------------------------------------------------------------------------------------------- |
+| Sticky Notes            | Jot a multi-point checklist and pin it anywhere; a notes button opens the stack on mobile (Alt + Q) |
+| Projects                | Organize work streams in one place                                                                  |
+| Writer Mode             | Distraction-free writing when you need to focus                                                     |
+| Voice Typing            | Dictate into the editor with native speech recognition                                              |
+| Quick Links & Top Sites | One-click access to your most visited sites                                                         |
+| Weather Widget          | Check conditions at a glance                                                                        |
+| Daily Inspiration       | Quotes and facts to spark curiosity                                                                 |
+| Deep Links              | Share a view with `?view=projects` / `?view=writer`                                                 |
+| Customizable            | Tailor Q to match your workflow                                                                     |
 
 ---
 

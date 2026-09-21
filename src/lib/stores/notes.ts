@@ -86,8 +86,13 @@ export function consumeStagedNote(id: number): boolean {
     return stagedNoteIds.delete(id)
 }
 
-/** Create a new note at the centre of the viewport and focus it. */
-export async function createNote(): Promise<number | undefined> {
+/**
+ * Create a new note at the centre of the viewport and focus it.
+ *
+ * `stage` marks the note for the desktop board's parking glide; the mobile
+ * card stack has no free positioning, so it passes `stage: false`.
+ */
+export async function createNote({ stage = true }: { stage?: boolean } = {}): Promise<number | undefined> {
     const viewportWidth = typeof window === 'undefined' ? 1280 : window.innerWidth
     const viewportHeight = typeof window === 'undefined' ? 800 : window.innerHeight
     const seed = Date.now()
@@ -100,7 +105,7 @@ export async function createNote(): Promise<number | undefined> {
         rotation: noteRotation(seed),
     })
     if (typeof id === 'number') {
-        stagedNoteIds.add(id)
+        if (stage) stagedNoteIds.add(id)
         appState.composeNoteId = id
     }
     return id

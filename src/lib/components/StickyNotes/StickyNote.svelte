@@ -23,13 +23,18 @@
         staggerIndex?: number | null
         onDeleted?: (note: Note) => void
         onFocused?: () => void
+        /** `board` = free-floating desktop note; `card` = in-flow note inside the mobile stack. */
+        variant?: 'board' | 'card'
     }
 
-    let { note, autoFocus = false, staggerIndex = null, onDeleted, onFocused }: Props = $props()
+    let { note, autoFocus = false, staggerIndex = null, onDeleted, onFocused, variant = 'board' }: Props = $props()
+
+    // The variant never changes for a mounted note, so read it once.
+    const isCard = untrack(() => variant === 'card')
 
     // Frozen once at mount: a later change (e.g. the note no longer being staged)
     // must never re-trigger the finished note-pop animation.
-    const enterDelay = untrack(() => (staggerIndex === null ? 0 : Math.min(staggerIndex * 70, 420)))
+    const enterDelay = untrack(() => (isCard || staggerIndex === null ? 0 : Math.min(staggerIndex * 70, 420)))
 
     interface Point extends NotePoint {
         id: number
@@ -38,6 +43,8 @@
     const FLIGHT_MS = 700
     /** Must match the `note-vanish` exit animation length. */
     const DISMISS_MS = 240
+    /** Swatches per row in the colour picker (must match the `grid-cols-*` class). */
+    const PALETTE_COLUMNS = 5
 
     let noteEl = $state<HTMLElement | undefined>(undefined)
     let colorButtonEl = $state<HTMLButtonElement | undefined>(undefined)
@@ -105,6 +112,8 @@
     // Refit and pull the note back on screen when the window changes.
     onMount(() => {
         reflow()
+        // Cards are in-flow and never clamped, so they don't need a resize listener.
+        if (isCard) return
         const onResize = () => {
             reflow()
             schedulePositionSave()
@@ -135,9 +144,11 @@
         }
     }
 
-    /** Pull the note back inside the viewport (no-op while dragging). */
+    /** Pull the note back inside the viewport (no-op while dragging, in card mode, or before binding). */
     function clampIntoView() {
-        if (dragging) return
+        // `use:autosize`'s initial fit runs before `bind:this` lands, so there is
+        // nothing measurable yet; clamping with the default size would shift the note.
+        if (dragging || isCard || !noteEl) return
         const { width, height } = noteSize()
         const position = clampToViewport(x, y, window.innerWidth, window.innerHeight, width, height)
         x = position.x
@@ -174,7 +185,7 @@
     }
 
     function onPointerDown(event: PointerEvent) {
-        if (exiting) return
+        if (exiting || isCard) return
         bringToFront()
         dragging = true
         moved = false
@@ -217,6 +228,8 @@
 
     function onHandleKeydown(event: KeyboardEvent) {
         if (event.key === 'Escape' && paletteOpen) {
+            // Keep Escape scoped to the palette so it never reaches a document-level handler.
+            event.stopPropagation()
             closePalette()
             return
         }
@@ -261,12 +274,18 @@
     function onPaletteKeydown(event: KeyboardEvent) {
         if (event.key === 'Escape') {
             event.preventDefault()
+            // Keep Escape scoped to the palette; on mobile it must not also close the sheet.
+            event.stopPropagation()
             closePalette()
             return
         }
-        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+        let delta = 0
+        if (event.key === 'ArrowRight') delta = 1
+        else if (event.key === 'ArrowLeft') delta = -1
+        else if (event.key === 'ArrowDown') delta = PALETTE_COLUMNS
+        else if (event.key === 'ArrowUp') delta = -PALETTE_COLUMNS
+        else return
         event.preventDefault()
-        const delta = event.key === 'ArrowRight' ? 1 : -1
         paletteIndex = (paletteIndex + delta + NOTE_COLORS.length) % NOTE_COLORS.length
         paletteEl?.querySelectorAll<HTMLButtonElement>('button')[paletteIndex]?.focus()
     }
@@ -306,6 +325,8 @@
 
         if (event.key === 'Escape') {
             event.preventDefault()
+            // Keep Escape scoped to the edit; on mobile it must not also close the sheet.
+            event.stopPropagation()
             cancelEdit()
             return
         }
@@ -372,6 +393,7 @@
 
     /** Glide a freshly created note from the centre to its first free parking slot. */
     async function settleIntoBoard() {
+        if (isCard) return
         if (!consumeStagedNote(note.id!)) return
         const { width, height } = noteSize()
         // Exclude this note itself (it sits at the centre while staged) from the occupancy check.
@@ -417,49 +439,56 @@
 
 <div
     bind:this={noteEl}
-    class={`fixed ${flying ? 'note-flying' : ''}`}
-    style:left={`${x}px`}
-    style:top={`${y}px`}
-    style:z-index={z}
+    class={isCard ? 'relative w-full' : `fixed ${flying ? 'note-flying' : ''}`}
+    style:left={isCard ? undefined : `${x}px`}
+    style:top={isCard ? undefined : `${y}px`}
+    style:z-index={isCard ? undefined : z}
     data-testid="sticky-note"
     data-color={note.color}
+    data-variant={variant}
     role="group"
     aria-label="Sticky note"
 >
     <div
-        class={`sticky-note relative rounded-xl border shadow-lg ${theme.paper} ${theme.border} ${
+        class={`sticky-note group relative rounded-2xl border ${theme.paper} ${theme.border} ${
             exiting ? 'sticky-note--exiting' : ''
-        } ${dragging ? 'sticky-note--dragging' : ''}`}
-        style:--rot={`${note.rotation}deg`}
+        } ${dragging ? 'sticky-note--dragging' : ''} ${isCard ? 'sticky-note--card' : ''}`}
+        style:--rot={isCard ? '0deg' : `${note.rotation}deg`}
         style:--enter-delay={`${enterDelay}ms`}
-        style:width="min(clamp(220px, 17vw, 300px), calc(100vw - 24px))"
+        style:width={isCard ? '100%' : 'min(clamp(208px, 15vw, 272px), calc(100vw - 24px))'}
     >
-        <!-- The whole bar is the drag surface; the buttons opt out. -->
+        <!-- The whole bar is the drag surface; the buttons opt out. On cards the bar is static. -->
         <div
-            class="flex cursor-grab touch-none items-center justify-between px-2 pt-1.5 pb-0.5 active:cursor-grabbing"
+            class={`flex items-center px-2 pt-1.5 pb-0.5 ${
+                isCard ? 'justify-end gap-1' : 'cursor-grab touch-none justify-between active:cursor-grabbing'
+            }`}
             data-testid="sticky-note-bar"
-            onpointerdown={onPointerDown}
-            onpointermove={onPointerMove}
-            onpointerup={onPointerUp}
-            onpointercancel={onPointerUp}
+            onpointerdown={isCard ? undefined : onPointerDown}
+            onpointermove={isCard ? undefined : onPointerMove}
+            onpointerup={isCard ? undefined : onPointerUp}
+            onpointercancel={isCard ? undefined : onPointerUp}
         >
-            <button
-                type="button"
-                class={`flex h-6 w-6 items-center justify-center rounded-md text-[11px] tracking-[0.15em] ${theme.accent} opacity-40 transition hover:bg-black/5 hover:opacity-80 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-slate-900/30 focus-visible:outline-none dark:hover:bg-white/10 dark:focus-visible:ring-slate-100/30`}
-                data-testid="sticky-note-handle"
-                aria-label="Move note (drag the bar or use arrow keys)"
-                title="Drag the bar or use arrow keys"
-                onkeydown={onHandleKeydown}
-            >
-                <span aria-hidden="true">⠿</span>
-            </button>
+            {#if !isCard}
+                <button
+                    type="button"
+                    class={`flex h-6 w-6 items-center justify-center rounded-md text-[11px] tracking-[0.15em] ${theme.accent} opacity-0 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10`}
+                    data-testid="sticky-note-handle"
+                    aria-label="Move note (drag the bar or use arrow keys)"
+                    title="Drag the bar or use arrow keys"
+                    onkeydown={onHandleKeydown}
+                >
+                    <span aria-hidden="true">⠿</span>
+                </button>
+            {/if}
 
             <div class="flex items-center gap-0.5">
                 <div class="relative">
                     <button
                         bind:this={colorButtonEl}
                         type="button"
-                        class={`flex h-6 w-6 cursor-pointer items-center justify-center rounded-md ${theme.accent} opacity-50 transition hover:bg-black/5 hover:opacity-90 dark:hover:bg-white/10`}
+                        class={`flex ${isCard ? 'h-9 w-9' : 'h-6 w-6'} cursor-pointer items-center justify-center rounded-md ${theme.accent} transition-opacity duration-200 ${
+                            isCard ? 'opacity-80' : 'opacity-0 group-focus-within:opacity-100 group-hover:opacity-100'
+                        } hover:bg-black/5 dark:hover:bg-white/10`}
                         aria-label="Change note colour"
                         aria-expanded={paletteOpen}
                         aria-controls={paletteId}
@@ -476,7 +505,9 @@
                         <div
                             bind:this={paletteEl}
                             id={paletteId}
-                            class="absolute top-7 right-0 z-10 flex gap-1 rounded-full border border-slate-200 bg-white/95 p-1 shadow-lg backdrop-blur dark:border-slate-700 dark:bg-slate-900/95"
+                            class={`absolute top-8 right-0 z-10 grid w-max grid-cols-5 rounded-2xl border border-slate-200/80 bg-white/95 shadow-lg backdrop-blur dark:border-slate-700/70 dark:bg-slate-900/95 ${
+                                isCard ? 'gap-1.5 p-1.5' : 'gap-1 p-1'
+                            }`}
                             role="toolbar"
                             aria-label="Note colour"
                             tabindex="-1"
@@ -485,7 +516,9 @@
                             {#each NOTE_COLORS as option, index (option)}
                                 <button
                                     type="button"
-                                    class={`h-4 w-4 cursor-pointer rounded-full ring-1 ring-black/10 transition hover:scale-110 ${
+                                    class={`${
+                                        isCard ? 'h-7 w-7' : 'h-5 w-5'
+                                    } cursor-pointer rounded-full ring-1 ring-black/10 transition hover:scale-110 ${
                                         option === note.color ? 'ring-2 ring-slate-900/60 dark:ring-slate-100/70' : ''
                                     }`}
                                     style:background={NOTE_THEME[option].swatch}
@@ -503,7 +536,9 @@
 
                 <button
                     type="button"
-                    class={`flex h-6 w-6 cursor-pointer items-center justify-center rounded-md ${theme.accent} opacity-40 transition hover:bg-black/5 hover:opacity-100 dark:hover:bg-white/10`}
+                    class={`flex ${isCard ? 'h-9 w-9' : 'h-6 w-6'} cursor-pointer items-center justify-center rounded-md ${theme.accent} transition-opacity duration-200 ${
+                        isCard ? 'opacity-80' : 'opacity-0 group-focus-within:opacity-100 group-hover:opacity-100'
+                    } hover:bg-black/5 dark:hover:bg-white/10`}
                     aria-label="Delete note"
                     onpointerdown={(event) => event.stopPropagation()}
                     onclick={(event) => {
@@ -524,11 +559,11 @@
             </div>
         </div>
 
-        <div class="flex flex-col gap-1 px-3 pb-3">
+        <div class="flex flex-col gap-1.5 px-3.5 pt-0.5 pb-3.5">
             {#each points as point, index (point.id)}
-                <div class="flex items-start gap-2.5">
+                <div class="flex items-start gap-2">
                     <label
-                        class="mt-1 flex-shrink-0 cursor-pointer"
+                        class="flex flex-shrink-0 cursor-pointer p-0.5"
                         title={point.done ? 'Mark point not done' : 'Mark point done'}
                     >
                         <input
@@ -539,14 +574,14 @@
                             onchange={() => togglePointDone(index)}
                         />
                         <span
-                            class={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all ${
+                            class={`flex h-4 w-4 items-center justify-center rounded-full border-[1.5px] transition-all ${
                                 point.done
                                     ? 'border-transparent bg-slate-900/70 dark:bg-slate-100/80'
                                     : 'border-slate-900/25 dark:border-slate-100/30'
                             }`}
                         >
                             {#if point.done}
-                                <svg class="h-3 w-3 text-white dark:text-slate-900" viewBox="0 0 24 24" fill="none">
+                                <svg class="h-2.5 w-2.5 text-white dark:text-slate-900" viewBox="0 0 24 24" fill="none">
                                     <path
                                         stroke="currentColor"
                                         stroke-width="3"
@@ -566,8 +601,8 @@
                         rows={1}
                         aria-label={`Point ${index + 1}`}
                         placeholder={index === 0 ? 'Jot a point…' : ''}
-                        class={`w-full resize-none overflow-y-auto bg-transparent text-sm leading-snug ${theme.accent} max-h-[40vh] placeholder:text-slate-900/30 focus:outline-none dark:placeholder:text-slate-100/30 ${
-                            point.done ? 'line-through opacity-60' : ''
+                        class={`w-full resize-none overflow-y-auto bg-transparent p-0 text-[15px] leading-snug ${theme.accent} max-h-[40vh] placeholder:text-slate-400/80 focus:outline-none dark:placeholder:text-slate-500/80 ${
+                            point.done ? 'line-through opacity-50' : ''
                         }`}
                         onfocus={() => {
                             editing = true
@@ -581,15 +616,19 @@
 
             {#if showFinishHint}
                 <p
-                    class={`pr-0.5 text-right text-[10px] font-medium tracking-wide ${theme.accent} opacity-50`}
+                    class="pr-0.5 text-right text-[10px] font-medium tracking-wide text-slate-400/90 dark:text-slate-500"
                     role="status"
                     data-testid="sticky-note-finish-hint"
                 >
-                    Press
-                    <kbd class="rounded border border-slate-900/20 px-1 py-px text-[9px] dark:border-slate-100/20">
-                        Enter
-                    </kbd>
-                    twice to finish
+                    {#if isCard}
+                        Saves automatically
+                    {:else}
+                        Press
+                        <kbd class="rounded border border-slate-400/40 px-1 py-px text-[9px] dark:border-slate-500/40">
+                            Enter
+                        </kbd>
+                        twice to finish
+                    {/if}
                 </p>
             {/if}
         </div>
@@ -602,22 +641,26 @@
     .sticky-note {
         transform: rotate(var(--rot, 0deg));
         transition:
-            transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
-            box-shadow 220ms ease;
-        animation: note-pop 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+            transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1),
+            box-shadow 200ms ease;
+        animation: note-pop 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
         animation-delay: var(--enter-delay, 0ms);
-        box-shadow: 0 10px 22px -12px rgba(15, 23, 42, 0.5);
+        box-shadow:
+            0 1px 2px rgba(15, 23, 42, 0.05),
+            0 10px 24px -12px rgba(15, 23, 42, 0.45);
     }
 
     .sticky-note:hover {
-        transform: rotate(calc(var(--rot, 0deg) * 0.35)) translateY(-2px);
-        box-shadow: 0 16px 28px -14px rgba(15, 23, 42, 0.55);
+        transform: rotate(calc(var(--rot, 0deg) * 0.4)) translateY(-2px);
+        box-shadow:
+            0 1px 3px rgba(15, 23, 42, 0.06),
+            0 16px 32px -14px rgba(15, 23, 42, 0.5);
     }
 
     .sticky-note--dragging {
         transition: none;
-        transform: rotate(0deg) scale(1.03);
-        box-shadow: 0 22px 36px -16px rgba(15, 23, 42, 0.6);
+        transform: rotate(0deg) scale(1.02);
+        box-shadow: 0 18px 34px -18px rgba(15, 23, 42, 0.45);
     }
 
     /* Graceful glide when a finished note parks itself. */
@@ -628,8 +671,10 @@
     }
 
     .note-flying .sticky-note {
-        transform: rotate(calc(var(--rot, 0deg) * 0.35)) scale(1.04);
-        box-shadow: 0 26px 44px -20px rgba(15, 23, 42, 0.6);
+        transform: rotate(calc(var(--rot, 0deg) * 0.4)) scale(1.02);
+        box-shadow:
+            0 1px 2px rgba(15, 23, 42, 0.05),
+            0 20px 36px -18px rgba(15, 23, 42, 0.45);
     }
 
     /* Quick, quiet exit: the note recedes with a short fade and shrink. */
@@ -638,17 +683,32 @@
         animation: note-vanish 240ms ease-in forwards;
     }
 
+    /* In-flow card used by the mobile notes stack: no tilt or lift (the stack applies its own). */
+    .sticky-note--card {
+        transform: none;
+        box-shadow:
+            0 1px 2px rgba(15, 23, 42, 0.03),
+            0 6px 18px -14px rgba(15, 23, 42, 0.3);
+    }
+
+    .sticky-note--card:hover {
+        transform: none;
+        box-shadow:
+            0 1px 2px rgba(15, 23, 42, 0.03),
+            0 6px 18px -14px rgba(15, 23, 42, 0.3);
+    }
+
     @keyframes note-pop {
         from {
             opacity: 0;
-            transform: rotate(var(--rot, 0deg)) translateY(14px) scale(0.94);
+            transform: rotate(var(--rot, 0deg)) translateY(8px) scale(0.985);
         }
     }
 
     @keyframes note-vanish {
         to {
             opacity: 0;
-            transform: rotate(var(--rot, 0deg)) scale(0.9);
+            transform: rotate(var(--rot, 0deg)) scale(0.97);
         }
     }
 
