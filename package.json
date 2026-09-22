@@ -10,8 +10,8 @@
     },
     "scripts": {
         "dev": "vite dev",
-        "build:ext": "BUILD_TARGET=extension bun run vite build",
-        "build:web": "BUILD_TARGET=web bun run vite build",
+        "build:ext": "BUILD_TARGET=extension bun run vite build && bun scripts/fix-extension-inline-scripts.js",
+        "build:web": "BUILD_TARGET=web bun run vite build && bun scripts/clean-web-build.js",
         "preview:web": "bun run build:web && vite preview",
         "preview": "vite preview",
         "release": "bun scripts/release.js",
@@ -29,7 +29,7 @@
         "test:e2e:ui": "playwright test --ui",
         "test:e2e:install": "playwright install chromium",
         "test:e2e:live": "E2E_LIVE=1 playwright test --project=live",
-        "test:e2e:extension": "RUN_EXTENSION_E2E=1 E2E_NO_SERVER=1 playwright test --project=extension"
+        "test:e2e:extension": "RUN_EXTENSION_E2E=1 E2E_NO_SERVER=1 bun run build:ext && playwright test --project=extension"
     },
     "devDependencies": {
         "@eslint/compat": "^1.4.1",

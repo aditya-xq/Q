@@ -29,12 +29,14 @@ bun run test:unit           # Bun unit tests (tests/**)
 bun run test:unit:coverage  # unit tests with coverage
 bun run test:e2e            # Playwright web e2e (builds + previews)
 bun run test:e2e:ui         # interactive UI mode
-bun run test:e2e:extension  # MV3 extension load test (headed Chromium)
+bun run test:e2e:extension  # MV3 extension load test (rebuilds build-extension, headed Chromium)
 bun run test:e2e:live       # smoke test against https://q.xqbuilds.com
 bun run test:e2e:install    # one-time browser download
 ```
 
 `BUILD_TARGET=web|extension` selects the adapter in `svelte.config.js` / `vite.config.ts`; the build scripts depend on it.
+
+MV3 `extension_pages` CSP allows only `'self'`/`'none'`/`'wasm-unsafe-eval'` and rejects inline scripts _and_ hashes/nonces, so `build:ext` runs `scripts/fix-extension-inline-scripts.js` after Vite to externalize every inline `<script>` (SvelteKit's bootstrap plus the `app.html` theme pre-paint script) into `script-<sha256>.js` and drop stale ones. Without it the extension renders but never hydrates. `static/` is shared by both targets, so `build:web` runs `scripts/clean-web-build.js` to delete the MV3-only `manifest.json`/`background.js` from `build/` (otherwise the web output is loadable as an unpacked extension and hits the same CSP wall).
 
 `bun run release` reads `version` from `package.json`, syncs `static/manifest.json`, builds both targets, packages `q-web.zip`/`q-extension.zip`, tags `vX.Y.Z`, creates the GitHub release, then (unless `--skip-edge`) uploads the extension and submits it for review via `scripts/edge-publish.js` using the `EDGE_EXTENSION_*` vars in `.env`. Use `bun run publish:edge` to retry only the store upload.
 

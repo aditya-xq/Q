@@ -6,7 +6,7 @@ test.use({
     geolocation: { latitude: 52.52, longitude: 13.405 },
 })
 
-const GEOCODE_URL = 'https://api.bigdatacloud.net/**'
+const GEOCODE_URL = 'https://api-bdc.io/**'
 const FORECAST_URL = 'https://api.open-meteo.com/**'
 const AIR_QUALITY_URL = 'https://air-quality-api.open-meteo.com/**'
 
@@ -52,7 +52,7 @@ test.describe('Weather widget', () => {
     test('does not request weather until the widget is enabled', async ({ page }) => {
         let requests = 0
         page.on('request', (request) => {
-            if (request.url().includes('open-meteo.com') || request.url().includes('bigdatacloud.net')) requests += 1
+            if (request.url().includes('open-meteo.com') || request.url().includes('api-bdc.io')) requests += 1
         })
 
         await openHome(page)

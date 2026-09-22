@@ -35,8 +35,9 @@
     const fetchWeatherData = async (lat: number, lon: number) => {
         try {
             const [gRes, wRes, aRes] = await Promise.all([
+                // api.bigdatacloud.net 307-redirects here; calling the canonical host avoids the extra hop
                 fetch(
-                    `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
+                    `https://api-bdc.io/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
                 ),
                 fetch(
                     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code&timezone=auto`

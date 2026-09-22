@@ -25,6 +25,6 @@
         }
     ],
     "content_security_policy": {
-        "extension_pages": "script-src 'self'; object-src 'self'; worker-src 'self'; connect-src 'self' https://api.open-meteo.com https://air-quality-api.open-meteo.com https://api.bigdatacloud.net"
+        "extension_pages": "script-src 'self'; object-src 'self'; worker-src 'self'; connect-src 'self' https://api.open-meteo.com https://air-quality-api.open-meteo.com https://api-bdc.io https://api.bigdatacloud.net"
     }
 }
