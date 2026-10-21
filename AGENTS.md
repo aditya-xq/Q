@@ -80,6 +80,8 @@ static/
   icons/, assets/
 ```
 
+- Writer UI (`components/Writer/`): the inline drafts panel renders at `lg+`; below that drafts open in the shared `createMobileDrawer` drawer. The editor is theme-aware — `Editor.svelte` imports Crepe's `nord.css` and overrides its CSS variables for light and dark (`.milkdown` / `.dark .milkdown`); its typography rules must select `.milkdown .ProseMirror …` to outrank Crepe's base styles. Code blocks keep a dark surface in both modes because Crepe highlights them with CodeMirror's `oneDark`.
+
 ### Data & state rules
 
 - IndexedDB is the source of truth. `utils/stores.ts` hides the legacy Quick Todo pseudo-project (id `-1`) from project lists without deleting it; `< 0` ids are never user projects.

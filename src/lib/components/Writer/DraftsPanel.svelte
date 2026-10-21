@@ -33,14 +33,14 @@
     }
 </script>
 
-<aside class="w-80">
-    <div class="hidden md:flex mb-4 items-center justify-between">
+<aside class="w-72 max-w-full xl:w-80">
+    <div class="hidden lg:flex mb-4 items-center justify-between">
         <h3 class="text-sm font-semibold tracking-wide text-slate-900 dark:text-slate-100 uppercase opacity-60">
             Drafts
         </h3>
         <!-- New draft button -->
         <button
-            class="group rounded-lg px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm hover:shadow"
+            class="group min-h-10 rounded-lg px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm hover:shadow"
             onclick={createNewDraft}
             onkeydown={handleKeyCreate}
             aria-label="Create new draft"
@@ -73,7 +73,7 @@
                         <article
                             class="group relative flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 transition-all
                             {w.id === currentWriteupId
-                                ? 'bg-white dark:bg-slate-800 dark:ring-slate-800'
+                                ? 'bg-white ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700'
                                 : 'hover:bg-slate-200/50 dark:hover:bg-slate-900'}"
                         >
                             <button
@@ -83,12 +83,14 @@
                                 <span class="truncate text-sm font-medium text-slate-800 dark:text-slate-200">
                                     {w.title}
                                 </span>
-                                <span class="truncate text-xs text-slate-300 group-hover:text-slate-400">
+                                <span
+                                    class="truncate text-xs text-slate-500 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300"
+                                >
                                     {formatRelative(new Date(w.updatedAt))}
                                 </span>
                             </button>
                             <div
-                                class="ml-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100"
+                                class="ml-2 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"
                             >
                                 <DeleteButton label="draft" handleDelete={() => removeDraft(w.id)} />
                             </div>
@@ -96,7 +98,7 @@
                     {/each}
                     <section>
                         <button
-                            class="flex w-full items-center justify-between px-2 py-1.5 text-xs font-medium text-slate-400 transition-colors hover:text-slate-600 dark:hover:text-slate-300"
+                            class="flex w-full items-center justify-between px-2 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                             onclick={() => (openOlder = !openOlder)}
                         >
                             <span>Older</span>
@@ -140,12 +142,12 @@
                                             >
                                                 {w.title}
                                             </span>
-                                            <span class="truncate text-[10px] text-slate-400">
+                                            <span class="truncate text-[10px] text-slate-500 dark:text-slate-400">
                                                 {new Date(w.updatedAt).toLocaleDateString()}
                                             </span>
                                         </button>
                                         <div
-                                            class="ml-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100"
+                                            class="ml-2 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"
                                         >
                                             <DeleteButton label="draft" handleDelete={() => removeDraft(w.id)} />
                                         </div>
@@ -159,7 +161,7 @@
                         <article
                             class="group relative flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 transition-all
                             {w.id === currentWriteupId
-                                ? 'bg-white dark:bg-slate-800 dark:ring-slate-800'
+                                ? 'bg-white ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700'
                                 : 'hover:bg-slate-200/50 dark:hover:bg-slate-900'}"
                         >
                             <button
@@ -169,12 +171,14 @@
                                 <span class="truncate text-sm font-medium text-slate-800 dark:text-slate-200">
                                     {w.title}
                                 </span>
-                                <span class="truncate text-xs text-slate-300 group-hover:text-slate-400">
+                                <span
+                                    class="truncate text-xs text-slate-500 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300"
+                                >
                                     {formatRelative(new Date(w.updatedAt))}
                                 </span>
                             </button>
                             <div
-                                class="ml-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100"
+                                class="ml-2 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"
                             >
                                 <DeleteButton label="draft" handleDelete={() => removeDraft(w.id)} />
                             </div>
@@ -183,7 +187,10 @@
                 {/if}
             </div>
         {:else}
-            <div class="text-center text-sm text-slate-400 py-8">No drafts yet</div>
+            <div class="px-3 py-8 text-center">
+                <p class="text-sm text-slate-600 dark:text-slate-300">No drafts yet</p>
+                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Drafts save automatically as you type.</p>
+            </div>
         {/if}
     </div>
 </aside>

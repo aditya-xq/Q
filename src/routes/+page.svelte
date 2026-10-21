@@ -87,7 +87,7 @@
                 {#if appState.view === 'projects'}
                     <div class="mt-16"><ProjectGrid /></div>
                 {:else if appState.view === 'writer'}
-                    <div class="mt-20 mr-2 md:mr-16">
+                    <div class="mt-16 sm:mt-20 md:mr-16">
                         {#if WriterView}
                             <WriterView />
                         {:else}

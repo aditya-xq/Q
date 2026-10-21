@@ -27,6 +27,56 @@ test.describe('Writer', () => {
         })
     })
 
+    test('keeps editor text readable in light and dark mode', async ({ page }) => {
+        await page.emulateMedia({ colorScheme: 'light' })
+        await openViewShortcut(page, 'w')
+        const prose = page.locator('.milkdown .ProseMirror')
+        await expect(prose).toBeVisible({ timeout: 20_000 })
+
+        const brightness = () =>
+            prose.evaluate((el) => {
+                const channels = getComputedStyle(el).color.match(/\d+/g)?.map(Number) ?? []
+                return channels.reduce((sum, value) => sum + value, 0) / channels.length
+            })
+
+        expect(await brightness()).toBeLessThan(100)
+
+        await page.emulateMedia({ colorScheme: 'dark' })
+        await expect.poll(brightness).toBeGreaterThan(150)
+    })
+
+    test('shows a live word count while typing', async ({ page }) => {
+        await openViewShortcut(page, 'w')
+        const editor = page.locator('.milkdown .ProseMirror')
+        await expect(editor).toBeVisible({ timeout: 20_000 })
+
+        await editor.click()
+        await page.keyboard.type('one two three four five')
+        await expect(page.getByText(/5\s+words/)).toBeVisible()
+    })
+
+    test.describe('tablet layout', () => {
+        test.use({ viewport: { width: 820, height: 900 } })
+
+        test('keeps the editor wide and moves drafts into the drawer', async ({ page }) => {
+            await openViewShortcut(page, 'w')
+            const editor = page.locator('.milkdown .ProseMirror')
+            await expect(editor).toBeVisible({ timeout: 20_000 })
+
+            // The inline panel is only shown from lg up; below it the drawer takes over.
+            const box = await editor.boundingBox()
+            expect(box?.width ?? 0).toBeGreaterThan(480)
+
+            const openButton = page.getByRole('button', { name: 'Open drafts' })
+            await expect(openButton).toBeVisible()
+            await openButton.click()
+            await expect(page.getByText('No drafts yet').last()).toBeVisible()
+
+            await page.getByRole('button', { name: 'Close drafts panel' }).last().click()
+            await expect(page.getByText('No drafts yet').last()).toBeHidden()
+        })
+    })
+
     test('writes, autosaves and lists the draft', async ({ page }) => {
         await openViewShortcut(page, 'w')
 

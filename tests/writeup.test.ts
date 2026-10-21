@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { WRITEUP_TITLE_FALLBACK, deriveWriteupTitle, toWriteupSummary } from '$lib/utils/writeup'
+import { WRITEUP_TITLE_FALLBACK, countWords, deriveWriteupTitle, toWriteupSummary } from '$lib/utils/writeup'
 import type { Writeup } from '$lib/utils/db'
 
 describe('deriveWriteupTitle', () => {
@@ -35,5 +35,27 @@ describe('toWriteupSummary', () => {
     test('drops the write-up body from the summary', () => {
         const summary = toWriteupSummary(base)
         expect('content' in summary).toBe(false)
+    })
+})
+
+describe('countWords', () => {
+    test('counts plain prose', () => {
+        expect(countWords('Hello world')).toBe(2)
+        expect(countWords('One')).toBe(1)
+    })
+
+    test('ignores markdown syntax, links and code', () => {
+        expect(countWords('# Heading\n\nSome **bold** text with [a link](https://example.test).')).toBe(7)
+        expect(countWords('Use `inline code` here')).toBe(2)
+        expect(countWords('Intro\n\n```\nconst answer = 42\n```')).toBe(1)
+    })
+
+    test('counts numbers and hyphenated words once', () => {
+        expect(countWords('Version 2 is well-known.')).toBe(4)
+    })
+
+    test('returns zero for empty drafts', () => {
+        expect(countWords('')).toBe(0)
+        expect(countWords('# ')).toBe(0)
     })
 })

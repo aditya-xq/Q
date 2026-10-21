@@ -16,3 +16,18 @@ export function toWriteupSummary(writeup: Writeup): WriteupSummary {
         createdAt: writeup.createdAt,
     }
 }
+
+/** Counts the words of a markdown draft, ignoring code and formatting syntax. */
+export function countWords(content: string): number {
+    if (!content) return 0
+
+    const text = content
+        .replace(/```[\s\S]*?```/g, ' ') // fenced code blocks
+        .replace(/`[^`]*`/g, ' ') // inline code
+        .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
+        .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links -> label
+        .replace(/<[^>]+>/g, ' ') // inline html
+        .replace(/[*_~#>|]+/g, ' ') // formatting markers
+
+    return text.match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu)?.length ?? 0
+}

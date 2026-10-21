@@ -34,11 +34,17 @@ export function ordinal(n: number): string {
     return n + (s[(v - 20) % 10] || s[v] || s[0])
 }
 
-export function formatAutosaveTime(d: Date | null): string {
+export function formatAutosaveTime(d: Date | null, now: Date = new Date()): string {
     if (!d) return ''
-    const day = ordinal(d.getDate())
-    const month = d.toLocaleString(undefined, { month: 'short' })
-    const year = d.getFullYear()
+
     const time = d.toLocaleString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true })
-    return `${day} ${month} ${year}, ${time}`
+    const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+    const dayDiff = Math.round((startOfDay(now) - startOfDay(d)) / 86_400_000)
+
+    if (dayDiff === 0) return time
+    if (dayDiff === 1) return `yesterday, ${time}`
+
+    const month = d.toLocaleString(undefined, { month: 'short' })
+    const year = d.getFullYear() === now.getFullYear() ? '' : ` ${d.getFullYear()}`
+    return `${ordinal(d.getDate())} ${month}${year}, ${time}`
 }

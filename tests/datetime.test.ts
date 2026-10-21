@@ -87,13 +87,25 @@ describe('ordinal', () => {
 })
 
 describe('formatAutosaveTime', () => {
+    const now = new Date(2026, 8, 7, 15, 0)
+
     test('returns empty string for null', () => {
         expect(formatAutosaveTime(null)).toBe('')
     })
 
-    test('includes the ordinal day and year', () => {
-        const result = formatAutosaveTime(new Date(2026, 8, 7, 14, 30))
-        expect(result).toContain('7th')
-        expect(result).toContain('2026')
+    test('shows only the time for saves from today', () => {
+        const result = formatAutosaveTime(new Date(2026, 8, 7, 14, 30), now)
+        expect(result).toContain('2:30')
+        expect(result).not.toContain('Sep')
+    })
+
+    test('labels saves from yesterday', () => {
+        expect(formatAutosaveTime(new Date(2026, 8, 6, 14, 30), now)).toMatch(/^yesterday, /)
+    })
+
+    test('includes the day and month, and the year only when different', () => {
+        expect(formatAutosaveTime(new Date(2026, 7, 22, 9, 5), now)).toContain('22nd Aug')
+        expect(formatAutosaveTime(new Date(2026, 7, 22, 9, 5), now)).not.toContain('2026')
+        expect(formatAutosaveTime(new Date(2025, 7, 22, 9, 5), now)).toContain('2025')
     })
 })

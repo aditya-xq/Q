@@ -4,10 +4,11 @@
     import { toast } from '$lib/utils/notification'
     import { createVoiceTypingController, getVoiceTypingSupport } from '$lib/features/voice'
     import { type EditorApi, type VoiceEngineState, type VoiceTypingController } from '$lib/features/voice/types'
-    import { onDestroy, onMount } from 'svelte'
+    import { onDestroy, onMount, tick } from 'svelte'
     import DraftsPanel from './DraftsPanel.svelte'
     import { createMobileDrawer } from '$lib/utils/mobileDrawer.svelte'
     import { formatAutosaveTime } from '$lib/utils/datetime'
+    import { countWords } from '$lib/utils/writeup'
 
     let content = $state('# ')
     let currentWriteupId = $state<number | undefined>(undefined)
@@ -18,6 +19,8 @@
     let loading = $state(true)
 
     let editorApi: EditorApi | null = $state(null)
+    let drawerPanelEl = $state<HTMLElement | undefined>(undefined)
+    let draftsButtonEl = $state<HTMLButtonElement | undefined>(undefined)
     let voiceController: VoiceTypingController | null = null
     let voiceState = $state<VoiceEngineState>('idle')
     let voiceError = $state<string | null>(null)
@@ -28,9 +31,11 @@
     let copyResetTimer: number | undefined
     let skipNextEditorSync = $state(true)
     let onKeyboardShortcut: ((event: KeyboardEvent) => void) | null = null
+    let drawerBreakpoint: MediaQueryList | null = null
 
     const AUTOSAVE_DELAY = 1200 // ms
     const VOICE_AUTOSAVE_DELAY = 2200 // ms
+    const DRAWER_BREAKPOINT = '(min-width: 1024px)'
     let autosaveTimer = $state<number | undefined>(undefined)
     let saveQueue: Promise<void> = Promise.resolve()
 
@@ -42,6 +47,7 @@
 
     let isVoiceRunning = $derived(voiceState === 'active')
     let isVoiceBusy = $derived(voiceTogglePending)
+    let wordCount = $derived(countWords(content))
 
     let voiceStatusText = $derived.by(() => {
         if (voiceState === 'error') return voiceError ?? 'Voice typing unavailable'
@@ -301,6 +307,7 @@
         createdTimeInNum = w.createdAt ?? new Date(w.updatedAt).getTime()
         dirty = false
         autosavedAt = w.updatedAt ? new Date(w.updatedAt) : null
+        editorApi?.focus()
     }
 
     // create new draft
@@ -322,6 +329,7 @@
         editorApi?.setContent('# ')
         dirty = false
         autosavedAt = null
+        editorApi?.focus()
     }
 
     async function removeDraft(id: number) {
@@ -353,6 +361,49 @@
         flushPendingWork()
     }
 
+    // The inline drafts panel replaces the drawer from lg up.
+    function onDrawerBreakpointChange(event: MediaQueryListEvent) {
+        if (event.matches && drawer.open) drawer.closeDrawer()
+    }
+
+    async function openDraftsDrawer() {
+        if (drawer.open) return
+        drawer.openDrawer()
+        await tick()
+        drawerPanelEl?.focus()
+    }
+
+    function closeDraftsDrawer({ restoreFocus = true }: { restoreFocus?: boolean } = {}) {
+        if (!drawer.open) return
+        drawer.closeDrawer()
+        if (restoreFocus) draftsButtonEl?.focus()
+    }
+
+    function onWindowDrawerKeydown(event: KeyboardEvent) {
+        if (!drawer.open || event.key !== 'Escape') return
+        event.preventDefault()
+        closeDraftsDrawer()
+    }
+
+    /** Keep Tab focus inside the drafts drawer while it is open. */
+    function onDrawerPanelKeydown(event: KeyboardEvent) {
+        if (event.key !== 'Tab') return
+        const focusables = drawerPanelEl?.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), a[href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
+        )
+        if (!focusables || focusables.length === 0) return
+        const first = focusables[0]
+        const last = focusables[focusables.length - 1]
+        const active = document.activeElement
+        if (event.shiftKey && (active === first || active === drawerPanelEl)) {
+            event.preventDefault()
+            last.focus()
+        } else if (!event.shiftKey && active === last) {
+            event.preventDefault()
+            first.focus()
+        }
+    }
+
     // lifecycle hooks
     onMount(async () => {
         loading = true
@@ -380,6 +431,9 @@
         window.addEventListener('beforeunload', onBeforeUnload)
         window.addEventListener('pagehide', onPageHide)
         window.addEventListener('keydown', onKeyboardShortcut)
+
+        drawerBreakpoint = window.matchMedia(DRAWER_BREAKPOINT)
+        drawerBreakpoint.addEventListener('change', onDrawerBreakpointChange)
     })
 
     onDestroy(() => {
@@ -388,6 +442,10 @@
         if (onKeyboardShortcut) {
             window.removeEventListener('keydown', onKeyboardShortcut)
             onKeyboardShortcut = null
+        }
+        if (drawerBreakpoint) {
+            drawerBreakpoint.removeEventListener('change', onDrawerBreakpointChange)
+            drawerBreakpoint = null
         }
         clearAutosaveTimer()
         if (copyResetTimer) {
@@ -408,22 +466,75 @@
     const drawer = createMobileDrawer()
 </script>
 
+<svelte:window onkeydown={onWindowDrawerKeydown} />
+
 <div class="container mx-auto p-3 sm:p-4 md:p-6 transition-all duration-300 ease-in-out">
     <p class="sr-only" aria-live="polite">{voiceStatusText}</p>
 
     <div class="flex gap-4 lg:gap-8 relative">
         <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between mb-3 sm:mb-4 gap-2">
-                <div class="flex-1 min-w-0"></div>
+            <!-- Matches the editor measure in Editor.svelte so the toolbar stays aligned on wide screens. -->
+            <div
+                class="mx-auto mb-3 flex w-full max-w-[46rem] flex-wrap items-center justify-end gap-2 sm:mb-4 sm:gap-3 lg:max-w-[50rem]"
+            >
+                <div
+                    class="mr-auto flex items-center gap-1.5 text-xs italic text-slate-500 dark:text-slate-400 sm:gap-2 sm:text-sm"
+                >
+                    {#if saving}
+                        <svg
+                            class="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            aria-hidden="true"
+                        >
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" stroke-opacity="0.25"
+                            ></circle>
+                            <path
+                                d="M22 12a10 10 0 00-10-10"
+                                stroke="currentColor"
+                                stroke-width="4"
+                                stroke-linecap="round"
+                            ></path>
+                        </svg>
+                    {/if}
+                    <span class="hidden whitespace-nowrap sm:inline">{saveStatusText}</span>
+                    {#if !saving && autosavedAt}
+                        <span class="whitespace-nowrap sm:hidden">Saved</span>
+                    {/if}
+                    {#if wordCount > 0}
+                        <span class="hidden items-center gap-1.5 sm:inline-flex">
+                            <span class="text-slate-300 dark:text-slate-600" aria-hidden="true">·</span>
+                            <span
+                                class="whitespace-nowrap tabular-nums"
+                                aria-label={`${wordCount} ${wordCount === 1 ? 'word' : 'words'}`}
+                            >
+                                {wordCount}
+                                {wordCount === 1 ? 'word' : 'words'}
+                            </span>
+                        </span>
+                    {/if}
+                </div>
 
-                <div class="flex items-center gap-2 sm:gap-3 shrink-0">
-                    <div class="text-xs sm:text-sm italic text-slate-400 flex items-center gap-1.5 sm:gap-2">
-                        {#if saving}
+                <button
+                    class={`group flex min-h-10 min-w-10 items-center justify-center rounded-md px-2.5 py-1.5 border transition-all shadow-sm active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:rounded-lg sm:px-3 sm:py-2 ${
+                        isVoiceRunning
+                            ? 'bg-rose-100 dark:bg-rose-950/40 border-rose-300 dark:border-rose-700 text-rose-700 dark:text-rose-300'
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                    }`}
+                    onclick={toggleVoiceTyping}
+                    disabled={!voiceSupported || voiceTogglePending}
+                    aria-label={isVoiceRunning
+                        ? `Stop voice typing (${VOICE_SHORTCUT_LABEL})`
+                        : `Start voice typing (${VOICE_SHORTCUT_LABEL})`}
+                    aria-pressed={isVoiceRunning}
+                >
+                    <div class="flex items-center gap-1.5 sm:gap-2">
+                        {#if isVoiceBusy && !isVoiceRunning}
                             <svg
                                 class="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin"
                                 viewBox="0 0 24 24"
                                 fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
                                 aria-hidden="true"
                             >
                                 <circle
@@ -441,178 +552,137 @@
                                     stroke-linecap="round"
                                 ></path>
                             </svg>
+                        {:else}
+                            <svg
+                                class="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                aria-hidden="true"
+                            >
+                                <path d="M12 14a3 3 0 003-3V6a3 3 0 10-6 0v5a3 3 0 003 3z"></path>
+                                <path
+                                    d="M5 11a1 1 0 112 0 5 5 0 0010 0 1 1 0 112 0 7 7 0 01-6 6.92V20h2a1 1 0 110 2H9a1 1 0 110-2h2v-2.08A7 7 0 015 11z"
+                                ></path>
+                            </svg>
                         {/if}
-                        <span class="hidden sm:inline whitespace-nowrap">{saveStatusText}</span>
-                        <span class="sm:hidden whitespace-nowrap">{saving ? 'Saving...' : 'Saved'}</span>
+                        <span class="hidden text-xs font-medium sm:inline">{isVoiceRunning ? 'Stop' : 'Voice'}</span>
                     </div>
+                </button>
 
-                    <button
-                        class={`group rounded-md sm:rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 border transition-all shadow-sm active:scale-95 ${
-                            isVoiceRunning
-                                ? 'bg-rose-100 dark:bg-rose-950/40 border-rose-300 dark:border-rose-700 text-rose-700 dark:text-rose-300'
-                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                        }`}
-                        onclick={toggleVoiceTyping}
-                        disabled={!voiceSupported || voiceTogglePending}
-                        aria-label={isVoiceRunning
-                            ? `Stop voice typing (${VOICE_SHORTCUT_LABEL})`
-                            : `Start voice typing (${VOICE_SHORTCUT_LABEL})`}
-                        aria-pressed={isVoiceRunning}
+                <button
+                    class={`group flex min-h-10 min-w-10 items-center justify-center rounded-md px-2.5 py-1.5 border transition-all shadow-sm active:scale-95 sm:rounded-lg sm:px-3 sm:py-2 ${
+                        copied
+                            ? 'bg-emerald-100 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300'
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                    }`}
+                    onclick={copyMarkdown}
+                    aria-label="Copy markdown to clipboard"
+                >
+                    <div class="flex items-center gap-1.5 sm:gap-2">
+                        {#if copied}
+                            <svg
+                                class="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="M20 6L9 17l-5-5"></path>
+                            </svg>
+                        {:else}
+                            <svg
+                                class="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+                            </svg>
+                        {/if}
+                        <span class="hidden text-xs font-medium sm:inline">{copied ? 'Copied' : 'Copy'}</span>
+                    </div>
+                </button>
+
+                {#if (isVoiceRunning || isVoiceBusy) && voiceStatusText}
+                    <span
+                        class="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap max-w-[8.5rem] sm:max-w-none truncate"
                     >
-                        <div class="flex items-center gap-1.5 sm:gap-2">
-                            {#if isVoiceBusy && !isVoiceRunning}
-                                <svg
-                                    class="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    aria-hidden="true"
-                                >
-                                    <circle
-                                        cx="12"
-                                        cy="12"
-                                        r="10"
-                                        stroke="currentColor"
-                                        stroke-width="4"
-                                        stroke-opacity="0.25"
-                                    ></circle>
-                                    <path
-                                        d="M22 12a10 10 0 00-10-10"
-                                        stroke="currentColor"
-                                        stroke-width="4"
-                                        stroke-linecap="round"
-                                    ></path>
-                                </svg>
-                            {:else}
-                                <svg
-                                    class="w-3.5 h-3.5 sm:w-4 sm:h-4"
-                                    viewBox="0 0 24 24"
-                                    fill="currentColor"
-                                    aria-hidden="true"
-                                >
-                                    <path d="M12 14a3 3 0 003-3V6a3 3 0 10-6 0v5a3 3 0 003 3z"></path>
-                                    <path
-                                        d="M5 11a1 1 0 112 0 5 5 0 0010 0 1 1 0 112 0 7 7 0 01-6 6.92V20h2a1 1 0 110 2H9a1 1 0 110-2h2v-2.08A7 7 0 015 11z"
-                                    ></path>
-                                </svg>
-                            {/if}
-                            <span class="text-xs font-medium">{isVoiceRunning ? 'Stop' : 'Voice'}</span>
-                        </div>
-                    </button>
+                        {#if isVoiceBusy}
+                            <span class="inline-block h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse"></span>
+                        {:else}
+                            <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500/70"></span>
+                        {/if}
+                        <span>{voiceStatusText}</span>
+                    </span>
+                {/if}
 
-                    <button
-                        class={`group rounded-md sm:rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 border transition-all shadow-sm active:scale-95 ${
-                            copied
-                                ? 'bg-emerald-100 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300'
-                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                        }`}
-                        onclick={copyMarkdown}
-                        aria-label="Copy markdown to clipboard"
-                    >
-                        <div class="flex items-center gap-1.5 sm:gap-2">
-                            {#if copied}
-                                <svg
-                                    class="w-3.5 h-3.5 sm:w-4 sm:h-4"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    aria-hidden="true"
-                                >
-                                    <path d="M20 6L9 17l-5-5"></path>
-                                </svg>
-                            {:else}
-                                <svg
-                                    class="w-3.5 h-3.5 sm:w-4 sm:h-4"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    aria-hidden="true"
-                                >
-                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
-                                </svg>
-                            {/if}
-                            <span class="text-xs font-medium">{copied ? 'Copied' : 'Copy'}</span>
-                        </div>
-                    </button>
-
-                    {#if (isVoiceRunning || isVoiceBusy) && voiceStatusText}
-                        <span
-                            class="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap max-w-[8.5rem] sm:max-w-none truncate"
+                {#if !loading}
+                    <div class="flex items-center gap-1.5 sm:gap-2 lg:hidden">
+                        <button
+                            class="group flex min-h-10 items-center justify-center rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm hover:shadow active:scale-95"
+                            onclick={() => createNewDraft()}
+                            aria-label="Create new draft"
                         >
-                            {#if isVoiceBusy}
-                                <span class="inline-block h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse"></span>
-                            {:else}
-                                <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500/70"></span>
-                            {/if}
-                            <span>{voiceStatusText}</span>
-                        </span>
-                    {/if}
-
-                    {#if !loading}
-                        <div class="md:hidden flex items-center gap-1.5 sm:gap-2">
-                            <button
-                                class="group rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm hover:shadow active:scale-95"
-                                onclick={() => createNewDraft()}
-                                aria-label="Create new draft"
-                            >
-                                <div class="flex items-center gap-1 sm:gap-1.5">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-all group-hover:rotate-90"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                    >
-                                        <path
-                                            fill-rule="evenodd"
-                                            d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                                            clip-rule="evenodd"
-                                        />
-                                    </svg>
-                                    <span
-                                        class="text-xs font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200"
-                                        >New</span
-                                    >
-                                </div>
-                            </button>
-                            <button
-                                class="group relative rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm hover:shadow active:scale-95"
-                                onclick={drawer.toggleDrawer}
-                                aria-label="Open drafts"
-                            >
-                                <div class="flex items-center gap-1.5 sm:gap-2">
-                                    <svg
-                                        class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                                        />
-                                    </svg>
-                                    <span
-                                        class="text-xs font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200"
-                                        >Drafts</span
-                                    >
-                                </div>
-                            </button>
-                        </div>
-                    {/if}
-                </div>
+                            <div class="flex items-center gap-1 sm:gap-1.5">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-all group-hover:rotate-90"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path
+                                        fill-rule="evenodd"
+                                        d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                                        clip-rule="evenodd"
+                                    />
+                                </svg>
+                                <span
+                                    class="text-xs font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200"
+                                    >New</span
+                                >
+                            </div>
+                        </button>
+                        <button
+                            class="group relative flex min-h-10 items-center justify-center rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm hover:shadow active:scale-95"
+                            onclick={openDraftsDrawer}
+                            aria-label="Open drafts"
+                            bind:this={draftsButtonEl}
+                        >
+                            <div class="flex items-center gap-1.5 sm:gap-2">
+                                <svg
+                                    class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                    />
+                                </svg>
+                                <span
+                                    class="text-xs font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200"
+                                    >Drafts</span
+                                >
+                            </div>
+                        </button>
+                    </div>
+                {/if}
             </div>
 
             {#if (voiceState === 'error' || !voiceSupported) && voiceError}
                 <div
-                    class="mb-3 sm:mb-4 rounded-xl border border-rose-300/70 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 px-3 py-2.5 text-xs sm:text-sm text-rose-700 dark:text-rose-300"
+                    class="mx-auto mb-3 w-full max-w-[46rem] rounded-xl border border-rose-300/70 bg-rose-50 px-3 py-2.5 text-xs text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300 sm:mb-4 sm:text-sm lg:max-w-[50rem]"
                 >
                     <p class="font-medium">{voiceError}</p>
                     <p class="mt-1.5 text-[11px] sm:text-xs opacity-80">
@@ -622,32 +692,43 @@
                 </div>
             {/if}
 
-            <div class="transition-opacity duration-200 ease-in-out ml-6 md:ml-40 2xl:ml-20">
+            <div class="transition-opacity duration-200 ease-in-out">
                 <Editor initialContent={content} onInputChange={handleInputChange} {onEditorReady} />
             </div>
         </div>
 
         {#if !loading}
-            <div class="hidden md:block">
+            <div class="hidden shrink-0 lg:block">
                 <DraftsPanel {createNewDraft} {currentWriteupId} {openDraft} {removeDraft} />
             </div>
 
             {#if drawer.open}
                 <div
-                    class="md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-300"
+                    class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[55] transition-opacity duration-300 lg:hidden"
                     class:opacity-0={!drawer.animating}
                     class:opacity-100={drawer.animating}
-                    onclick={drawer.closeDrawer}
-                    onkeydown={drawer.closeDrawer}
+                    onclick={() => closeDraftsDrawer()}
+                    onkeydown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            closeDraftsDrawer()
+                        }
+                    }}
                     aria-label="Close drafts panel"
                     role="button"
                     tabindex="-1"
                 ></div>
 
                 <div
-                    class="md:hidden fixed right-0 top-0 bottom-0 w-84 max-w-[85vw] bg-slate-50 dark:bg-slate-950 z-50 shadow-2xl overflow-y-auto border-l border-slate-200 dark:border-slate-800 transition-transform duration-300 ease-out"
+                    class="fixed right-0 top-0 bottom-0 w-84 max-w-[85vw] bg-slate-50 dark:bg-slate-950 z-[60] shadow-2xl overflow-y-auto overscroll-contain border-l border-slate-200 dark:border-slate-800 transition-transform duration-300 ease-out lg:hidden"
                     class:translate-x-0={drawer.animating}
                     class:translate-x-full={!drawer.animating}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Drafts"
+                    tabindex="-1"
+                    bind:this={drawerPanelEl}
+                    onkeydown={onDrawerPanelKeydown}
                 >
                     <div
                         class="sticky top-0 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 px-3 sm:px-4 py-3 sm:py-3.5 flex justify-between items-center z-10"
@@ -674,7 +755,7 @@
                         </div>
                         <button
                             class="rounded-lg p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors active:scale-95"
-                            onclick={drawer.closeDrawer}
+                            onclick={() => closeDraftsDrawer()}
                             aria-label="Close drafts panel"
                         >
                             <svg
@@ -693,13 +774,14 @@
                         </button>
                     </div>
 
-                    <div class="px-2 py-3 sm:py-4">
+                    <div class="px-2 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:py-4">
                         <DraftsPanel
-                            {createNewDraft}
+                            createNewDraft={() => {
+                                void createNewDraft().then(() => closeDraftsDrawer({ restoreFocus: false }))
+                            }}
                             {currentWriteupId}
                             openDraft={(id: number) => {
-                                openDraft(id)
-                                drawer.closeDrawer()
+                                void openDraft(id).then(() => closeDraftsDrawer({ restoreFocus: false }))
                             }}
                             {removeDraft}
                         />
