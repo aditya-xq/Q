@@ -28,7 +28,6 @@ test.describe('Writer', () => {
     })
 
     test('keeps editor text readable in light and dark mode', async ({ page }) => {
-        await page.emulateMedia({ colorScheme: 'light' })
         await openViewShortcut(page, 'w')
         const prose = page.locator('.milkdown .ProseMirror')
         await expect(prose).toBeVisible({ timeout: 20_000 })
@@ -39,9 +38,18 @@ test.describe('Writer', () => {
                 return channels.reduce((sum, value) => sum + value, 0) / channels.length
             })
 
+        // The app defaults to Terminal dark; switch modes explicitly for each check.
+        const dialog = page.getByRole('dialog', { name: 'Theme designer' })
+        await page.keyboard.press('Alt+a')
+        await expect(dialog).toBeVisible()
+        await dialog.getByRole('button', { name: 'Light', exact: true }).click()
+        await dialog.getByRole('button', { name: 'Close theme designer' }).click()
         expect(await brightness()).toBeLessThan(100)
 
-        await page.emulateMedia({ colorScheme: 'dark' })
+        await page.keyboard.press('Alt+a')
+        await expect(dialog).toBeVisible()
+        await dialog.getByRole('button', { name: 'Dark', exact: true }).click()
+        await dialog.getByRole('button', { name: 'Close theme designer' }).click()
         await expect.poll(brightness).toBeGreaterThan(150)
     })
 

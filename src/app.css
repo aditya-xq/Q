@@ -4,21 +4,21 @@
 /* Explicit light/dark mode: the theme store (and the pre-paint script) own the `.dark` class. */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Fallbacks mirror the default Prism preset for the first paint (SSR, first run, extension install). */
+/* Fallbacks mirror the default Terminal preset for the first paint (SSR, first run, extension install). */
 :root {
-    --q-bg: #fafafd;
-    --q-surface: rgb(253 253 254 / 0.72);
-    --q-surface-2: rgb(248 248 252 / 0.6);
-    --q-fg: #1a2134;
-    --q-fg-muted: #6f7380;
-    --q-fg-subtle: #9c9fa9;
-    --q-border: #dfe0e5;
-    --q-border-strong: #c9cad1;
-    --q-accent: #06b6d4;
+    --q-bg: #fbfbfb;
+    --q-surface: #fbfbfb;
+    --q-surface-2: #eaebec;
+    --q-fg: #0b111e;
+    --q-fg-muted: #666a72;
+    --q-fg-subtle: #96999e;
+    --q-border: #dedfe0;
+    --q-border-strong: #c6c8ca;
+    --q-accent: #22c55e;
     --q-accent-fg: #0b1220;
-    --q-accent-text: #056c7e;
-    --q-accent-soft: #dcf5f9;
-    --q-accent-strong: #05a0bb;
+    --q-accent-text: #157438;
+    --q-accent-soft: #e0f7e8;
+    --q-accent-strong: #1ead53;
     --q-danger: #dc2626;
     --q-danger-fg: #ffffff;
     --q-danger-soft: #fbe5e5;
@@ -28,45 +28,41 @@
     --q-warning: #b45309;
     --q-warning-fg: #ffffff;
     --q-warning-soft: #f6eae1;
-    --q-selection: rgb(6 182 212 / 0.3);
-    --q-radius: 18px;
-    --q-font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    --q-shadow-card: 0 1px 2px rgb(0 0 0 / 0.06), 0 10px 24px -18px rgb(0 0 0 / 0.25);
-    --q-app-bg:
-        radial-gradient(70rem 44rem at 8% -10%, rgb(6 182 212 / 0.16), transparent 60%),
-        radial-gradient(52rem 38rem at 100% 108%, rgb(99 102 241 / 0.14), transparent 65%);
-    --q-glass-blur: 16px;
+    --q-selection: rgb(34 197 94 / 0.3);
+    --q-radius: 2px;
+    --q-font: ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+    --q-shadow-card: 0 0 #0000;
+    --q-app-bg: none;
+    --q-glass-blur: 0px;
     color-scheme: light;
 }
 
 .dark {
-    --q-bg: #161924;
-    --q-surface: rgb(30 34 50 / 0.66);
-    --q-surface-2: rgb(42 48 67 / 0.55);
-    --q-fg: #eaedf7;
-    --q-fg-muted: #999ca7;
-    --q-fg-subtle: #6f727d;
-    --q-border: #2f323d;
-    --q-border-strong: #565963;
-    --q-accent: #06b6d4;
+    --q-bg: #070a0f;
+    --q-surface: #070a0f;
+    --q-surface-2: #16191e;
+    --q-fg: #dee1e4;
+    --q-fg-muted: #8c8f93;
+    --q-fg-subtle: #616468;
+    --q-border: #212429;
+    --q-border-strong: #484b4f;
+    --q-accent: #22c55e;
     --q-accent-fg: #0b1220;
-    --q-accent-text: #06b6d4;
-    --q-accent-soft: #124555;
-    --q-accent-strong: #29c0da;
+    --q-accent-text: #22c55e;
+    --q-accent-soft: #0f3e25;
+    --q-accent-strong: #41cd75;
     --q-danger: #f87171;
     --q-danger-fg: #0b1220;
-    --q-danger-soft: #482c35;
+    --q-danger-soft: #3c2125;
     --q-success: #4ade80;
     --q-success-fg: #0b1220;
-    --q-success-soft: #214438;
+    --q-success-soft: #163928;
     --q-warning: #fbbf24;
     --q-warning-fg: #0b1220;
-    --q-warning-soft: #483e24;
-    --q-selection: rgb(6 182 212 / 0.3);
-    --q-shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 28px -18px rgb(0 0 0 / 0.7);
-    --q-app-bg:
-        radial-gradient(70rem 44rem at 8% -10%, rgb(6 182 212 / 0.22), transparent 60%),
-        radial-gradient(52rem 38rem at 100% 108%, rgb(99 102 241 / 0.2), transparent 65%);
+    --q-warning-soft: #3d3214;
+    --q-selection: rgb(34 197 94 / 0.3);
+    --q-shadow-card: 0 0 #0000;
+    --q-app-bg: none;
     color-scheme: dark;
 }
 

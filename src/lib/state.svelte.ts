@@ -33,7 +33,7 @@ export const appState: AppState = $state({
     showQuote: true,
     showWeather: false,
     theme: { ...DEFAULT_THEME },
-    themeResolved: 'light',
+    themeResolved: 'dark',
     themeDesignerOpen: false,
 })
 

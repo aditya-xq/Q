@@ -30,10 +30,15 @@ async function openDesigner(page: import('@playwright/test').Page) {
 }
 
 test.describe('Theme', () => {
-    test('follows the system preference by default', async ({ page }) => {
+    test('starts in dark mode and follows the system once System is chosen', async ({ page }) => {
         await page.emulateMedia({ colorScheme: 'light' })
         await openHome(page)
-        expect(await isDark(page)).toBe(false)
+        // First run opens Terminal dark regardless of the OS setting.
+        expect(await isDark(page)).toBe(true)
+
+        const dialog = await openDesigner(page)
+        await dialog.getByRole('button', { name: 'System', exact: true }).click()
+        await expect.poll(() => isDark(page)).toBe(false)
 
         await page.emulateMedia({ colorScheme: 'dark' })
         await expect.poll(() => isDark(page)).toBe(true)
@@ -42,7 +47,7 @@ test.describe('Theme', () => {
         await expect.poll(() => isDark(page)).toBe(false)
     })
 
-    test('an explicit light or dark choice overrides the system and survives a reload', async ({ page }) => {
+    test('an explicit light or dark choice survives a reload', async ({ page }) => {
         await page.emulateMedia({ colorScheme: 'dark' })
         await openHome(page)
         await expect.poll(() => isDark(page)).toBe(true)
@@ -78,7 +83,7 @@ test.describe('Theme', () => {
 
     test('applies presets, custom colours and corners live', async ({ page }) => {
         await openHome(page)
-        expect(await accentOf(page)).toBe('#06b6d4')
+        expect(await accentOf(page)).toBe('#22c55e')
 
         const dialog = await openDesigner(page)
         await dialog.getByRole('button', { name: 'High Contrast', exact: true }).click()
@@ -120,7 +125,7 @@ test.describe('Theme', () => {
         await expect.poll(() => isDark(page)).toBe(true)
 
         await dialog.getByRole('button', { name: 'Reset', exact: true }).click()
-        await expect.poll(() => accentOf(page)).toBe('#06b6d4')
+        await expect.poll(() => accentOf(page)).toBe('#22c55e')
         expect(await isDark(page)).toBe(true)
     })
 
@@ -139,7 +144,7 @@ test.describe('Theme', () => {
         await expect(meta).toHaveAttribute('content', await background())
 
         const dialog = await openDesigner(page)
-        await dialog.getByRole('button', { name: 'Dark', exact: true }).click()
+        await dialog.getByRole('button', { name: 'Light', exact: true }).click()
         await expect.poll(metaMatchesBackground).toBe(true)
     })
 
@@ -148,13 +153,13 @@ test.describe('Theme', () => {
         await openHome(first)
         const second = await context.newPage()
         await openHome(second)
-        expect(await isDark(second)).toBe(false)
+        expect(await isDark(second)).toBe(true)
 
         const dialog = await openDesigner(first)
-        await dialog.getByRole('button', { name: 'Dark', exact: true }).click()
+        await dialog.getByRole('button', { name: 'Light', exact: true }).click()
         await dialog.getByRole('button', { name: 'Done', exact: true }).click()
 
-        await expect.poll(() => isDark(second)).toBe(true)
+        await expect.poll(() => isDark(second)).toBe(false)
         expect(await accentOf(second)).toBe(await accentOf(first))
     })
 
@@ -199,7 +204,7 @@ test.describe('Theme designer on mobile', () => {
 
         const dialog = page.getByRole('dialog', { name: 'Theme designer' })
         await expect(dialog).toBeVisible()
-        await expect(dialog.getByRole('button', { name: 'Prism', exact: true })).toBeVisible()
+        await expect(dialog.getByRole('button', { name: 'Terminal', exact: true })).toBeVisible()
 
         await dialog.getByRole('button', { name: 'Dark', exact: true }).click()
         await expect.poll(() => isDark(page)).toBe(true)

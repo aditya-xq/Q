@@ -31,7 +31,7 @@ Transform every new tab into a focused productivity hub. Stay organized, write d
 
 ## Themes
 
-Pick **Light**, **Dark** or **System** in Settings, or open the theme designer from the palette button in the rail (`Alt + A`). Start from one of five presets — **Prism** (modern glassmorphic), **High Contrast** (pure black, white and yellow), **Terminal**, **Retro** (warm 70s print) or **Atelier** (plum and gold) — then fine-tune:
+Pick **Light**, **Dark** or **System** in Settings, or open the theme designer from the palette button in the rail (`Alt + A`). Q opens in **Terminal** dark mode for first-time users. Start from one of five presets — **Terminal**, **Prism** (modern glassmorphic), **High Contrast** (pure black, white and yellow), **Retro** (warm 70s print) or **Atelier** (plum and gold) — then fine-tune:
 
 - **Base colour** tints the page, text and borders; **vibrancy** controls how strongly it shows.
 - **Accent** drives buttons, links and active states, with a live contrast readout.

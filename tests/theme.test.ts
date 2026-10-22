@@ -40,9 +40,10 @@ describe('theme presets', () => {
         }
     })
 
-    test('the default theme is the Prism preset in system mode', () => {
+    test('the default theme is the Terminal preset in dark mode', () => {
         expect(DEFAULT_THEME.preset).toBe(DEFAULT_PRESET.id)
-        expect(DEFAULT_THEME.mode).toBe('system')
+        expect(DEFAULT_THEME.preset).toBe('terminal')
+        expect(DEFAULT_THEME.mode).toBe('dark')
         expect(THEME_PRESETS.map((preset) => preset.accent)).toContain(DEFAULT_THEME.accent)
         expect(SEED_SWATCHES).toContain(DEFAULT_THEME.seed)
         expect(ACCENT_SWATCHES).toContain(DEFAULT_THEME.accent)
@@ -214,9 +215,9 @@ describe('themeToVars', () => {
         }
         expect(vars['--q-radius']).toBe(`${theme.radius}px`)
         expect(vars['--q-font']).toBe(FONT_STACKS[theme.font])
-        // The default preset is glass; an opaque surface turns the blur off.
-        expect(vars['--q-glass-blur']).toBe('16px')
-        expect(themeToVars({ ...theme, surface: 'flat' }, 'dark')['--q-glass-blur']).toBe('0px')
+        // The default Terminal preset is flat; glass turns the blur on.
+        expect(vars['--q-glass-blur']).toBe('0px')
+        expect(themeToVars({ ...theme, surface: 'glass' }, 'dark')['--q-glass-blur']).toBe('16px')
     })
 
     test('glass surfaces enable the blur token', () => {

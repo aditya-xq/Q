@@ -91,6 +91,17 @@ export const MODE_OPTIONS: { id: ThemeMode; label: string }[] = [
 
 export const THEME_PRESETS: ThemePreset[] = [
     {
+        id: 'terminal',
+        name: 'Terminal',
+        description: 'Monospaced, phosphor green, sharp edges',
+        seed: '#0b0f0d',
+        accent: '#22c55e',
+        radius: 2,
+        font: 'mono',
+        surface: 'flat',
+        vibrancy: 0,
+    },
+    {
         id: 'prism',
         name: 'Prism',
         description: 'Frosted glass with a cool violet glow',
@@ -109,17 +120,6 @@ export const THEME_PRESETS: ThemePreset[] = [
         accent: '#facc15',
         radius: 2,
         font: 'sans',
-        surface: 'flat',
-        vibrancy: 0,
-    },
-    {
-        id: 'terminal',
-        name: 'Terminal',
-        description: 'Monospaced, phosphor green, sharp edges',
-        seed: '#0b0f0d',
-        accent: '#22c55e',
-        radius: 2,
-        font: 'mono',
         surface: 'flat',
         vibrancy: 0,
     },
@@ -149,14 +149,15 @@ export const THEME_PRESETS: ThemePreset[] = [
 
 export const DEFAULT_PRESET = THEME_PRESETS[0]
 
-export const DEFAULT_THEME: ThemeConfig = presetToTheme(DEFAULT_PRESET, 'system')
+/** First run opens in the Terminal preset, dark. Existing saved themes are untouched. */
+export const DEFAULT_THEME: ThemeConfig = presetToTheme(DEFAULT_PRESET, 'dark')
 
-export const ACCENT_SWATCHES = ['#06b6d4', '#facc15', '#22c55e', '#c2410c', '#f59e0b', '#4f46e5', '#ec4899', '#ef4444']
+export const ACCENT_SWATCHES = ['#22c55e', '#06b6d4', '#facc15', '#c2410c', '#f59e0b', '#4f46e5', '#ec4899', '#ef4444']
 
 export const SEED_SWATCHES = [
+    '#0b0f0d',
     '#6366f1',
     '#000000',
-    '#0b0f0d',
     '#b08968',
     '#6d28d9',
     '#64748b',

@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en" data-surface="glass">
+<html lang="en" data-surface="flat">
     <head>
         <meta charset="utf-8" />
         <link rel="icon" href="%sveltekit.assets%/icons/favicon.ico" />
         <link rel="apple-touch-icon" href="%sveltekit.assets%/icons/apple-touch-icon.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#fafafd" />
+        <meta name="theme-color" content="#070a0f" />
         <script>
             // Apply the cached theme before first paint so there is no flash. The cache is
             // written by stores/theme.ts (key: q:theme) and holds both palettes.
@@ -15,7 +15,8 @@
                     const cache = raw ? JSON.parse(raw) : null
                     const mode = cache && cache.theme && cache.theme.mode
                     const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches
-                    const dark = mode === 'dark' || ((mode === 'system' || !mode) && prefersDark)
+                    // First run defaults to dark; a cached light/system choice still wins.
+                    const dark = mode ? mode === 'dark' || (mode === 'system' && prefersDark) : true
                     const vars = cache && cache[dark ? 'dark' : 'light']
                     const root = document.documentElement
                     if (vars) {
@@ -28,7 +29,7 @@
                     if (cache && cache.theme && cache.theme.surface) {
                         root.dataset.surface = cache.theme.surface
                     }
-                    const background = (vars && vars['--q-bg']) || (dark ? '#161924' : '#fafafd')
+                    const background = (vars && vars['--q-bg']) || (dark ? '#070a0f' : '#fbfbfb')
                     const meta = document.querySelector('meta[name="theme-color"]')
                     if (meta) meta.setAttribute('content', background)
                 } catch (error) {
