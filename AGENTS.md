@@ -59,7 +59,7 @@ src/
       db.ts            Dexie schema + init + settings helpers (single source of DB truth)
       stores.ts        Project/Task CRUD + observeProjects()
       tasks.ts         Pure helpers: project/task sorting + grouping (unit-tested)
-      constants.ts     Shared quick-link/category defaults, icons, URL helpers
+      constants.ts     Shared quick-link/category defaults, icons (bundled brand marks), URL helpers
       browser.ts       Typed chrome/browser API access (topSites, permissions)
       utils.ts         deriveTitle(), clickOutside action
       writeup.ts       Derived draft title + Writeup -> WriteupSummary projection (unit-tested)
@@ -79,7 +79,7 @@ e2e/                   Playwright specs (web, extension, live)
 static/
   manifest.json        MV3 manifest (version must match package.json)
   background.js        Service worker stub
-  icons/, assets/
+  icons/ (app icons + brands/ quick-link marks), assets/
 ```
 
 - Writer UI (`components/Writer/`): the inline drafts panel renders at `lg+`; below that drafts open in the shared `createMobileDrawer` drawer. The editor is theme-aware — `Editor.svelte` imports Crepe's `nord.css` and overrides its CSS variables for light and dark (`.milkdown` / `.dark .milkdown`); its typography rules must select `.milkdown .ProseMirror …` to outrank Crepe's base styles. Code blocks keep a dark surface in both modes because Crepe highlights them with CodeMirror's `oneDark`.

@@ -4,14 +4,31 @@
     import { db, type QuickLink } from '$lib/utils/db'
     import {
         DEFAULT_QUICK_LINKS,
-        FAVICON_FALLBACK,
+        FALLBACK_ICON,
         QUICK_LINK_CATEGORIES,
         extractNameFromUrl,
+        getFaviconUrl,
         getQuickLinkIcon,
     } from '$lib/utils/constants'
 
     let quickLinks = $state<QuickLink[]>([])
     let isOpen = $state(false)
+
+    // Curated icons are local, so an error means a custom link's remote favicon failed.
+    // Try the host's favicon once, then settle on the bundled placeholder.
+    function onIconError(event: Event, url: string) {
+        const img = event.currentTarget as HTMLImageElement
+        if (img.dataset.fallback === 'placeholder') return
+        const favicon = getFaviconUrl(url)
+        // Unknown links already use the host favicon, so go straight to the placeholder.
+        if (img.dataset.fallback === 'favicon' || img.src === favicon) {
+            img.dataset.fallback = 'placeholder'
+            img.src = FALLBACK_ICON
+            return
+        }
+        img.dataset.fallback = 'favicon'
+        img.src = favicon
+    }
 
     function openLink(url: string) {
         if (!url) return
@@ -65,9 +82,7 @@
                     src={getQuickLinkIcon(link.name, link.url)}
                     alt={link.name}
                     class="w-5 h-5 transition-transform duration-300 group-hover:scale-110"
-                    onerror={(e) => {
-                        ;(e.currentTarget as HTMLImageElement).src = FAVICON_FALLBACK
-                    }}
+                    onerror={(event) => onIconError(event, link.url)}
                 />
             </button>
         {/each}
@@ -107,9 +122,7 @@
                             src={getQuickLinkIcon(link.name, link.url)}
                             alt={link.name}
                             class="w-8 h-8 transition-transform duration-200 group-hover:scale-110"
-                            onerror={(e) => {
-                                ;(e.currentTarget as HTMLImageElement).src = FAVICON_FALLBACK
-                            }}
+                            onerror={(event) => onIconError(event, link.url)}
                         />
                         <span class="text-xs font-medium text-slate-700 dark:text-slate-300 text-center leading-tight">
                             {link.name}

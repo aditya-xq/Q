@@ -1,9 +1,11 @@
 import { describe, expect, test } from 'bun:test'
+import { existsSync } from 'node:fs'
 import {
     DEFAULT_QUICK_LINKS,
-    FAVICON_FALLBACK,
+    FALLBACK_ICON,
     LINK_ICONS,
     extractNameFromUrl,
+    getFaviconUrl,
     getQuickLinkIcon,
     normalizeUrl,
 } from '$lib/utils/constants'
@@ -43,22 +45,56 @@ describe('extractNameFromUrl', () => {
 })
 
 describe('getQuickLinkIcon', () => {
-    test('returns the curated icon for known names', () => {
+    test('returns the bundled icon for known names', () => {
         expect(getQuickLinkIcon('Gmail', 'https://anything')).toBe(LINK_ICONS.Gmail)
+        expect(LINK_ICONS.Gmail).toMatch(/^\/icons\/brands\//)
+    })
+
+    test('ships every curated icon from the local brand folder', () => {
+        for (const icon of Object.values(LINK_ICONS)) {
+            expect(icon).toMatch(/^\/icons\/brands\/.+\.(ico|png|svg)$/)
+        }
     })
 
     test('falls back to a Google favicon for unknown hosts', () => {
         expect(getQuickLinkIcon('Unknown', 'https://foo.com/bar')).toBe(
-            'https://www.google.com/s2/favicons?domain=foo.com&sz=32'
+            'https://www.google.com/s2/favicons?domain=foo.com&sz=64'
         )
     })
 
     test('normalizes scheme-less hosts', () => {
-        expect(getQuickLinkIcon('Unknown', 'foo.com')).toBe('https://www.google.com/s2/favicons?domain=foo.com&sz=32')
+        expect(getQuickLinkIcon('Unknown', 'foo.com')).toBe('https://www.google.com/s2/favicons?domain=foo.com&sz=64')
     })
 
-    test('uses the fallback favicon for unparseable urls', () => {
-        expect(getQuickLinkIcon('Unknown', 'bad url')).toBe(FAVICON_FALLBACK)
+    test('uses the placeholder for unparseable urls', () => {
+        expect(getQuickLinkIcon('Unknown', 'bad url')).toBe(FALLBACK_ICON)
+    })
+})
+
+describe('brand icons', () => {
+    test('every curated icon and the placeholder exist in static/', () => {
+        for (const icon of [...Object.values(LINK_ICONS), FALLBACK_ICON]) {
+            expect(existsSync(new URL(`../static${icon}`, import.meta.url))).toBe(true)
+        }
+    })
+})
+
+describe('getFaviconUrl', () => {
+    test('builds a domain favicon url and strips the path', () => {
+        expect(getFaviconUrl('https://mail.google.com/mail/u/0/')).toBe(
+            'https://www.google.com/s2/favicons?domain=mail.google.com&sz=64'
+        )
+    })
+
+    test('accepts scheme-less urls', () => {
+        expect(getFaviconUrl('web.whatsapp.com')).toBe(
+            'https://www.google.com/s2/favicons?domain=web.whatsapp.com&sz=64'
+        )
+    })
+
+    test('returns the local placeholder when the url cannot be parsed', () => {
+        expect(getFaviconUrl('')).toBe(FALLBACK_ICON)
+        expect(FALLBACK_ICON).toBe('/icons/brands/link.svg')
     })
 })
 
