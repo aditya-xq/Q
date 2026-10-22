@@ -72,7 +72,7 @@
     <!-- Top-Left Minimal "Queue" Label -->
     <div class="fixed top-4 left-16 md:left-20 z-40 select-none font-light text-lg tracking-wide text-fg-muted">
         <span>Queue</span>
-        <span class="ml-1 align-baseline text-[0.65rem] tracking-wide tabular-nums">
+        <span class="-ml-px align-baseline text-[0.65rem] tracking-tight tabular-nums">
             v{__APP_VERSION__}
         </span>
     </div>

@@ -474,11 +474,17 @@
 
     <div class="flex gap-4 lg:gap-8 relative">
         <div class="flex-1 min-w-0">
-            <!-- Matches the editor measure in Editor.svelte so the toolbar stays aligned on wide screens. -->
+            <!--
+                From lg the row spans the writer column so the actions end where the drafts rail begins. The status
+                keeps the editor measure: the margin centres the 50rem prose box and adds its 3rem text inset
+                (46rem/2rem below lg, handled by the md translate).
+            -->
             <div
-                class="mx-auto mb-3 flex w-full max-w-[46rem] flex-wrap items-center justify-end gap-2 sm:mb-4 sm:gap-3 lg:max-w-[50rem]"
+                class="mx-auto mb-3 flex w-full max-w-[46rem] flex-wrap items-center justify-end gap-2 sm:mb-4 sm:gap-3 lg:max-w-none"
             >
-                <div class="mr-auto flex items-center gap-1.5 text-xs italic text-fg-muted sm:gap-2 sm:text-sm">
+                <div
+                    class="mr-auto flex items-center gap-1.5 text-xs italic text-fg-muted sm:gap-2 sm:text-sm md:translate-x-12 lg:translate-x-0 lg:ml-[max(3rem,calc(50%-22rem))]"
+                >
                     {#if saving}
                         <svg
                             class="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin"
