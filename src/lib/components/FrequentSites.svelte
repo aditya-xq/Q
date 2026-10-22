@@ -44,7 +44,7 @@
         {#each sites as site (site.url)}
             <a
                 href={site.url}
-                class="flex flex-col items-center justify-center p-2 md:p-3 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200"
+                class="flex flex-col items-center justify-center p-2 md:p-3 rounded-lg hover:bg-surface-2 transition-colors duration-200"
                 rel="external noopener noreferrer"
             >
                 <div
@@ -58,7 +58,7 @@
                         onerror={handleImageError}
                     />
                 </div>
-                <span class="text-xs md:text-sm text-center text-slate-700 dark:text-slate-300 truncate w-full">
+                <span class="text-xs md:text-sm text-center text-fg-muted truncate w-full">
                     {site.title}
                 </span>
             </a>

@@ -182,6 +182,13 @@ export async function getAllSettings(): Promise<Record<string, boolean | string 
     )
 }
 
+// Helper function to read a single setting
+export async function getSetting(key: string): Promise<boolean | string | number | undefined> {
+    await ensureDBReady()
+    const setting = await db.settings.get(key)
+    return setting?.value
+}
+
 // Helper function to set a setting
 export async function setSetting(key: string, value: boolean | string | number): Promise<void> {
     await ensureDBReady()

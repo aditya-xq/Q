@@ -2,6 +2,7 @@
     import { onMount } from 'svelte'
     import { fade } from 'svelte/transition'
     import { appState, updateView, type View } from '$lib/state.svelte'
+    import { openThemeDesigner } from '$lib/stores/theme'
     import SideNavButton from './SideNavButton.svelte'
 
     let mobileMenuOpen = $state(false)
@@ -46,14 +47,22 @@
     })
 </script>
 
+<svelte:window
+    onkeydown={(event) => {
+        if (event.key === 'Escape' && mobileMenuOpen) mobileMenuOpen = false
+    }}
+/>
+
 <!-- Mobile Menu Toggle Button (only on mobile) -->
 {#if isMobile}
     <button
         onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
         aria-label="Toggle Menu"
-        class="fixed z-1001 top-3 left-3 rounded-full p-2
-               text-white shadow-lg hover:shadow-xl
-               hover:bg-slate-700 active:scale-95 transition-all duration-300"
+        aria-expanded={mobileMenuOpen}
+        aria-controls="nav-menu"
+        class="fixed z-1001 top-3 left-3 rounded-lg border border-line bg-surface p-2
+               text-fg shadow-lg hover:shadow-xl
+               hover:bg-surface-2 hover:scale-105 active:scale-95 transition-all duration-300"
     >
         <svg
             class="w-6 h-6 transition-transform duration-300"
@@ -84,15 +93,18 @@
 
 <!-- Desktop Floating Menu / Mobile Slide-out Menu -->
 <div
+    id="nav-menu"
     class="fixed z-1000 transition-transform duration-300
            {isMobile
-        ? 'top-0 left-0 h-full w-64 bg-slate-50 dark:bg-slate-950 shadow-2xl flex flex-col py-20 px-4 gap-3 border-r border-slate-200 dark:border-slate-700'
+        ? 'top-0 left-0 h-full w-64 bg-bg shadow-2xl flex flex-col py-20 px-4 gap-3 border-r border-line'
         : 'top-5 left-4 flex flex-col gap-3'}"
     class:translate-x-0={isMobile && mobileMenuOpen}
     class:-translate-x-full={isMobile && !mobileMenuOpen}
     data-shortcut-blocker={isMobile && mobileMenuOpen ? '' : undefined}
+    inert={isMobile && !mobileMenuOpen}
+    aria-hidden={isMobile && !mobileMenuOpen}
 >
-    <SideNavButton view="home" label="Home" active={appState.view === 'home'} square {isMobile} onNavigate={navigate} />
+    <SideNavButton view="home" label="Home" active={appState.view === 'home'} {isMobile} onNavigate={navigate} />
 
     {#each menuItems as item (item.id)}
         <SideNavButton
@@ -104,4 +116,27 @@
             onNavigate={navigate}
         />
     {/each}
+
+    <button
+        type="button"
+        onclick={openThemeDesigner}
+        aria-label="Appearance (Alt + A)"
+        aria-haspopup="dialog"
+        aria-expanded={appState.themeDesignerOpen}
+        data-tooltip={isMobile ? null : 'Appearance (Alt + A)'}
+        data-tooltip-position="right"
+        class="group rounded-lg border border-line bg-surface text-fg-muted shadow-sm transition-all duration-300
+               hover:border-accent hover:text-accent-text hover:scale-105 hover:shadow-md active:scale-95
+               {isMobile ? 'w-full p-4 flex items-center gap-3' : 'p-2'}"
+    >
+        <span
+            class="flex shrink-0 items-center justify-center transition-transform duration-300 group-hover:rotate-12
+            {isMobile ? 'h-9 w-9 text-2xl' : 'h-6 w-6 text-xl'}"
+        >
+            🎨
+        </span>
+        {#if isMobile}
+            <span class="text-sm font-medium">Appearance</span>
+        {/if}
+    </button>
 </div>

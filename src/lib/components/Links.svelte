@@ -33,17 +33,18 @@
 
 <!-- Desktop: Fixed sidebar on the right -->
 <aside
+    aria-label="Quick links"
     class="hidden md:flex fixed right-0 top-0 h-full w-16 z-50 flex-col items-center pt-4 pb-6
-	   bg-slate-50 dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800
+	   bg-surface border-l border-line
 	   shadow-xl"
 >
     <div class="fixed top-5 right-3.5 flex flex-col gap-3">
         {#each quickLinks as link (link.category)}
             {@const shortcut = shortcutLabel(link.category)}
             <button
-                class="group rounded-lg p-2 border border-slate-200 dark:border-slate-700
-					bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
-					shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300
+                class="group rounded-lg p-2 border border-line
+					bg-surface text-fg-muted
+					shadow-sm hover:shadow-md hover:border-accent hover:text-accent-text transition-all duration-300
 					hover:scale-105 active:scale-95"
                 data-tooltip={shortcut ? `${link.name} (${shortcut})` : link.name}
                 onclick={() => openLink(link.url)}
@@ -61,6 +62,12 @@
     </div>
 </aside>
 
+<svelte:window
+    onkeydown={(event) => {
+        if (event.key === 'Escape' && isOpen) isOpen = false
+    }}
+/>
+
 <!-- Mobile: Collapsible menu with floating button -->
 <div class="md:hidden">
     <!-- Backdrop -->
@@ -75,19 +82,24 @@
 
     <!-- Quick Links Menu -->
     <div
+        id="quick-links-menu"
+        role="group"
+        aria-label="Quick links"
         class="fixed top-15 right-3 z-50 transition-all duration-300 ease-out origin-top-right"
         style:transform={isOpen ? 'scale(1)' : 'scale(0)'}
         style:opacity={isOpen ? '1' : '0'}
         data-shortcut-blocker={isOpen ? '' : undefined}
+        inert={!isOpen}
+        aria-hidden={!isOpen}
     >
-        <div class="rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-3 min-w-50">
+        <div class="rounded-2xl border border-line bg-surface p-3 shadow-2xl min-w-50">
             <div class="grid grid-cols-2 gap-3">
                 {#each quickLinks as link (link.category)}
                     {@const shortcut = shortcutLabel(link.category)}
                     <button
                         class="group flex flex-col items-center gap-1.5 p-4 rounded-xl
-							bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700
-							hover:border-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950
+							bg-surface-2 border border-line
+							hover:border-accent hover:bg-accent-soft
 							transition-all duration-200 active:scale-95"
                         onclick={() => openLink(link.url)}
                         aria-label={link.name}
@@ -99,7 +111,7 @@
                             class="w-8 h-8 transition-transform duration-200 group-hover:scale-110"
                             onerror={(event) => onIconError(event, link.url)}
                         />
-                        <span class="text-xs font-medium text-slate-700 dark:text-slate-300 text-center leading-tight">
+                        <span class="text-xs font-medium text-fg text-center leading-tight">
                             {link.name}
                         </span>
                     </button>
@@ -110,14 +122,16 @@
 
     <!-- Floating Toggle Button -->
     <button
-        class="fixed top-3 right-3 z-50 w-10 h-10 rounded-full
-			border-2 border-slate-300 dark:border-slate-600
-			shadow-lg hover:shadow-xl active:shadow-md
+        class="fixed top-3 right-3 z-50 w-10 h-10 rounded-lg
+			border border-line bg-surface text-fg-muted
+			shadow-lg hover:shadow-xl hover:border-accent hover:text-accent-text active:shadow-md
 			flex items-center justify-center
 			transition-all duration-300 ease-out
-			hover:scale-110 active:scale-95"
+			hover:scale-105 active:scale-95"
         onclick={() => (isOpen = !isOpen)}
         aria-label="Toggle quick links"
+        aria-expanded={isOpen}
+        aria-controls="quick-links-menu"
         style:transform={isOpen ? 'rotate(90deg)' : 'rotate(0deg)'}
     >
         <span class="text-xl">🔗</span>

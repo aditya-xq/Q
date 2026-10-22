@@ -8,6 +8,7 @@ import Settings from './Settings.svelte'
 import Quote from './Widgets/Quote.svelte'
 import Weather from './Widgets/Weather.svelte'
 import ProjectGrid from './Projects/ProjectGrid.svelte'
+import ThemeDesigner from './ThemeDesigner.svelte'
 
 export {
     Notification,
@@ -20,4 +21,5 @@ export {
     Settings,
     Quote,
     Weather,
+    ThemeDesigner,
 }

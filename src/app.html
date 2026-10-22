@@ -1,18 +1,40 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-surface="glass">
     <head>
         <meta charset="utf-8" />
         <link rel="icon" href="%sveltekit.assets%/icons/favicon.ico" />
         <link rel="apple-touch-icon" href="%sveltekit.assets%/icons/apple-touch-icon.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#fafafd" />
         <script>
-            try {
-                if (matchMedia('(prefers-color-scheme: dark)').matches) {
-                    document.documentElement.classList.add('dark')
+            // Apply the cached theme before first paint so there is no flash. The cache is
+            // written by stores/theme.ts (key: q:theme) and holds both palettes.
+            ;(() => {
+                try {
+                    const raw = localStorage.getItem('q:theme')
+                    const cache = raw ? JSON.parse(raw) : null
+                    const mode = cache && cache.theme && cache.theme.mode
+                    const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches
+                    const dark = mode === 'dark' || ((mode === 'system' || !mode) && prefersDark)
+                    const vars = cache && cache[dark ? 'dark' : 'light']
+                    const root = document.documentElement
+                    if (vars) {
+                        for (const key in vars) {
+                            if (key.startsWith('--q-')) root.style.setProperty(key, vars[key])
+                        }
+                    }
+                    root.classList.toggle('dark', dark)
+                    root.style.colorScheme = dark ? 'dark' : 'light'
+                    if (cache && cache.theme && cache.theme.surface) {
+                        root.dataset.surface = cache.theme.surface
+                    }
+                    const background = (vars && vars['--q-bg']) || (dark ? '#161924' : '#fafafd')
+                    const meta = document.querySelector('meta[name="theme-color"]')
+                    if (meta) meta.setAttribute('content', background)
+                } catch (error) {
+                    /* no cached theme yet */
                 }
-            } catch (error) {
-                /* matchMedia unavailable */
-            }
+            })()
         </script>
         %sveltekit.head%
     </head>

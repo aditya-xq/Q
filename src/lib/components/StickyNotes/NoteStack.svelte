@@ -6,6 +6,7 @@
     import { createNote } from '$lib/stores/notes'
     import type { Note } from '$lib/utils/db'
     import StickyNote from './StickyNote.svelte'
+    import { CloseButton } from '../shared'
 
     interface Props {
         onDeleted?: (note: Note) => void
@@ -84,7 +85,7 @@
 <button
     bind:this={fabEl}
     type="button"
-    class="fixed right-4 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-[55] flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200/80 bg-white/85 text-slate-600 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-14px_rgba(15,23,42,0.4)] backdrop-blur-md transition duration-200 hover:border-slate-300 hover:text-slate-800 active:scale-95 dark:border-slate-700/70 dark:bg-slate-900/85 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-100"
+    class="fixed right-4 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-[55] flex h-12 w-12 items-center justify-center rounded-2xl border border-line/80 bg-surface/85 text-fg-muted shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-14px_rgba(15,23,42,0.4)] backdrop-blur-md transition duration-200 hover:scale-105 hover:border-line-strong hover:text-fg active:scale-95"
     aria-label={noteCount > 0 ? `Open notes (${noteCount})` : 'Open notes'}
     aria-haspopup="dialog"
     aria-expanded={open}
@@ -105,7 +106,7 @@
     </svg>
     {#if noteCount > 0}
         <span
-            class="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-900/90 px-1.5 text-[10px] font-semibold text-white ring-2 ring-white/85 dark:bg-slate-100 dark:text-slate-900 dark:ring-slate-900/85"
+            class="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-fg px-1.5 text-[10px] font-semibold text-bg ring-2 ring-surface"
             data-testid="notes-fab-count"
         >
             {noteCount > 99 ? '99+' : noteCount}
@@ -118,7 +119,7 @@
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
-            class="absolute inset-0 bg-slate-900/25 backdrop-blur-[3px]"
+            class="absolute inset-0 bg-black/30 backdrop-blur-[3px]"
             transition:fade={{ duration }}
             data-testid="notes-backdrop"
             onclick={closeSheet}
@@ -126,7 +127,7 @@
 
         <div
             bind:this={panelEl}
-            class="absolute inset-x-0 bottom-0 flex max-h-[82vh] flex-col overflow-hidden rounded-t-[26px] border-t border-slate-200/80 bg-white shadow-[0_-16px_48px_-24px_rgba(15,23,42,0.35)] dark:border-slate-700/60 dark:bg-slate-900"
+            class="absolute inset-x-0 bottom-0 flex max-h-[82dvh] flex-col overflow-hidden rounded-t-[26px] border-t border-line/80 bg-surface shadow-[0_-16px_48px_-24px_rgba(15,23,42,0.35)]"
             role="dialog"
             aria-modal="true"
             aria-label="Notes"
@@ -137,18 +138,18 @@
             transition:fly={{ y: 48, duration, easing: cubicOut }}
         >
             <div class="flex justify-center pt-2.5" aria-hidden="true">
-                <span class="h-1 w-9 rounded-full bg-slate-300/80 dark:bg-slate-600/80"></span>
+                <span class="h-1 w-9 rounded-full bg-line-strong"></span>
             </div>
 
             <header class="flex items-center gap-2.5 px-5 pt-2.5 pb-3">
-                <h2 class="text-[15px] font-semibold tracking-tight text-slate-800 dark:text-slate-100">Notes</h2>
+                <h2 class="text-base font-semibold tracking-tight text-fg">Notes</h2>
                 {#if noteCount > 0}
-                    <span class="text-xs font-medium text-slate-400 dark:text-slate-500">{noteCount}</span>
+                    <span class="text-xs font-medium text-fg-subtle">{noteCount}</span>
                 {/if}
                 <div class="ml-auto flex items-center gap-1.5">
                     <button
                         type="button"
-                        class="flex h-9 items-center gap-1.5 rounded-full bg-slate-900 px-3.5 text-sm font-semibold text-white transition hover:bg-slate-700 active:scale-95 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+                        class="flex h-9 items-center gap-1.5 rounded-lg bg-accent px-3.5 text-sm font-semibold text-accent-fg transition hover:bg-accent-strong active:scale-95"
                         onclick={() => void addNote()}
                         data-testid="notes-new"
                     >
@@ -157,22 +158,7 @@
                         </svg>
                         New note
                     </button>
-                    <button
-                        type="button"
-                        class="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 active:scale-95 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
-                        aria-label="Close notes"
-                        onclick={closeSheet}
-                        data-testid="notes-close"
-                    >
-                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                d="M6 6l12 12M18 6L6 18"
-                            />
-                        </svg>
-                    </button>
+                    <CloseButton label="Close notes" testId="notes-close" onclick={closeSheet} />
                 </div>
             </header>
 
@@ -181,14 +167,9 @@
             >
                 {#if noteCount === 0}
                     <div
-                        class="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-200 px-6 py-10 text-center dark:border-slate-700/70"
+                        class="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line px-6 py-10 text-center"
                     >
-                        <svg
-                            class="h-7 w-7 text-slate-300 dark:text-slate-600"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            aria-hidden="true"
-                        >
+                        <svg class="h-7 w-7 text-fg-subtle" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                             <path
                                 stroke="currentColor"
                                 stroke-width="1.7"
@@ -209,12 +190,12 @@
                                 d="M8.75 12h6.5M8.75 15.5h4.5"
                             />
                         </svg>
-                        <p class="max-w-[15rem] text-sm text-slate-500 dark:text-slate-400">
+                        <p class="max-w-[15rem] text-sm text-fg-muted">
                             No notes yet. Jot down a thought before it slips away.
                         </p>
                         <button
                             type="button"
-                            class="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 active:scale-95 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+                            class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-fg transition hover:bg-accent-strong active:scale-95"
                             onclick={() => void addNote()}
                         >
                             Jot a note

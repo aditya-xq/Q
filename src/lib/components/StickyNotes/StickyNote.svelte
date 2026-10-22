@@ -452,7 +452,9 @@
     <div
         class={`sticky-note group relative rounded-2xl border ${theme.paper} ${theme.border} ${
             exiting ? 'sticky-note--exiting' : ''
-        } ${dragging ? 'sticky-note--dragging' : ''} ${isCard ? 'sticky-note--card' : ''}`}
+        } ${dragging ? 'sticky-note--dragging' : ''} ${isCard ? 'sticky-note--card' : ''} ${
+            !isCard && paletteOpen ? 'sticky-note--menu' : ''
+        }`}
         style:--rot={isCard ? '0deg' : `${note.rotation}deg`}
         style:--enter-delay={`${enterDelay}ms`}
         style:width={isCard ? '100%' : 'min(clamp(208px, 15vw, 272px), calc(100vw - 24px))'}
@@ -661,6 +663,14 @@
         transition: none;
         transform: rotate(0deg) scale(1.02);
         box-shadow: 0 18px 34px -18px rgba(15, 23, 42, 0.45);
+    }
+
+    /* Freeze the hover lift while the colour palette is open so the popover cannot
+       drift under the pointer between opening it and picking a swatch. */
+    .sticky-note--menu,
+    .sticky-note--menu:hover {
+        transform: rotate(calc(var(--rot, 0deg) * 0.4)) translateY(-2px);
+        transition: none;
     }
 
     /* Graceful glide when a finished note parks itself. */

@@ -42,14 +42,14 @@ export function removeNotification(id: string) {
 export function getNotificationColor(type: string) {
     switch (type) {
         case 'success':
-            return 'bg-green-100 border-green-500 text-green-800'
+            return 'bg-success-soft border-success text-success'
         case 'error':
-            return 'bg-red-100 border-red-500 text-red-800'
+            return 'bg-danger-soft border-danger text-danger'
         case 'warning':
-            return 'bg-yellow-100 border-yellow-500 text-yellow-800'
+            return 'bg-warning-soft border-warning text-warning'
         case 'info':
         default:
-            return 'bg-blue-100 border-blue-500 text-blue-800'
+            return 'bg-accent-soft border-accent text-accent-text'
     }
 }
 

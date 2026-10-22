@@ -35,12 +35,10 @@
 
 <aside class="w-72 max-w-full xl:w-80">
     <div class="hidden lg:flex mb-4 items-center justify-between">
-        <h3 class="text-sm font-semibold tracking-wide text-slate-900 dark:text-slate-100 uppercase opacity-60">
-            Drafts
-        </h3>
+        <h3 class="text-sm font-semibold tracking-wide text-fg-muted uppercase">Drafts</h3>
         <!-- New draft button -->
         <button
-            class="group min-h-10 rounded-lg px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm hover:shadow"
+            class="group min-h-10 rounded-lg px-3 py-2 bg-surface border border-line hover:border-line-strong transition-all shadow-sm hover:shadow"
             onclick={createNewDraft}
             onkeydown={handleKeyCreate}
             aria-label="Create new draft"
@@ -48,7 +46,7 @@
             <div class="flex items-center gap-1.5">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4 text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-all group-hover:rotate-90"
+                    class="h-4 w-4 text-fg-muted group-hover:text-fg transition-all group-hover:rotate-90"
                     viewBox="0 0 20 20"
                     fill="currentColor"
                 >
@@ -58,10 +56,7 @@
                         clip-rule="evenodd"
                     />
                 </svg>
-                <span
-                    class="text-xs font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200"
-                    >New</span
-                >
+                <span class="text-xs font-medium text-fg-muted group-hover:text-fg">New</span>
             </div>
         </button>
     </div>
@@ -73,19 +68,17 @@
                         <article
                             class="group relative flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 transition-all
                             {w.id === currentWriteupId
-                                ? 'bg-white ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700'
-                                : 'hover:bg-slate-200/50 dark:hover:bg-slate-900'}"
+                                ? 'bg-surface ring-1 ring-line-strong'
+                                : 'hover:bg-surface-2/60'}"
                         >
                             <button
                                 class="flex min-w-0 flex-1 flex-col gap-0.5 text-left focus:outline-none"
                                 onclick={() => openDraft(w.id)}
                             >
-                                <span class="truncate text-sm font-medium text-slate-800 dark:text-slate-200">
+                                <span class="truncate text-sm font-medium text-fg">
                                     {w.title}
                                 </span>
-                                <span
-                                    class="truncate text-xs text-slate-500 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300"
-                                >
+                                <span class="truncate text-xs text-fg-muted group-hover:text-fg">
                                     {formatRelative(new Date(w.updatedAt))}
                                 </span>
                             </button>
@@ -98,14 +91,12 @@
                     {/each}
                     <section>
                         <button
-                            class="flex w-full items-center justify-between px-2 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                            class="flex w-full items-center justify-between px-2 py-1.5 text-xs font-medium text-fg-muted transition-colors hover:text-fg"
                             onclick={() => (openOlder = !openOlder)}
                         >
                             <span>Older</span>
                             <div class="flex items-center gap-1">
-                                <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] dark:bg-slate-900"
-                                    >{older.length}</span
-                                >
+                                <span class="rounded bg-surface-2 px-1.5 py-0.5 text-[10px]">{older.length}</span>
                                 <svg
                                     class="h-3 w-3 transform transition-transform duration-200 {openOlder
                                         ? 'rotate-90'
@@ -126,23 +117,20 @@
                                 {#each older as w (w.id)}
                                     <article
                                         class="group flex cursor-pointer items-center justify-between rounded-lg px-2 py-2 transition-colors
-                                        {w.id === currentWriteupId
-                                            ? 'bg-slate-100 dark:bg-slate-900'
-                                            : 'hover:bg-slate-100 dark:hover:bg-slate-900'}"
+                                        {w.id === currentWriteupId ? 'bg-surface-2' : 'hover:bg-surface-2'}"
                                     >
                                         <button
                                             class="flex min-w-0 flex-1 flex-col text-left focus:outline-none"
                                             onclick={() => openDraft(w.id)}
                                         >
                                             <span
-                                                class="truncate text-sm text-slate-600 dark:text-slate-400 {w.id ===
-                                                currentWriteupId
-                                                    ? 'font-medium text-slate-900 dark:text-slate-100'
+                                                class="truncate text-sm text-fg-muted {w.id === currentWriteupId
+                                                    ? 'font-medium text-fg'
                                                     : ''}"
                                             >
                                                 {w.title}
                                             </span>
-                                            <span class="truncate text-[10px] text-slate-500 dark:text-slate-400">
+                                            <span class="truncate text-[10px] text-fg-subtle">
                                                 {new Date(w.updatedAt).toLocaleDateString()}
                                             </span>
                                         </button>
@@ -161,19 +149,17 @@
                         <article
                             class="group relative flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 transition-all
                             {w.id === currentWriteupId
-                                ? 'bg-white ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700'
-                                : 'hover:bg-slate-200/50 dark:hover:bg-slate-900'}"
+                                ? 'bg-surface ring-1 ring-line-strong'
+                                : 'hover:bg-surface-2/60'}"
                         >
                             <button
                                 class="flex min-w-0 flex-1 flex-col gap-0.5 text-left focus:outline-none"
                                 onclick={() => openDraft(w.id)}
                             >
-                                <span class="truncate text-sm font-medium text-slate-800 dark:text-slate-200">
+                                <span class="truncate text-sm font-medium text-fg">
                                     {w.title}
                                 </span>
-                                <span
-                                    class="truncate text-xs text-slate-500 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300"
-                                >
+                                <span class="truncate text-xs text-fg-muted group-hover:text-fg">
                                     {formatRelative(new Date(w.updatedAt))}
                                 </span>
                             </button>
@@ -187,9 +173,25 @@
                 {/if}
             </div>
         {:else}
-            <div class="px-3 py-8 text-center">
-                <p class="text-sm text-slate-600 dark:text-slate-300">No drafts yet</p>
-                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Drafts save automatically as you type.</p>
+            <div class="flex flex-col items-center px-3 py-8 text-center">
+                <div class="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-surface-2/60">
+                    <svg
+                        class="h-5 w-5 text-fg-subtle"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        aria-hidden="true"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                        />
+                    </svg>
+                </div>
+                <p class="text-sm font-medium text-fg">No drafts yet</p>
+                <p class="mt-1 text-xs text-fg-muted">Drafts save automatically as you type.</p>
             </div>
         {/if}
     </div>

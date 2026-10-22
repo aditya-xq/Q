@@ -81,16 +81,12 @@
 
 {#if undoStack.length > 0}
     <div
-        class="fixed bottom-24 left-1/2 z-[1200] flex -translate-x-1/2 items-center gap-3 rounded-full border border-slate-200/80 bg-white/95 px-4 py-2 text-xs text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_30px_-16px_rgba(15,23,42,0.4)] backdrop-blur-md md:bottom-6 dark:border-slate-700/70 dark:bg-slate-900/95 dark:text-slate-300"
+        class="fixed bottom-24 left-1/2 z-[1200] flex -translate-x-1/2 items-center gap-3 rounded-full border border-line/80 bg-surface/95 px-4 py-2 text-xs text-fg-muted shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_30px_-16px_rgba(15,23,42,0.4)] backdrop-blur-md md:bottom-6"
         role="status"
         data-testid="sticky-note-undo"
     >
         <span>{undoStack.length > 1 ? `${undoStack.length} notes dismissed` : 'Note dismissed'}</span>
-        <button
-            type="button"
-            class="font-semibold text-sky-600 transition hover:text-sky-500 dark:text-sky-400"
-            onclick={undo}
-        >
+        <button type="button" class="font-semibold text-accent-text transition hover:text-accent-strong" onclick={undo}>
             Undo
         </button>
     </div>

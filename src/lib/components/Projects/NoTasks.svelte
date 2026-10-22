@@ -1,8 +1,8 @@
 <div class="flex flex-col items-center justify-center py-16">
-    <div class="w-16 h-16 rounded-full flex items-center justify-center mb-4">
+    <div class="w-16 h-16 rounded-full bg-surface-2/60 flex items-center justify-center mb-4">
         <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="h-8 w-8 text-slate-400 dark:text-slate-600"
+            class="h-8 w-8 text-fg-subtle"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -15,5 +15,5 @@
             />
         </svg>
     </div>
-    <p class="text-slate-500 dark:text-slate-500 text-center text-lg">No tasks yet. Add your first task below.</p>
+    <p class="text-sm font-medium text-fg text-center">No tasks yet. Add your first task below.</p>
 </div>

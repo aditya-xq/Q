@@ -49,18 +49,20 @@ The shipped version shown next to the "Queue" imprint in `+layout.svelte` comes 
 ```
 src/
   routes/
-    +layout.svelte     App shell: sidebars, global shortcuts (Alt+Q/P/W, quick-link letters), DB liveQuery subscriptions
+    +layout.svelte     App shell: sidebars, global shortcuts (Alt+Q/P/W/A, quick-link letters), theme init, DB liveQuery subscriptions
     +layout.ts         prerender = true
     +page.svelte       View router (home|projects|writer) + deep-link sync; home board (StickyNotes); lazy-imports WriterView
     +error.svelte      Error page
   lib/
-    state.svelte.ts    Global rune state: appState (view, projectStore, writeups, notes, composeNoteId, flags), notifications
+    state.svelte.ts    Global rune state: appState (view, projectStore, writeups, notes, quickLinks, theme, composer/flags), notifications
     utils/
       db.ts            Dexie schema + init + settings helpers (single source of DB truth)
       stores.ts        Project/Task CRUD + observeProjects()
       tasks.ts         Pure helpers: project/task sorting + grouping (unit-tested)
       constants.ts     Shared quick-link/category defaults, icons (bundled brand marks), URL helpers
       shortcuts.ts     Quick-link letter map + lookup, isShortcutBlocked guard, openQuickLink
+      theme.ts         Theme config, presets, palette generation + CSS vars, cache/stored-row parsing (unit-tested)
+      color.ts         Pure hex/HSL mixing, WCAG luminance, contrast and readable-foreground helpers (unit-tested)
       browser.ts       Typed chrome/browser API access (topSites, permissions)
       utils.ts         deriveTitle(), clickOutside action
       writeup.ts       Derived draft title + Writeup -> WriteupSummary projection (unit-tested)
@@ -73,9 +75,10 @@ src/
       writeups.ts      Writeup CRUD + observeWriteups()
       notes.ts         Sticky-note CRUD + observeNotes() + createNote()
       quicklinks.ts    Quick link read/upsert helpers
-    components/        UI (SideNav + SideNavButton, StickyNotes/, Links, Settings, Projects/, Writer/, Widgets/, shared/)
+      theme.ts         applyTheme / setTheme / initTheme / destroyTheme, IndexedDB + localStorage persistence
+    components/        UI (SideNav + SideNavButton, StickyNotes/, Links, Settings, ThemeDesigner, Projects/, Writer/, Widgets/, shared/)
     features/voice/    Browser-native SpeechRecognition -> editor text controller
-tests/                 Bun unit tests for pure modules (deriveTitle, textPostProcess, constants, ...)
+tests/                 Bun unit tests for pure modules (deriveTitle, textPostProcess, constants, color, theme, ...)
 e2e/                   Playwright specs (web, extension, live)
 static/
   manifest.json        MV3 manifest (version must match package.json)
@@ -83,13 +86,17 @@ static/
   icons/ (app icons + brands/ quick-link marks), assets/
 ```
 
-- Writer UI (`components/Writer/`): the inline drafts panel renders at `lg+`; below that drafts open in the shared `createMobileDrawer` drawer. The editor is theme-aware — `Editor.svelte` imports Crepe's `nord.css` and overrides its CSS variables for light and dark (`.milkdown` / `.dark .milkdown`); its typography rules must select `.milkdown .ProseMirror …` to outrank Crepe's base styles. Code blocks keep a dark surface in both modes because Crepe highlights them with CodeMirror's `oneDark`.
+- Writer UI (`components/Writer/`): the inline drafts panel renders at `lg+`; below that drafts open in the shared `createMobileDrawer` drawer. The editor is theme-aware — `Editor.svelte` imports Crepe's `nord.css` and maps its `--crepe-*` variables to the semantic `--q-*` tokens; its typography rules must select `.milkdown .ProseMirror …` to outrank Crepe's base styles. Code blocks keep a dark surface in both modes because Crepe highlights them with CodeMirror's `oneDark`.
 
 ### Data & state rules
 
 - IndexedDB is the source of truth. `utils/stores.ts` hides the legacy Quick Todo pseudo-project (id `-1`) from project lists without deleting it; `< 0` ids are never user projects.
 - Cross-tab/global sync uses Dexie `liveQuery` subscriptions created in `+layout.svelte` (`observeProjects`, `observeWriteups`, `observeNotes`, `observeQuickLinks`). Mutations write to Dexie and rely on the observers to refresh `appState`; do not refresh `appState` manually or query Dexie ad-hoc from components when a store helper exists.
 - Quick links are observed into `appState.quickLinks` (one entry per category, defaults filling gaps) and feed both the rail and the bare-letter shortcuts. `utils/shortcuts.ts` maps `e/m/o/a/s/c` to Email/Messaging/OTT/AI/Social/Custom and `isShortcutBlocked` refuses to fire while typing (input/textarea/select/contenteditable), composing, with Alt/Ctrl/Meta held, or when a `[role="dialog"]` / `[data-shortcut-blocker]` overlay is open — any new panel that owns the keyboard must add that attribute.
+- **Theming:** `app.css` owns the semantic tokens (`--q-bg`, `--q-surface`, `--q-fg`, `--q-border`, `--q-accent`, `--q-danger`, …) exposed through `@theme inline` as `bg-bg` / `bg-surface` / `text-fg` / `border-line` / `bg-accent` / `text-accent-text`, plus a radius scale derived from `--q-radius`. New UI must use these utilities rather than Tailwind palette classes (`slate-*`, `sky-*`, …); neutral scrims (`bg-black/40`), the white toggle knobs and the fixed sticky-note paper are the deliberate exceptions. `dark:` is class-based (`@custom-variant dark`) and is owned by `stores/theme.ts`; `Editor.svelte` maps Crepe's `--crepe-*` variables to the tokens. Sticky notes are deliberately fixed paper tints (`noteTheme.ts`) and keep their own text colours.
+- **Theme persistence:** `ThemeConfig` (mode, preset, seed, accent, radius, font, surface, vibrancy) is generated into `--q-*` vars by `utils/theme.ts` and applied on `<html>` by `stores/theme.ts`. IndexedDB (`settings` key `theme`) is the durable source; `localStorage['q:theme']` is a pre-paint cache holding both palettes, read by `app.html` before hydration and rewritten by every `applyTheme`. Each write carries a `savedAt`; `initTheme` lets the newer copy win, so a debounced DB write can never roll a fresh change back. Cross-tab sync rides the `storage` event; system mode listens to `prefers-color-scheme`. `mode` is `light | dark | system`; `appState.themeResolved` mirrors the applied side for UI.
+- **Theme designer:** `ThemeDesigner.svelte` is always mounted in the layout, opens from the rail's Appearance button or `Alt+A`, is a `role="dialog"` (so shortcuts are blocked) and applies changes live. Presets are data in `THEME_PRESETS`; any custom edit clears the active preset. `Reset` restores the default preset but keeps the chosen mode.
+- **Design language:** control shapes and sizes are shared, not per-component. `shared/CloseButton` is the only close control (32px, 16px line icon) and `shared/ModeControl` is the only light/dark/system switch. Section eyebrows use `text-xs font-semibold uppercase tracking-wide text-fg-muted`; floating utility buttons are 40px `rounded-lg` with `border-line`/`bg-surface`; primary actions are `bg-accent text-accent-fg` + `hover:bg-accent-strong`; inline icon actions use 16px line icons. Keyboard focus is a single global `:focus-visible` outline on `--q-accent-text` (in `app.css`). Hidden mobile menus (`nav`, quick links) are `inert` + `aria-hidden` and close on Escape; any overlay that owns the keyboard also carries `data-shortcut-blocker`.
 - liveQuery queriers must issue their first Dexie read synchronously (no `await` of an external promise such as `ensureDBReady()` before `db.*`), or Dexie's query scope is lost and the subscription never re-fires. `ensureDBReady()` guards every other DB call.
 - Clearing a project's finished tasks goes through `deleteCompletedTasks(projectId)` (`utils/stores.ts`): one Dexie transaction that resolves the removed count. `ProjectGrid` asks for an inline confirmation first and toasts the result; the `Clear` control sits in the Completed Tasks header row.
 - Sticky notes are a **home-only board**: `appState.notes` is observed from Dexie, positions are viewport pixels clamped by `utils/notes.ts`, and `Alt+Q` (global, in `+layout.svelte`) switches to Home and calls `createNote()` (which stages the note at the viewport centre; on its first commit it glides to the nearest free parking slot via `nextFreeNoteSlot`, avoiding any `[data-note-obstacle]` region — the home content column — plus the side rails). Existing notes fly in staggered when the board mounts (a `note-pop` CSS animation on the card, so the note's measured position is unaffected); a note created in this session (`isStagedNote`) enters without a delay. Notes must never change the URL/view beyond that Home switch. `StickyNoteHint` is a persistent desktop-only pill above the home quote. Per-note UX: the whole header bar is the drag surface (plus arrow-key nudge, Shift = 10px), a colour palette (10 colours in a roving-tabindex 5×2 grid with arrow-key navigation), multi-point checklist editing (each point has its own checkbox), and a short fade-out exit + undo delete (undo keeps the last 5). `Note.points` is an ordered `{ text, done }[]`: Enter splits at the caret, a second Enter on a blank point finishes and drops it, Backspace on a blank point removes it, Shift+Enter wraps within a point, and blur commits (an all-blank note is discarded). A hint inside the note ("Press Enter twice to finish" / "Saves automatically" on mobile) is visible the whole time it is being drafted. Toggling a point's checkbox persists immediately. On `md+` notes are free-floating (`position: fixed`, width `min(clamp(208px,15vw,272px), 100vw-24px)`) and refit/re-clamp on window resize; `clampIntoView` must skip while `noteEl` is unbound (the textarea autosize action runs before `bind:this`) or it clamps with the default `NOTE_HEIGHT`. Notes wear an opaque tinted-paper theme (`noteTheme.ts`: neutral text, tinted hairline, whisper shadows, ±2° tilt) and the board's handle/colour/delete controls are hidden until hover or focus-within so the resting board stays clean. All `stores/notes.ts` mutations catch failures and toast, so callers may ignore rejections. `nextNoteZ()`/`NOTE_Z_BASE` live in `state.svelte.ts` so `utils/notes.ts` stays pure.
@@ -114,7 +121,7 @@ static/
 ### Unit (`bun run test:unit`, `tests/**`)
 
 - Bun's built-in runner (`bun:test`); `bun test` must be scoped to `tests/` so it never picks up Playwright specs.
-- Only pure modules are unit-tested (no Svelte runes / Dexie / DOM). Current coverage: `deriveTitle`, `textPostProcess` (voice), `constants` URL/icon helpers, `browser`, `weather`, `datetime`, `view`, `tasks`, `notes`, `writeup`.
+- Only pure modules are unit-tested (no Svelte runes / Dexie / DOM). Current coverage: `deriveTitle`, `textPostProcess` (voice), `constants` URL/icon helpers, `browser`, `weather`, `datetime`, `view`, `tasks`, `notes`, `writeup`, `color`, `theme` (presets, palette contrast, cache/stored-row parsing).
 - Keep pure logic in `utils/*.ts` so it stays testable; add a `tests/<module>.test.ts` alongside non-trivial changes.
 
 ### e2e (`bun run test:e2e`, `e2e/**`)
@@ -123,7 +130,7 @@ static/
 - Web tests run against `vite preview`; the `webServer` builds `build:web` first. Each test gets an isolated context, so IndexedDB starts empty.
 - `openHome()` / `openViewShortcut()` live in `e2e/helpers.ts`. Prefer accessible-role locators and stable ids (e.g. `input[id^="task-edit-"]`) over positional selectors.
 - Cover happy, unhappy (blank/duplicate input, cancel) and edge (reload persistence, ordering, toggling back) paths per view. Mobile specs set a viewport via `test.use`.
-- `migration.spec.ts` seeds a v1 IndexedDB and asserts the v3 upgrade; `sync.spec.ts` opens two tabs for cross-tab sync; `weather.spec.ts` mocks the weather/fetch + geolocation APIs; `stickynotes.spec.ts` covers create/drag/delete/undo, multi-note parking clear of the home content, and a `mobile stack` describe (390px viewport) for the notes button, sheet, card checkbox/colour persistence and Escape scoping.
+- `migration.spec.ts` seeds a v1 IndexedDB and asserts the v3 upgrade; `sync.spec.ts` opens two tabs for cross-tab sync; `weather.spec.ts` mocks the weather/fetch + geolocation APIs; `stickynotes.spec.ts` covers create/drag/delete/undo, multi-note parking clear of the home content, and a `mobile stack` describe (390px viewport) for the notes button, sheet, card checkbox/colour persistence and Escape scoping; `theme.spec.ts` covers system/light/dark resolution, persistence through reloads and IndexedDB, live token updates, reset, the theme-colour meta tag and the mobile designer.
 - Live/extension suites are gated by `E2E_LIVE=1` / `RUN_EXTENSION_E2E=1` and must not run in the default `bun run test:e2e`.
 
 ## Self-Improvement Protocol

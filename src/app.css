@@ -1,7 +1,183 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
-/* Global Tooltip Styles */
+/* Explicit light/dark mode: the theme store (and the pre-paint script) own the `.dark` class. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Fallbacks mirror the default Prism preset for the first paint (SSR, first run, extension install). */
+:root {
+    --q-bg: #fafafd;
+    --q-surface: rgb(253 253 254 / 0.72);
+    --q-surface-2: rgb(248 248 252 / 0.6);
+    --q-fg: #1a2134;
+    --q-fg-muted: #6f7380;
+    --q-fg-subtle: #9c9fa9;
+    --q-border: #dfe0e5;
+    --q-border-strong: #c9cad1;
+    --q-accent: #06b6d4;
+    --q-accent-fg: #0b1220;
+    --q-accent-text: #056c7e;
+    --q-accent-soft: #dcf5f9;
+    --q-accent-strong: #05a0bb;
+    --q-danger: #dc2626;
+    --q-danger-fg: #ffffff;
+    --q-danger-soft: #fbe5e5;
+    --q-success: #15803d;
+    --q-success-fg: #ffffff;
+    --q-success-soft: #e3f0e8;
+    --q-warning: #b45309;
+    --q-warning-fg: #ffffff;
+    --q-warning-soft: #f6eae1;
+    --q-selection: rgb(6 182 212 / 0.3);
+    --q-radius: 18px;
+    --q-font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --q-shadow-card: 0 1px 2px rgb(0 0 0 / 0.06), 0 10px 24px -18px rgb(0 0 0 / 0.25);
+    --q-app-bg:
+        radial-gradient(70rem 44rem at 8% -10%, rgb(6 182 212 / 0.16), transparent 60%),
+        radial-gradient(52rem 38rem at 100% 108%, rgb(99 102 241 / 0.14), transparent 65%);
+    --q-glass-blur: 16px;
+    color-scheme: light;
+}
+
+.dark {
+    --q-bg: #161924;
+    --q-surface: rgb(30 34 50 / 0.66);
+    --q-surface-2: rgb(42 48 67 / 0.55);
+    --q-fg: #eaedf7;
+    --q-fg-muted: #999ca7;
+    --q-fg-subtle: #6f727d;
+    --q-border: #2f323d;
+    --q-border-strong: #565963;
+    --q-accent: #06b6d4;
+    --q-accent-fg: #0b1220;
+    --q-accent-text: #06b6d4;
+    --q-accent-soft: #124555;
+    --q-accent-strong: #29c0da;
+    --q-danger: #f87171;
+    --q-danger-fg: #0b1220;
+    --q-danger-soft: #482c35;
+    --q-success: #4ade80;
+    --q-success-fg: #0b1220;
+    --q-success-soft: #214438;
+    --q-warning: #fbbf24;
+    --q-warning-fg: #0b1220;
+    --q-warning-soft: #483e24;
+    --q-selection: rgb(6 182 212 / 0.3);
+    --q-shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 28px -18px rgb(0 0 0 / 0.7);
+    --q-app-bg:
+        radial-gradient(70rem 44rem at 8% -10%, rgb(6 182 212 / 0.22), transparent 60%),
+        radial-gradient(52rem 38rem at 100% 108%, rgb(99 102 241 / 0.2), transparent 65%);
+    color-scheme: dark;
+}
+
+/* Semantic utilities. `inline` keeps the var() reference at the use site, so `.dark` and
+   runtime overrides on <html> flow straight through. */
+@theme inline {
+    --color-bg: var(--q-bg);
+    --color-surface: var(--q-surface);
+    --color-surface-2: var(--q-surface-2);
+    --color-fg: var(--q-fg);
+    --color-fg-muted: var(--q-fg-muted);
+    --color-fg-subtle: var(--q-fg-subtle);
+    --color-line: var(--q-border);
+    --color-line-strong: var(--q-border-strong);
+    --color-accent: var(--q-accent);
+    --color-accent-fg: var(--q-accent-fg);
+    --color-accent-text: var(--q-accent-text);
+    --color-accent-soft: var(--q-accent-soft);
+    --color-accent-strong: var(--q-accent-strong);
+    --color-danger: var(--q-danger);
+    --color-danger-fg: var(--q-danger-fg);
+    --color-danger-soft: var(--q-danger-soft);
+    --color-success: var(--q-success);
+    --color-success-fg: var(--q-success-fg);
+    --color-success-soft: var(--q-success-soft);
+    --color-warning: var(--q-warning);
+    --color-warning-fg: var(--q-warning-fg);
+    --color-warning-soft: var(--q-warning-soft);
+
+    --font-sans: var(--q-font);
+
+    --radius-xs: calc(var(--q-radius) * 0.25);
+    --radius-sm: calc(var(--q-radius) * 0.5);
+    --radius-md: calc(var(--q-radius) * 0.75);
+    --radius: calc(var(--q-radius) * 0.5);
+    --radius-lg: var(--q-radius);
+    --radius-xl: calc(var(--q-radius) * 1.5);
+    --radius-2xl: calc(var(--q-radius) * 2);
+    --radius-3xl: calc(var(--q-radius) * 3);
+
+    --shadow-sm: var(--q-shadow-card);
+}
+
+html {
+    background-color: var(--q-bg);
+}
+
+body {
+    min-height: 100dvh;
+    background-color: var(--q-bg);
+    background-image: var(--q-app-bg);
+    background-attachment: fixed;
+    color: var(--q-fg);
+    font-family: var(--q-font);
+    transition:
+        background-color 250ms ease,
+        color 250ms ease;
+}
+
+::selection {
+    background-color: var(--q-selection);
+}
+
+/* One keyboard affordance for every button and link. Unlayered so it still
+   wins over component-level `focus:outline-none`. */
+:where(button, a, [role='button']):focus-visible {
+    outline: 2px solid var(--q-accent-text);
+    outline-offset: 2px;
+}
+
+/* Keyboard users can jump past the fixed rails into the page content. */
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+}
+
+.skip-link:focus {
+    position: fixed;
+    left: 1rem;
+    top: 1rem;
+    z-index: 3000;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--q-border);
+    border-radius: var(--q-radius);
+    background: var(--q-bg);
+    color: var(--q-fg);
+    font-size: 0.875rem;
+    font-weight: 500;
+    box-shadow: var(--q-shadow-card);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-delay: 0ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Frosted surfaces only when the theme asks for them. */
+[data-surface='glass'] [class*='bg-surface'] {
+    backdrop-filter: blur(var(--q-glass-blur));
+}
+
+/* Global tooltip styles */
 [data-tooltip] {
     position: relative;
 }
@@ -13,8 +189,8 @@
     top: 50%;
     transform: translateY(-50%);
     padding: 0.5rem 0.75rem;
-    background-color: rgb(30 41 59);
-    color: white;
+    background-color: var(--q-fg);
+    color: var(--q-bg);
     font-size: 0.875rem;
     line-height: 1.25rem;
     border-radius: 0.5rem;
@@ -40,7 +216,7 @@
     width: 0;
     height: 0;
     border: 4px solid transparent;
-    border-left-color: rgb(30 41 59);
+    border-left-color: var(--q-fg);
     pointer-events: none;
     opacity: 0;
     visibility: hidden;
@@ -72,7 +248,7 @@
     bottom: 100%;
     transform: translateX(-50%);
     border-left-color: transparent;
-    border-top-color: rgb(30 41 59);
+    border-top-color: var(--q-fg);
 }
 
 [data-tooltip][data-tooltip-position='bottom']::before {
@@ -90,7 +266,7 @@
     bottom: auto;
     transform: translateX(-50%);
     border-left-color: transparent;
-    border-bottom-color: rgb(30 41 59);
+    border-bottom-color: var(--q-fg);
 }
 
 [data-tooltip][data-tooltip-position='right']::before {
@@ -102,29 +278,29 @@
     left: 100%;
     right: auto;
     border-left-color: transparent;
-    border-right-color: rgb(30 41 59);
+    border-right-color: var(--q-fg);
 }
 
-/* Dark mode support */
-.dark [data-tooltip]::before {
-    background-color: rgb(51 65 85);
+/* Scrollbars follow the theme */
+* {
+    scrollbar-color: color-mix(in srgb, var(--q-fg) 25%, transparent) transparent;
+    scrollbar-width: thin;
 }
 
-.dark [data-tooltip]::after {
-    border-left-color: rgb(51 65 85);
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
 }
 
-.dark [data-tooltip][data-tooltip-position='top']::after {
-    border-left-color: transparent;
-    border-top-color: rgb(51 65 85);
+::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background-color: color-mix(in srgb, var(--q-fg) 25%, transparent);
 }
 
-.dark [data-tooltip][data-tooltip-position='bottom']::after {
-    border-left-color: transparent;
-    border-bottom-color: rgb(51 65 85);
+::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--q-fg) 40%, transparent);
 }
 
-.dark [data-tooltip][data-tooltip-position='right']::after {
-    border-left-color: transparent;
-    border-right-color: rgb(51 65 85);
+::-webkit-scrollbar-track {
+    background: transparent;
 }

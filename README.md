@@ -23,8 +23,21 @@ Transform every new tab into a focused productivity hub. Stay organized, write d
 | Quick Links & Top Sites | One-click access to your most visited sites (shortcuts below)                                       |
 | Weather Widget          | Check conditions at a glance                                                                        |
 | Daily Inspiration       | Quotes and facts to spark curiosity                                                                 |
+| Themes                  | Light, dark or system, plus a designer with presets, colours, corners and type (Alt + A)            |
 | Deep Links              | Share a view with `?view=projects` / `?view=writer`                                                 |
 | Customizable            | Tailor Q to match your workflow                                                                     |
+
+---
+
+## Themes
+
+Pick **Light**, **Dark** or **System** in Settings, or open the theme designer from the palette button in the rail (`Alt + A`). Start from one of five presets — **Prism** (modern glassmorphic), **High Contrast** (pure black, white and yellow), **Terminal**, **Retro** (warm 70s print) or **Atelier** (plum and gold) — then fine-tune:
+
+- **Base colour** tints the page, text and borders; **vibrancy** controls how strongly it shows.
+- **Accent** drives buttons, links and active states, with a live contrast readout.
+- **Corners**, **typeface** (sans, rounded, serif, mono) and **surface style** (flat, soft, elevated, glass) restyle the whole app.
+
+Themes apply instantly, follow you across tabs and survive reloads. Everything is stored locally.
 
 ---
 
@@ -35,6 +48,7 @@ Transform every new tab into a focused productivity hub. Stay organized, write d
 | `Alt + Q`                         | Go home and start a new sticky note                                |
 | `Alt + P` / `Alt + W`             | Open Projects / Writer                                             |
 | `Alt + S`                         | Open Settings                                                      |
+| `Alt + A`                         | Open the theme designer                                            |
 | `E` / `M` / `O` / `A` / `S` / `C` | Open the Email / Messaging / OTT / AI / Social / Custom quick link |
 
 Bare letters only fire when you are not typing — they are ignored inside text fields, the editor, dialogs and open panels, and while a modifier key is held.

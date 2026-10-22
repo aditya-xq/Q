@@ -156,29 +156,30 @@
     }
 
     :global(.milkdown) {
-        --crepe-color-background: #f8fafc;
-        --crepe-color-on-background: #0f172a;
-        --crepe-color-surface: #ffffff;
-        --crepe-color-surface-low: #f1f5f9;
-        --crepe-color-on-surface: #0f172a;
-        --crepe-color-on-surface-variant: #475569;
-        --crepe-color-outline: #94a3b8;
-        --crepe-color-primary: #2563eb;
-        --crepe-color-secondary: #e2e8f0;
-        --crepe-color-on-secondary: #0f172a;
-        --crepe-color-inverse: #1e293b;
-        --crepe-color-on-inverse: #f8fafc;
-        --crepe-color-inline-code: #b91c1c;
-        --crepe-color-error: #b91c1c;
-        --crepe-color-hover: #f1f5f9;
-        --crepe-color-selected: #cbd5e1;
-        --crepe-color-inline-area: #e2e8f0;
+        --crepe-color-background: var(--q-bg);
+        --crepe-color-on-background: var(--q-fg);
+        --crepe-color-surface: var(--q-surface);
+        --crepe-color-surface-low: var(--q-surface-2);
+        --crepe-color-on-surface: var(--q-fg);
+        --crepe-color-on-surface-variant: var(--q-fg-muted);
+        --crepe-color-outline: var(--q-fg-subtle);
+        --crepe-color-primary: var(--q-accent-text);
+        --crepe-color-secondary: var(--q-surface-2);
+        --crepe-color-on-secondary: var(--q-fg);
+        --crepe-color-inverse: var(--q-fg);
+        --crepe-color-on-inverse: var(--q-bg);
+        --crepe-color-inline-code: var(--q-danger);
+        --crepe-color-error: var(--q-danger);
+        --crepe-color-hover: var(--q-surface-2);
+        --crepe-color-selected: var(--q-border-strong);
+        --crepe-color-inline-area: var(--q-surface-2);
         --crepe-shadow-1: 0 1px 3px 1px rgba(15, 23, 42, 0.12), 0 1px 2px 0 rgba(15, 23, 42, 0.18);
         --crepe-shadow-2: 0 2px 6px 2px rgba(15, 23, 42, 0.12), 0 1px 2px 0 rgba(15, 23, 42, 0.18);
 
         background: transparent;
         width: 100%;
         max-width: 100%;
+        font-family: var(--q-font);
 
         /* Base font size optimized for readability */
         font-size: 16px;
@@ -187,23 +188,6 @@
     }
 
     :global(.dark .milkdown) {
-        --crepe-color-background: #020617;
-        --crepe-color-on-background: #f1f5f9;
-        --crepe-color-surface: #0f172a;
-        --crepe-color-surface-low: #1e293b;
-        --crepe-color-on-surface: #e2e8f0;
-        --crepe-color-on-surface-variant: #cbd5e1;
-        --crepe-color-outline: #94a3b8;
-        --crepe-color-primary: #60a5fa;
-        --crepe-color-secondary: #1e293b;
-        --crepe-color-on-secondary: #dbeafe;
-        --crepe-color-inverse: #e2e8f0;
-        --crepe-color-on-inverse: #020617;
-        --crepe-color-inline-code: #fca5a5;
-        --crepe-color-error: #fca5a5;
-        --crepe-color-hover: #1e293b;
-        --crepe-color-selected: #334155;
-        --crepe-color-inline-area: #1e293b;
         --crepe-shadow-1: 0 1px 3px 1px rgba(0, 0, 0, 0.5), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
         --crepe-shadow-2: 0 2px 6px 2px rgba(0, 0, 0, 0.5), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
     }
@@ -645,14 +629,14 @@
         outline: none;
     }
 
-    /* Selection with slate color */
+    /* Selection with the theme accent */
     :global(.milkdown ::selection) {
-        background-color: rgba(100, 116, 139, 0.4);
+        background-color: var(--q-selection);
         color: inherit;
     }
 
     :global(.milkdown ::-moz-selection) {
-        background-color: rgba(100, 116, 139, 0.4);
+        background-color: var(--q-selection);
         color: inherit;
     }
 </style>

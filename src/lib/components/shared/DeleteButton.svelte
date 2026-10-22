@@ -1,27 +1,107 @@
 <script lang="ts">
-    import { clickOutside } from '$lib/utils/utils'
-    import { slide } from 'svelte/transition'
+    import { tick } from 'svelte'
+    import { fade } from 'svelte/transition'
 
     let { handleDelete, label = 'item' }: { handleDelete: () => void; label?: string } = $props()
+
     let showConfirmDelete = $state(false)
+    let triggerEl = $state<HTMLButtonElement | undefined>(undefined)
+    let popupEl = $state<HTMLElement | undefined>(undefined)
+    let positioned = $state(false)
+    let position = $state({ top: -9999, left: -9999 })
+
+    /** Move the popup to <body> so scroll containers and overflow:hidden never clip it. */
+    function portal(node: HTMLElement) {
+        document.body.appendChild(node)
+        return {
+            destroy() {
+                node.remove()
+            },
+        }
+    }
+
+    function closeConfirm(restoreFocus = true) {
+        showConfirmDelete = false
+        if (restoreFocus && triggerEl?.isConnected) triggerEl.focus()
+    }
+
+    function updatePosition() {
+        if (!triggerEl || !popupEl) return
+        const trigger = triggerEl.getBoundingClientRect()
+        const popup = popupEl.getBoundingClientRect()
+        const margin = 8
+        const gap = 8
+
+        let top = trigger.bottom + gap
+        if (top + popup.height > window.innerHeight - margin) {
+            top = Math.max(margin, trigger.top - popup.height - gap)
+        }
+
+        // Right-align to the trigger, then clamp to the viewport (important on mobile).
+        let left = trigger.right - popup.width
+        left = Math.min(Math.max(margin, left), window.innerWidth - popup.width - margin)
+
+        position = { top, left }
+        positioned = true
+    }
+
+    $effect(() => {
+        if (!showConfirmDelete) {
+            positioned = false
+            return
+        }
+
+        positioned = false
+        const onDocumentClick = (event: MouseEvent) => {
+            const target = event.target as Node
+            if (popupEl?.contains(target) || triggerEl?.contains(target)) return
+            closeConfirm(false)
+        }
+        const onKeydown = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') return
+            event.preventDefault()
+            closeConfirm()
+        }
+        const onViewportChange = () => updatePosition()
+
+        const frame = requestAnimationFrame(() => {
+            updatePosition()
+            void tick().then(() => {
+                if (showConfirmDelete) popupEl?.querySelector<HTMLButtonElement>('button')?.focus()
+            })
+        })
+
+        document.addEventListener('click', onDocumentClick)
+        window.addEventListener('keydown', onKeydown)
+        window.addEventListener('resize', onViewportChange)
+        window.addEventListener('scroll', onViewportChange, true)
+
+        return () => {
+            cancelAnimationFrame(frame)
+            document.removeEventListener('click', onDocumentClick)
+            window.removeEventListener('keydown', onKeydown)
+            window.removeEventListener('resize', onViewportChange)
+            window.removeEventListener('scroll', onViewportChange, true)
+        }
+    })
 </script>
 
 <div class="relative inline-block">
     <button
-        class="p-1.5 rounded-full transition-colors text-slate-500 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 hover:bg-slate-200/70 dark:hover:bg-slate-800"
-        onclick={(e) => {
-            e.stopPropagation()
-            if (showConfirmDelete) {
-                handleDelete()
-            } else {
-                showConfirmDelete = true
-            }
+        bind:this={triggerEl}
+        class="p-1.5 rounded-full transition-colors text-fg-subtle hover:text-danger hover:bg-surface-2"
+        onclick={(event) => {
+            event.stopPropagation()
+            if (showConfirmDelete) closeConfirm()
+            else showConfirmDelete = true
         }}
         aria-label={`Delete ${label}`}
+        aria-haspopup="dialog"
+        aria-expanded={showConfirmDelete}
     >
         <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
+            class="h-4 w-4"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -35,27 +115,30 @@
             />
         </svg>
     </button>
+
     {#if showConfirmDelete}
-        <!-- absolutely positioned popup placed below the button; does not change layout -->
         <div
-            use:clickOutside={() => (showConfirmDelete = false)}
-            class="absolute top-full -left-30 transform -translate-x-1/2 mt-2 w-[min(22rem,calc(100vw-2rem))] max-w-xs z-50 rounded-lg bg-red-50/95 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 backdrop-blur-sm shadow-lg p-3"
-            transition:slide={{ duration: 180 }}
+            use:portal
+            bind:this={popupEl}
+            class="fixed z-[1050] w-[min(20rem,calc(100vw-1rem))] rounded-xl border border-danger/40 bg-danger-soft/95 p-3 shadow-lg backdrop-blur-sm
+                {positioned ? '' : 'invisible'}"
+            style:top={`${position.top}px`}
+            style:left={`${position.left}px`}
+            in:fade={{ duration: 120 }}
             role="dialog"
             aria-label={`Confirm delete ${label}`}
             aria-modal="false"
         >
-            <p class="text-sm text-red-700 dark:text-red-300 mb-2">Are you sure you want to delete this?</p>
+            <p class="mb-2 text-sm text-danger">Are you sure you want to delete this?</p>
 
-            <div class="flex justify-end items-center space-x-2">
-                <!-- Improved Cancel button to match delete aesthetic -->
+            <div class="flex items-center justify-end gap-2">
                 <button
                     type="button"
-                    onclick={(e) => {
-                        e.stopPropagation()
-                        showConfirmDelete = false
+                    onclick={(event) => {
+                        event.stopPropagation()
+                        closeConfirm()
                     }}
-                    class="px-3 py-1.5 text-xs rounded-lg border border-red-200 dark:border-red-800 bg-transparent text-red-700 dark:text-red-300 hover:bg-red-50/70 dark:hover:bg-red-900/40 focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-700 transition"
+                    class="rounded-lg border border-danger/40 bg-transparent px-3 py-1.5 text-xs text-danger transition hover:bg-danger-soft focus:outline-none focus:ring-2 focus:ring-danger/30"
                 >
                     Cancel
                 </button>
@@ -63,7 +146,7 @@
                     type="button"
                     data-confirm-delete-button
                     onclick={handleDelete}
-                    class="px-3 py-1.5 text-xs rounded-lg bg-red-500/95 hover:bg-red-600/95 dark:bg-red-700 dark:hover:bg-red-600 text-white transition"
+                    class="rounded-lg bg-danger px-3 py-1.5 text-xs text-danger-fg transition hover:bg-danger/90"
                 >
                     Delete
                 </button>

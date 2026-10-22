@@ -145,16 +145,14 @@
     >
         {#if loading}
             <div
-                class="flex items-center justify-center gap-3 px-5 py-2.5 bg-white/70 dark:bg-slate-950/70 backdrop-blur-lg rounded-full border border-slate-200/60 dark:border-slate-700/60 shadow-lg"
+                class="flex items-center justify-center gap-3 px-5 py-2.5 bg-surface/70 backdrop-blur-lg rounded-full border border-line/60 shadow-lg"
             >
-                <div class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></div>
-                <span class="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider"
-                    >Locating...</span
-                >
+                <div class="w-2.5 h-2.5 rounded-full bg-success animate-pulse"></div>
+                <span class="text-xs font-bold text-fg-muted uppercase tracking-wider">Locating...</span>
             </div>
         {:else if error}
             <div
-                class="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50/90 dark:bg-red-950/40 backdrop-blur-lg px-4 py-2 rounded-full border border-red-200/60 dark:border-red-800/60 shadow-lg text-center"
+                class="text-xs font-bold text-danger bg-danger-soft backdrop-blur-lg px-4 py-2 rounded-full border border-danger/40 shadow-lg text-center"
             >
                 <span>⚠️ {error}</span>
                 <button onclick={refresh} class="ml-2 underline hover:no-underline" aria-label="Retry weather"
@@ -164,38 +162,32 @@
         {:else if weather}
             <!-- Mobile Layout (< md) -->
             <div
-                class="md:hidden max-w-xs mx-auto bg-white/85 dark:bg-slate-950/90 backdrop-blur-xl px-4 py-3 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-xl"
+                class="md:hidden max-w-xs mx-auto bg-surface/85 backdrop-blur-xl px-4 py-3 rounded-2xl border border-line/60 shadow-xl"
             >
                 <!-- Top Row: Location & Temp -->
                 <div class="flex items-center justify-between mb-3">
                     <div class="flex items-center gap-2">
-                        <span class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">
+                        <span class="text-xs font-black text-fg uppercase tracking-wide">
                             {weather.location}
                         </span>
                         <span
                             class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wide {weather.vibe ===
                             'Warm'
-                                ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400'
-                                : 'bg-blue-500/20 text-blue-600 dark:text-blue-400'}"
+                                ? 'bg-warning-soft text-warning'
+                                : 'bg-accent-soft text-accent-text'}"
                         >
                             {weather.vibe}
                         </span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="text-2xl leading-none">{weather.icon}</span>
-                        <span class="text-2xl font-black text-slate-900 dark:text-slate-100 leading-none tabular-nums"
-                            >{weather.temp}°</span
-                        >
+                        <span class="text-2xl font-black text-fg leading-none tabular-nums">{weather.temp}°</span>
                     </div>
                 </div>
 
                 <!-- Bottom Row: Condition, AQI, Humidity -->
-                <div
-                    class="flex items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800"
-                >
-                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400 capitalize"
-                        >{weather.condition}</span
-                    >
+                <div class="flex items-center justify-between gap-3 pt-3 border-t border-line">
+                    <span class="text-xs font-bold text-fg-muted capitalize">{weather.condition}</span>
 
                     <div class="flex items-center gap-3">
                         <!-- AQI Compact -->
@@ -208,16 +200,10 @@
 
                         <!-- Humidity -->
                         <div class="flex items-center gap-1.5">
-                            <svg
-                                class="w-3 h-3 text-blue-500 dark:text-blue-400"
-                                fill="currentColor"
-                                viewBox="0 0 24 24"
-                            >
+                            <svg class="w-3 h-3 text-accent-text" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M12 21c-4.418 0-8-3.582-8-8s8-11 8-11 8 6.582 8 11-3.582 8-8 8z" />
                             </svg>
-                            <span class="text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums"
-                                >{weather.humidity}%</span
-                            >
+                            <span class="text-xs font-bold text-fg tabular-nums">{weather.humidity}%</span>
                         </div>
                     </div>
                 </div>
@@ -225,18 +211,18 @@
 
             <!-- Desktop Layout (≥ md) -->
             <div
-                class="hidden md:flex items-center gap-4 bg-white/85 dark:bg-slate-950/90 backdrop-blur-xl px-5 py-3 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-xl transition-all hover:shadow-2xl"
+                class="hidden md:flex items-center gap-4 bg-surface/85 backdrop-blur-xl px-5 py-3 rounded-2xl border border-line/60 shadow-xl transition-all hover:shadow-2xl"
             >
                 <!-- Location & Vibe -->
-                <div class="flex items-center gap-2.5 border-r border-slate-300 dark:border-slate-700 pr-4">
-                    <span class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">
+                <div class="flex items-center gap-2.5 border-r border-line-strong pr-4">
+                    <span class="text-xs font-black text-fg uppercase tracking-wide">
                         {weather.location}
                     </span>
                     <span
                         class="px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wide {weather.vibe ===
                         'Warm'
-                            ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400'
-                            : 'bg-blue-500/20 text-blue-600 dark:text-blue-400'}"
+                            ? 'bg-warning-soft text-warning'
+                            : 'bg-accent-soft text-accent-text'}"
                     >
                         {weather.vibe}
                     </span>
@@ -246,11 +232,8 @@
                 <div class="flex items-center gap-2.5">
                     <span class="text-xl leading-none">{weather.icon}</span>
                     <div class="flex flex-col gap-0.5">
-                        <span class="text-lg font-black text-slate-900 dark:text-slate-100 leading-none tabular-nums"
-                            >{weather.temp}°</span
-                        >
-                        <span
-                            class="text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide leading-none"
+                        <span class="text-lg font-black text-fg leading-none tabular-nums">{weather.temp}°</span>
+                        <span class="text-[8px] font-bold text-fg-muted uppercase tracking-wide leading-none"
                             >{weather.condition}</span
                         >
                     </div>
@@ -264,7 +247,7 @@
                     >
                         AQI {weather.aqi}
                     </span>
-                    <div class="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div class="w-full h-1.5 bg-surface-2 rounded-full overflow-hidden">
                         <div
                             class="h-full rounded-full transition-all duration-300"
                             style:background-color={weather.aqiColor}
@@ -277,16 +260,13 @@
                 </div>
 
                 <!-- Humidity -->
-                <div class="flex items-center gap-2 pl-4 border-l border-slate-300 dark:border-slate-700">
-                    <svg class="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                <div class="flex items-center gap-2 pl-4 border-l border-line-strong">
+                    <svg class="w-3.5 h-3.5 text-accent-text" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 21c-4.418 0-8-3.582-8-8s8-11 8-11 8 6.582 8 11-3.582 8-8 8z" />
                     </svg>
                     <div class="flex flex-col gap-0.5">
-                        <span class="text-sm font-black text-slate-900 dark:text-slate-100 leading-none tabular-nums"
-                            >{weather.humidity}%</span
-                        >
-                        <span
-                            class="text-[7px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide leading-none"
+                        <span class="text-sm font-black text-fg leading-none tabular-nums">{weather.humidity}%</span>
+                        <span class="text-[7px] font-bold text-fg-muted uppercase tracking-wide leading-none"
                             >Humidity</span
                         >
                     </div>

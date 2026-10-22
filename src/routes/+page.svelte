@@ -48,12 +48,6 @@
     })
 
     onMount(() => {
-        const darkQuery = window.matchMedia('(prefers-color-scheme: dark)')
-        const applyTheme = (matches: boolean) => document.documentElement.classList.toggle('dark', matches)
-        applyTheme(darkQuery.matches)
-        const onThemeChange = (event: MediaQueryListEvent) => applyTheme(event.matches)
-        darkQuery.addEventListener('change', onThemeChange)
-
         void getTopSites().then((sites) => {
             frequentSites = sites.length > 0 ? sites.slice(0, 8) : fallbackSites
         })
@@ -64,7 +58,6 @@
         window.addEventListener('popstate', handlePopState)
 
         return () => {
-            darkQuery.removeEventListener('change', onThemeChange)
             window.removeEventListener('popstate', handlePopState)
         }
     })
@@ -72,7 +65,7 @@
 
 <!-- ===== Main Screen ===== -->
 <div
-    class={`relative min-h-screen flex flex-col transition-colors duration-500 ${appState.view === 'projects' || appState.view === 'writer' ? 'items-start' : 'items-center justify-center'}`}
+    class={`relative min-h-full flex flex-col transition-colors duration-500 ${appState.view === 'projects' || appState.view === 'writer' ? 'items-start' : 'items-center justify-center'}`}
 >
     <!-- Notifications -->
     <Notification />
@@ -87,11 +80,11 @@
                 {#if appState.view === 'projects'}
                     <div class="mt-16"><ProjectGrid /></div>
                 {:else if appState.view === 'writer'}
-                    <div class="mt-16 sm:mt-20 md:mr-16">
+                    <div class="mt-16 sm:mt-20">
                         {#if WriterView}
                             <WriterView />
                         {:else}
-                            <div class="p-10 text-center text-sm text-slate-400">Loading editor…</div>
+                            <div class="p-10 text-center text-sm text-fg-subtle">Loading editor…</div>
                         {/if}
                     </div>
                 {/if}
@@ -100,9 +93,10 @@
     {:else}
         <!-- Home View -->
         <div
-            class={`flex flex-col items-center justify-center flex-1 w-full ${appState.showQuote ? '-mt-44' : '-mt-24'} md:mr-6 px-4 sm:px-6 lg:px-8 transition-all duration-500 ease-out`}
+            class={`flex flex-col items-center justify-center flex-1 w-full ${appState.showQuote ? '-mt-44' : '-mt-24'} px-4 sm:px-6 lg:px-8 transition-all duration-500 ease-out`}
             in:fade={{ duration: 400, easing: cubicOut }}
         >
+            <h1 class="sr-only">Queue home</h1>
             <div
                 class="max-w-3xl w-full text-center space-y-8 transition-all duration-400 ease-in-out"
                 data-note-obstacle
@@ -124,17 +118,5 @@
 <style>
     :global(html) {
         scroll-behavior: smooth;
-    }
-
-    /* Scrollbars (light & dark) */
-    :global(::-webkit-scrollbar) {
-        width: 8px;
-    }
-    :global(::-webkit-scrollbar-thumb) {
-        border-radius: 4px;
-        background-color: rgba(148, 163, 184, 0.4);
-    }
-    :global(.dark ::-webkit-scrollbar-thumb) {
-        background-color: rgba(71, 85, 105, 0.5);
     }
 </style>

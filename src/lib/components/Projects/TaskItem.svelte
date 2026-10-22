@@ -38,7 +38,7 @@
 </script>
 
 <div
-    class="group rounded-lg transition-all duration-200 hover:bg-slate-100/80 dark:hover:bg-slate-800/70 border border-transparent hover:border-slate-200/50 dark:hover:border-slate-700/50"
+    class="group rounded-lg transition-all duration-200 hover:bg-surface-2/70 border border-transparent hover:border-line/60"
 >
     <div class="flex items-center p-3">
         <div class="shrink-0 mr-4">
@@ -47,12 +47,12 @@
                 <div
                     class={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-200 ${
                         task.completed
-                            ? 'bg-linear-to-r from-indigo-500/90 to-indigo-600/90 dark:from-indigo-600 dark:to-indigo-800 border-transparent shadow-sm'
-                            : 'border-slate-300 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50 hover:border-indigo-400/50 dark:hover:border-indigo-500/50'
-                    } peer-focus:ring-2 peer-focus:ring-indigo-500/30 dark:peer-focus:ring-indigo-400/20`}
+                            ? 'bg-accent border-transparent shadow-sm'
+                            : 'border-line-strong bg-surface-2/60 hover:border-accent/50'
+                    } peer-focus:ring-2 peer-focus:ring-accent/30`}
                 >
                     {#if task.completed}
-                        <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 text-accent-fg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                         </svg>
                     {/if}
@@ -66,9 +66,10 @@
                     id={`task-edit-${task.id}`}
                     bind:this={editInput}
                     type="text"
+                    aria-label="Edit task"
                     bind:value={editedText}
-                    class="w-full rounded-lg py-2 px-3 text-base bg-slate-100/80 dark:bg-slate-800/80 border-0 text-slate-700 dark:text-slate-200
-                        focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:focus:ring-indigo-400/20 shadow-sm backdrop-blur-sm"
+                    class="w-full rounded-lg py-2 px-3 text-base bg-surface-2 border-0 text-fg
+                        focus:outline-none focus:ring-2 focus:ring-accent/30 shadow-sm backdrop-blur-sm"
                     onblur={saveEdit}
                     onkeydown={(e) => {
                         if (e.key === 'Enter') saveEdit()
@@ -81,9 +82,7 @@
             {:else}
                 <span
                     class={`block py-1 text-base transition-all duration-200 cursor-pointer truncate text-wrap ${
-                        task.completed
-                            ? 'text-slate-500 dark:text-slate-500 line-through'
-                            : 'text-slate-700 dark:text-slate-200'
+                        task.completed ? 'text-fg-muted line-through' : 'text-fg'
                     }`}
                     onclick={() => (editing = true)}
                     role="button"
@@ -106,7 +105,7 @@
         >
             {#if !editing}
                 <button
-                    class="p-1.5 rounded-full transition-colors text-slate-500 hover:text-indigo-500 dark:text-slate-500 dark:hover:text-indigo-400 hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
+                    class="p-1.5 rounded-full transition-colors text-fg-subtle hover:text-accent-text hover:bg-surface-2"
                     onclick={() => (editing = true)}
                     aria-label="Edit task"
                 >

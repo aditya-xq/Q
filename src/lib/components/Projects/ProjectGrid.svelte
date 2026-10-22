@@ -11,6 +11,7 @@
     import NoTasks from './NoTasks.svelte'
     import NoProjectSelected from './NoProjectSelected.svelte'
     import ProjectList from './ProjectList.svelte'
+    import { CloseButton } from '../shared'
 
     let selectedProjectId = $state<number | null>(null)
     let showCompleted = $state(false)
@@ -75,9 +76,9 @@
 </script>
 
 <div class="container mx-auto px-3 sm:px-4 md:px-8 transition-all duration-300 ease-in-out">
-    <div class="flex gap-4 lg:gap-6 h-[calc(100vh-6rem)] sm:h-[calc(100vh-8rem)] relative">
+    <div class="flex gap-4 lg:gap-6 h-[calc(100dvh-6rem)] sm:h-[calc(100dvh-8rem)] relative">
         <!-- Desktop Left Sidebar - Project List -->
-        <div class="hidden md:block">
+        <div class="hidden md:block h-full">
             <ProjectList {selectedProjectId} {onProjectSelection} />
         </div>
 
@@ -86,43 +87,36 @@
             <!-- Mobile Header with Projects Button -->
             <div class="md:hidden flex items-center justify-end mb-3 sm:mb-4">
                 <button
-                    class="group relative rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm hover:shadow active:scale-95"
+                    class="group relative rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-surface border border-line hover:border-line-strong transition-all shadow-sm hover:shadow active:scale-95"
                     onclick={drawer.toggleDrawer}
                     aria-label="Open projects"
                 >
                     <div class="flex items-center gap-1.5 sm:gap-2">
-                        <span
-                            class="text-xs font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200"
-                            >Projects</span
-                        >
+                        <span class="text-xs font-medium text-fg-muted group-hover:text-fg">Projects</span>
                     </div>
                 </button>
             </div>
 
             {#if selectedProject}
                 <div
-                    class="rounded-lg border border-slate-200 dark:border-slate-700 h-[calc(100vh-12rem)] md:h-full flex flex-col overflow-hidden"
+                    class="rounded-xl border border-line bg-surface/40 h-[calc(100dvh-12rem)] md:h-full flex flex-col overflow-hidden"
                     transition:fade={{ duration: 200 }}
                 >
                     <!-- Project Header -->
-                    <div class="p-4 sm:p-6 border-b border-slate-200/70 dark:border-slate-700">
+                    <div class="p-4 sm:p-6 border-b border-line/70">
                         <div class="flex items-center justify-between">
                             <div class="grow min-w-0">
-                                <h1
-                                    class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 mb-1 truncate"
-                                >
+                                <h1 class="text-xl sm:text-2xl font-bold text-fg mb-1 truncate">
                                     {selectedProject.title}
                                 </h1>
-                                <p class="text-xs sm:text-sm text-slate-500">
+                                <p class="text-xs sm:text-sm text-fg-muted">
                                     {completedTasks.length} of {selectedProject.tasks.length} completed
                                 </p>
                             </div>
                         </div>
                     </div>
                     <!-- Task List -->
-                    <div
-                        class="grow overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent"
-                    >
+                    <div class="grow overflow-y-auto">
                         <div class="p-4 sm:p-6">
                             {#if selectedProject.tasks.length === 0}
                                 <NoTasks />
@@ -132,7 +126,7 @@
                                     {#if activeTasks.length > 0}
                                         <div>
                                             <h3
-                                                class="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 mb-2 sm:mb-3 px-1"
+                                                class="text-xs sm:text-sm font-semibold uppercase tracking-wide text-fg-muted mb-2 sm:mb-3 px-1"
                                             >
                                                 Active Tasks
                                             </h3>
@@ -154,7 +148,7 @@
                                                     <button
                                                         onclick={() => (showCompleted = !showCompleted)}
                                                         aria-expanded={showCompleted}
-                                                        class="grow min-w-0 flex items-center justify-between px-1 py-2 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200"
+                                                        class="grow min-w-0 flex items-center justify-between px-1 py-2 text-xs sm:text-sm font-semibold uppercase tracking-wide text-fg-muted hover:text-fg transition-colors duration-200"
                                                     >
                                                         <span>Completed Tasks ({completedTasks.length})</span>
                                                         <svg
@@ -182,8 +176,8 @@
                                                         title="Delete all completed tasks"
                                                         class={`shrink-0 flex items-center gap-1 rounded-full border px-2 py-1.5 text-[0.65rem] sm:text-xs font-medium transition-all duration-200 active:scale-95 ${
                                                             confirmingClear
-                                                                ? 'border-red-300 bg-red-50/80 text-red-600 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300'
-                                                                : 'border-slate-200/70 bg-white/60 text-slate-500 hover:border-red-200 hover:text-red-500 dark:border-slate-700/70 dark:bg-slate-800/40 dark:text-slate-400 dark:hover:border-red-900/60 dark:hover:text-red-400'
+                                                                ? 'border-danger/50 bg-danger-soft text-danger'
+                                                                : 'border-line/70 bg-surface/60 text-fg-muted hover:border-danger/40 hover:text-danger'
                                                         }`}
                                                     >
                                                         <svg
@@ -207,12 +201,12 @@
 
                                                 {#if confirmingClear}
                                                     <div
-                                                        class="mt-2 mr-2 sm:mr-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-200 bg-red-50/80 px-3 py-2 dark:border-red-900/50 dark:bg-red-950/30"
+                                                        class="mt-2 mr-2 sm:mr-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-danger/40 bg-danger-soft px-3 py-2"
                                                         transition:slide={{ duration: 180 }}
                                                         role="group"
                                                         aria-label="Confirm deleting completed tasks"
                                                     >
-                                                        <p class="text-xs text-red-700 dark:text-red-300">
+                                                        <p class="text-xs text-danger">
                                                             Delete {completedTasks.length}
                                                             {completedTasks.length === 1
                                                                 ? 'completed task'
@@ -222,7 +216,7 @@
                                                             <button
                                                                 type="button"
                                                                 onclick={() => (confirmingClear = false)}
-                                                                class="rounded-lg border border-red-200 px-2.5 py-2 sm:py-1 text-[0.7rem] text-red-700 transition hover:bg-red-100/70 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-900/40"
+                                                                class="rounded-lg border border-danger/40 px-2.5 py-2 sm:py-1 text-[0.7rem] text-danger transition hover:bg-danger-soft"
                                                             >
                                                                 Cancel
                                                             </button>
@@ -230,7 +224,7 @@
                                                                 type="button"
                                                                 onclick={clearCompletedTasks}
                                                                 disabled={clearing}
-                                                                class="rounded-lg bg-red-500/95 px-2.5 py-2 sm:py-1 text-[0.7rem] text-white transition hover:bg-red-600/95 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-red-700 dark:hover:bg-red-600"
+                                                                class="rounded-lg bg-danger px-2.5 py-2 sm:py-1 text-[0.7rem] text-danger-fg transition hover:bg-danger/90 disabled:cursor-not-allowed disabled:opacity-60"
                                                             >
                                                                 Delete all
                                                             </button>
@@ -265,7 +259,7 @@
                             {/if}
                         </div>
                     </div>
-                    <div class="px-4 sm:px-6 py-3 sm:py-4 border-t border-slate-200 dark:border-slate-700">
+                    <div class="px-4 sm:px-6 py-3 sm:py-4 border-t border-line">
                         <AddTaskInput projectId={selectedProject.id as number} />
                     </div>
                 </div>
@@ -290,41 +284,19 @@
 
             <!-- Sliding panel from right -->
             <div
-                class="md:hidden fixed right-0 top-0 bottom-0 w-84 max-w-[85vw] bg-slate-50 dark:bg-slate-950 z-50 shadow-2xl overflow-y-auto border-l border-slate-200 dark:border-slate-800 transition-transform duration-300 ease-out"
+                class="md:hidden fixed right-0 top-0 bottom-0 w-84 max-w-[85vw] bg-bg z-50 shadow-2xl overflow-y-auto border-l border-line transition-transform duration-300 ease-out"
                 class:translate-x-0={drawer.animating}
                 class:translate-x-full={!drawer.animating}
                 data-shortcut-blocker
             >
                 <!-- Header with close button -->
                 <div
-                    class="sticky top-0 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 px-3 sm:px-4 py-3 sm:py-3.5 flex justify-between items-center z-10"
+                    class="sticky top-0 bg-bg/95 backdrop-blur-sm border-b border-line px-3 sm:px-4 py-3 sm:py-3.5 flex justify-between items-center z-10"
                 >
                     <div class="flex items-center gap-2">
-                        <h3
-                            class="text-xs sm:text-sm font-semibold tracking-wide text-slate-900 dark:text-slate-100 uppercase opacity-60"
-                        >
-                            Projects
-                        </h3>
+                        <h3 class="text-xs sm:text-sm font-semibold tracking-wide text-fg-muted uppercase">Projects</h3>
                     </div>
-                    <button
-                        class="rounded-lg p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors active:scale-95"
-                        onclick={drawer.closeDrawer}
-                        aria-label="Close projects panel"
-                    >
-                        <svg
-                            class="w-5 h-5 text-slate-500 dark:text-slate-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12"
-                            />
-                        </svg>
-                    </button>
+                    <CloseButton label="Close projects panel" onclick={drawer.closeDrawer} />
                 </div>
 
                 <!-- Panel content -->
@@ -341,18 +313,3 @@
         {/if}
     </div>
 </div>
-
-<style>
-    .scrollbar-thin::-webkit-scrollbar {
-        width: 4px;
-    }
-
-    .scrollbar-thumb-slate-300::-webkit-scrollbar-thumb {
-        background-color: rgb(203 213 225);
-        border-radius: 2px;
-    }
-
-    .scrollbar-track-transparent::-webkit-scrollbar-track {
-        background: transparent;
-    }
-</style>

@@ -17,16 +17,17 @@
     <input
         type="text"
         placeholder="Add a new task..."
+        aria-label="Add a new task"
         bind:value={newTaskText}
-        class="w-full pl-4 pr-12 py-2 rounded-lg text-slate-700 dark:text-slate-200 placeholder-slate-500 dark:placeholder-slate-600
-            transition-all duration-200 border-0 focus:border-0 focus:outline-none focus:ring-0 text-base"
+        class="w-full pl-4 pr-12 py-2 rounded-lg text-fg placeholder:text-fg-subtle
+            transition-all duration-200 border-0 focus:border-0 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent/20 text-base"
         onkeydown={(e) => {
             if (e.key === 'Enter') addNewTask()
         }}
     />
     <button
-        class="absolute right-3 top-1/2 transform -translate-y-1/2 p-2 rounded-full text-slate-500 hover:text-indigo-500 dark:text-slate-500 dark:hover:text-indigo-400
-            hover:bg-slate-200/70 dark:hover:bg-slate-700/70 transition-colors"
+        class="absolute right-3 top-1/2 transform -translate-y-1/2 p-2 rounded-full text-fg-subtle hover:text-accent-text
+            hover:bg-surface-2 transition-colors"
         onclick={addNewTask}
         aria-label="Add task"
     >

@@ -73,6 +73,10 @@ async function writeNote(page: Page, note: Locator, ...points: string[]) {
                 { timeout: 5000 }
             )
             .toBeGreaterThan(20)
+        // Movement starts the 700ms glide; wait for the wrapper to drop `note-flying`
+        // before treating the note as settled (position polling can otherwise sample
+        // two identical frames before the glide begins).
+        await expect(note).not.toHaveClass(/note-flying/, { timeout: 5000 })
     }
     await waitForSettled(note)
 }
@@ -199,21 +203,29 @@ test.describe('Sticky notes', () => {
 
         const note = page.getByTestId('sticky-note')
         const staged = await note.boundingBox()
+        if (!staged) throw new Error('note not measurable')
+
         await note.getByRole('textbox').first().fill('Glide')
         await page.keyboard.press('Enter')
         await page.keyboard.press('Enter')
 
-        await page.waitForTimeout(140)
-        const mid = await note.boundingBox()
+        // The wrapper carries `note-flying` for the 700ms glide; its transition is what
+        // makes the move an animation instead of a jump. Asserting the mechanism avoids
+        // sampling a wall-clock position (which is flaky on a loaded runner).
+        await expect(note).toHaveClass(/note-flying/)
+        const transitionMs = await note.evaluate((element) => {
+            const durations = getComputedStyle(element)
+                .transitionDuration.split(',')
+                .map((value) => parseFloat(value) * 1000)
+            return Math.max(...durations)
+        })
+        expect(transitionMs).toBeGreaterThanOrEqual(600)
+
         await page.waitForTimeout(900)
         const settled = await note.boundingBox()
-        if (!staged || !mid || !settled) throw new Error('note not measurable')
-
+        if (!settled) throw new Error('note not measurable')
         const total = Math.abs(settled.x - staged.x) + Math.abs(settled.y - staged.y)
-        const travelled = Math.abs(mid.x - staged.x) + Math.abs(mid.y - staged.y)
         expect(total).toBeGreaterThan(40)
-        expect(travelled).toBeGreaterThan(0)
-        expect(travelled).toBeLessThan(total - 2)
     })
 
     test('a note can be dragged by its whole bar and the position persists', async ({ page }) => {
@@ -274,7 +286,10 @@ test.describe('Sticky notes', () => {
     test('an empty note is discarded on Escape', async ({ page }) => {
         await openHome(page)
         await page.keyboard.press('Alt+q')
-        await expect(page.getByTestId('sticky-note')).toHaveCount(1)
+        const note = page.getByTestId('sticky-note')
+        await expect(note).toHaveCount(1)
+        // Escape is handled by the focused point; wait for the new note's autofocus.
+        await expect(note.getByRole('textbox').first()).toBeFocused()
 
         await page.keyboard.press('Escape')
         await expect(page.getByTestId('sticky-note')).toHaveCount(0, { timeout: 5000 })

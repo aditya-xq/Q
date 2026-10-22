@@ -1,5 +1,6 @@
 import type { Note, QuickLink, WriteupSummary } from './utils/db'
 import type { ProjectWithTasks } from './utils/stores'
+import { DEFAULT_THEME, type ResolvedMode, type ThemeConfig } from './utils/theme'
 
 export type View = 'projects' | 'writer' | 'home'
 
@@ -12,6 +13,9 @@ interface AppState {
     composeNoteId?: number
     showQuote?: boolean
     showWeather?: boolean
+    theme: ThemeConfig
+    themeResolved: ResolvedMode
+    themeDesignerOpen: boolean
 }
 
 interface Notification {
@@ -28,6 +32,9 @@ export const appState: AppState = $state({
     quickLinks: [],
     showQuote: true,
     showWeather: false,
+    theme: { ...DEFAULT_THEME },
+    themeResolved: 'light',
+    themeDesignerOpen: false,
 })
 
 export const notifications: Notification[] = $state([])

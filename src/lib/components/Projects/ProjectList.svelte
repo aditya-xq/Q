@@ -48,26 +48,22 @@
 </script>
 
 <!-- Mobile: Full width without border, Desktop: Fixed width with border -->
-<div class="w-full md:w-86 md:shrink-0">
-    <div
-        class="md:rounded-lg md:border md:border-slate-200 md:dark:border-slate-700 h-full flex flex-col overflow-hidden"
-    >
+<div class="w-full md:w-86 md:h-full md:shrink-0">
+    <div class="md:rounded-xl md:border md:border-line md:bg-surface/40 h-full flex flex-col overflow-hidden">
         <!-- Desktop-only header -->
-        <div class="hidden md:block p-4 border-b border-slate-200/70 dark:border-slate-800/70">
-            <h2 class="text-lg font-semibold text-slate-700 dark:text-slate-100">Projects</h2>
+        <div class="hidden md:block p-4 border-b border-line/70">
+            <h2 class="text-lg font-semibold text-fg">Projects</h2>
         </div>
 
         <!-- Projects list -->
-        <div
-            class="grow overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent"
-        >
+        <div class="grow overflow-y-auto">
             <div class="p-1.5 sm:p-2 space-y-1">
                 {#each appState.projectStore as project (project.id)}
                     <div
                         class={`group relative rounded-lg transition-all duration-200 ${
                             selectedProjectId === project.id
-                                ? 'bg-slate-200/80 dark:bg-slate-800/80 shadow-sm ring-1 ring-slate-300/50 dark:ring-slate-700/50'
-                                : 'hover:bg-slate-100/80 dark:hover:bg-slate-800/70'
+                                ? 'bg-surface-2 shadow-sm ring-1 ring-line-strong'
+                                : 'hover:bg-surface-2/70'
                         }`}
                         transition:fly={{ y: -10, duration: 300, easing: quintOut }}
                     >
@@ -80,14 +76,12 @@
                             <div class="pr-9">
                                 <h3
                                     class={`font-medium text-sm sm:text-base truncate ${
-                                        selectedProjectId === project.id
-                                            ? 'text-slate-800 dark:text-slate-100'
-                                            : 'text-slate-700 dark:text-slate-200'
+                                        selectedProjectId === project.id ? 'text-fg' : 'text-fg-muted'
                                     }`}
                                 >
                                     {project.title}
                                 </h3>
-                                <p class="text-xs text-slate-500 dark:text-slate-500 mt-0.5">
+                                <p class="text-xs text-fg-subtle mt-0.5">
                                     {project.tasks.length}
                                     {project.tasks.length === 1 ? 'task' : 'tasks'}
                                 </p>
@@ -98,30 +92,34 @@
                         </div>
                     </div>
                 {/each}
+                {#if appState.projectStore.length === 0}
+                    <p class="px-3 py-8 text-center text-xs text-fg-subtle">No projects yet. Create one below.</p>
+                {/if}
             </div>
         </div>
 
         <!-- Add project section -->
-        <div class="p-2.5 sm:p-3 border-t border-slate-200/70 dark:border-slate-800/70">
+        <div class="p-2.5 sm:p-3 border-t border-line/70">
             {#if isAddingProject}
                 <div class="space-y-2" transition:slide={{ duration: 200 }}>
                     <input
                         id="new-project-input"
                         type="text"
                         placeholder="Project name"
+                        aria-label="Project name"
                         bind:value={newProjectTitle}
                         onkeydown={handleKeydown}
-                        class="w-full bg-slate-100/80 dark:bg-slate-800/70 border-0 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400/30 dark:focus:ring-slate-600/40 text-sm placeholder:text-slate-500 dark:placeholder:text-slate-600 font-medium text-slate-700 dark:text-slate-200 shadow-sm"
+                        class="w-full rounded-lg border-0 bg-surface-2 px-3 py-2 text-sm font-medium text-fg shadow-sm placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-accent/30"
                     />
                     <div class="flex gap-2">
                         <button
-                            class="flex-1 px-3 py-2 rounded-lg text-xs transition-all duration-200 text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 font-medium active:scale-95"
+                            class="flex-1 rounded-lg px-3 py-2 text-xs font-medium text-fg-muted transition-all duration-200 hover:bg-surface-2 hover:text-fg active:scale-95"
                             onclick={cancelAddProject}
                         >
                             Cancel
                         </button>
                         <button
-                            class="flex-1 px-3 py-2 rounded-lg text-xs transition-all duration-200 bg-slate-700 dark:bg-slate-600 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-medium shadow-sm active:scale-95"
+                            class="flex-1 rounded-lg bg-accent px-3 py-2 text-xs font-medium text-accent-fg shadow-sm transition-all duration-200 hover:bg-accent-strong active:scale-95"
                             onclick={addNewProject}
                         >
                             Add
@@ -131,14 +129,14 @@
             {:else}
                 <button
                     onclick={startAddingProject}
-                    class="w-full flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border border-slate-200/70 dark:border-slate-800/70 bg-slate-100/50 dark:bg-slate-800/50 hover:bg-slate-100/80 dark:hover:bg-slate-800/70 transition-all duration-200 group active:scale-95"
+                    class="group flex w-full items-center justify-center gap-2 rounded-lg border border-line/70 bg-surface-2/50 px-3 py-2 text-fg-muted transition-all duration-200 hover:bg-surface-2 hover:text-fg active:scale-95 sm:px-4 sm:py-2.5"
                 >
                     <div
-                        class="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-slate-600 dark:bg-slate-500 flex items-center justify-center group-hover:scale-110 transition-transform duration-200"
+                        class="flex h-4 w-4 items-center justify-center rounded-full bg-accent transition-transform duration-200 group-hover:scale-110 sm:h-5 sm:w-5"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            class="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white"
+                            class="h-2.5 w-2.5 text-accent-fg sm:h-3 sm:w-3"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -151,15 +149,9 @@
                             />
                         </svg>
                     </div>
-                    <span class="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">New Project</span>
+                    <span class="text-xs font-medium sm:text-sm">New Project</span>
                 </button>
             {/if}
         </div>
     </div>
 </div>
-
-<style>
-    .dark .scrollbar-thumb-slate-700::-webkit-scrollbar-thumb {
-        background-color: rgb(51 65 85);
-    }
-</style>

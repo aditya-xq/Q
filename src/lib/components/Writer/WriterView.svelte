@@ -6,6 +6,7 @@
     import { type EditorApi, type VoiceEngineState, type VoiceTypingController } from '$lib/features/voice/types'
     import { onDestroy, onMount, tick } from 'svelte'
     import DraftsPanel from './DraftsPanel.svelte'
+    import { CloseButton } from '../shared'
     import { createMobileDrawer } from '$lib/utils/mobileDrawer.svelte'
     import { formatAutosaveTime } from '$lib/utils/datetime'
     import { countWords } from '$lib/utils/writeup'
@@ -477,9 +478,7 @@
             <div
                 class="mx-auto mb-3 flex w-full max-w-[46rem] flex-wrap items-center justify-end gap-2 sm:mb-4 sm:gap-3 lg:max-w-[50rem]"
             >
-                <div
-                    class="mr-auto flex items-center gap-1.5 text-xs italic text-slate-500 dark:text-slate-400 sm:gap-2 sm:text-sm"
-                >
+                <div class="mr-auto flex items-center gap-1.5 text-xs italic text-fg-muted sm:gap-2 sm:text-sm">
                     {#if saving}
                         <svg
                             class="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin"
@@ -504,7 +503,7 @@
                     {/if}
                     {#if wordCount > 0}
                         <span class="hidden items-center gap-1.5 sm:inline-flex">
-                            <span class="text-slate-300 dark:text-slate-600" aria-hidden="true">·</span>
+                            <span class="text-fg-subtle" aria-hidden="true">·</span>
                             <span
                                 class="whitespace-nowrap tabular-nums"
                                 aria-label={`${wordCount} ${wordCount === 1 ? 'word' : 'words'}`}
@@ -517,10 +516,10 @@
                 </div>
 
                 <button
-                    class={`group flex min-h-10 min-w-10 items-center justify-center rounded-md px-2.5 py-1.5 border transition-all shadow-sm active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:rounded-lg sm:px-3 sm:py-2 ${
+                    class={`group flex min-h-10 min-w-10 items-center justify-center rounded-lg px-2.5 py-1.5 border transition-all shadow-sm active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3 sm:py-2 ${
                         isVoiceRunning
-                            ? 'bg-rose-100 dark:bg-rose-950/40 border-rose-300 dark:border-rose-700 text-rose-700 dark:text-rose-300'
-                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                            ? 'bg-danger-soft border-danger/40 text-danger'
+                            : 'bg-surface border-line text-fg-muted hover:border-line-strong'
                     }`}
                     onclick={toggleVoiceTyping}
                     disabled={!voiceSupported || voiceTogglePending}
@@ -570,10 +569,10 @@
                 </button>
 
                 <button
-                    class={`group flex min-h-10 min-w-10 items-center justify-center rounded-md px-2.5 py-1.5 border transition-all shadow-sm active:scale-95 sm:rounded-lg sm:px-3 sm:py-2 ${
+                    class={`group flex min-h-10 min-w-10 items-center justify-center rounded-lg px-2.5 py-1.5 border transition-all shadow-sm active:scale-95 sm:px-3 sm:py-2 ${
                         copied
-                            ? 'bg-emerald-100 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300'
-                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                            ? 'bg-success-soft border-success/40 text-success'
+                            : 'bg-surface border-line text-fg-muted hover:border-line-strong'
                     }`}
                     onclick={copyMarkdown}
                     aria-label="Copy markdown to clipboard"
@@ -613,12 +612,12 @@
 
                 {#if (isVoiceRunning || isVoiceBusy) && voiceStatusText}
                     <span
-                        class="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap max-w-[8.5rem] sm:max-w-none truncate"
+                        class="flex items-center gap-1.5 text-[11px] text-fg-muted whitespace-nowrap max-w-[8.5rem] sm:max-w-none truncate"
                     >
                         {#if isVoiceBusy}
-                            <span class="inline-block h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse"></span>
+                            <span class="inline-block h-1.5 w-1.5 rounded-full bg-fg-subtle animate-pulse"></span>
                         {:else}
-                            <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500/70"></span>
+                            <span class="inline-block h-1.5 w-1.5 rounded-full bg-success/70"></span>
                         {/if}
                         <span>{voiceStatusText}</span>
                     </span>
@@ -627,14 +626,14 @@
                 {#if !loading}
                     <div class="flex items-center gap-1.5 sm:gap-2 lg:hidden">
                         <button
-                            class="group flex min-h-10 items-center justify-center rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm hover:shadow active:scale-95"
+                            class="group flex min-h-10 items-center justify-center rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-surface border border-line hover:border-line-strong transition-all shadow-sm hover:shadow active:scale-95"
                             onclick={() => createNewDraft()}
                             aria-label="Create new draft"
                         >
                             <div class="flex items-center gap-1 sm:gap-1.5">
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
-                                    class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-all group-hover:rotate-90"
+                                    class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-fg-muted group-hover:text-fg transition-all group-hover:rotate-90"
                                     viewBox="0 0 20 20"
                                     fill="currentColor"
                                 >
@@ -644,21 +643,18 @@
                                         clip-rule="evenodd"
                                     />
                                 </svg>
-                                <span
-                                    class="text-xs font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200"
-                                    >New</span
-                                >
+                                <span class="text-xs font-medium text-fg-muted group-hover:text-fg">New</span>
                             </div>
                         </button>
                         <button
-                            class="group relative flex min-h-10 items-center justify-center rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm hover:shadow active:scale-95"
+                            class="group relative flex min-h-10 items-center justify-center rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-surface border border-line hover:border-line-strong transition-all shadow-sm hover:shadow active:scale-95"
                             onclick={openDraftsDrawer}
                             aria-label="Open drafts"
                             bind:this={draftsButtonEl}
                         >
                             <div class="flex items-center gap-1.5 sm:gap-2">
                                 <svg
-                                    class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors"
+                                    class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-fg-muted group-hover:text-fg transition-colors"
                                     viewBox="0 0 24 24"
                                     fill="none"
                                     stroke="currentColor"
@@ -670,10 +666,7 @@
                                         d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
                                     />
                                 </svg>
-                                <span
-                                    class="text-xs font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200"
-                                    >Drafts</span
-                                >
+                                <span class="text-xs font-medium text-fg-muted group-hover:text-fg">Drafts</span>
                             </div>
                         </button>
                     </div>
@@ -682,7 +675,7 @@
 
             {#if (voiceState === 'error' || !voiceSupported) && voiceError}
                 <div
-                    class="mx-auto mb-3 w-full max-w-[46rem] rounded-xl border border-rose-300/70 bg-rose-50 px-3 py-2.5 text-xs text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300 sm:mb-4 sm:text-sm lg:max-w-[50rem]"
+                    class="mx-auto mb-3 w-full max-w-[46rem] rounded-xl border border-danger/40 bg-danger-soft px-3 py-2.5 text-xs text-danger sm:mb-4 sm:text-sm lg:max-w-[50rem]"
                 >
                     <p class="font-medium">{voiceError}</p>
                     <p class="mt-1.5 text-[11px] sm:text-xs opacity-80">
@@ -720,7 +713,7 @@
                 ></div>
 
                 <div
-                    class="fixed right-0 top-0 bottom-0 w-84 max-w-[85vw] bg-slate-50 dark:bg-slate-950 z-[60] shadow-2xl overflow-y-auto overscroll-contain border-l border-slate-200 dark:border-slate-800 transition-transform duration-300 ease-out lg:hidden"
+                    class="fixed right-0 top-0 bottom-0 w-84 max-w-[85vw] bg-bg z-[60] shadow-2xl overflow-y-auto overscroll-contain border-l border-line transition-transform duration-300 ease-out lg:hidden"
                     class:translate-x-0={drawer.animating}
                     class:translate-x-full={!drawer.animating}
                     role="dialog"
@@ -731,15 +724,10 @@
                     onkeydown={onDrawerPanelKeydown}
                 >
                     <div
-                        class="sticky top-0 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 px-3 sm:px-4 py-3 sm:py-3.5 flex justify-between items-center z-10"
+                        class="sticky top-0 bg-bg/95 backdrop-blur-sm border-b border-line px-3 sm:px-4 py-3 sm:py-3.5 flex justify-between items-center z-10"
                     >
                         <div class="flex items-center gap-2">
-                            <svg
-                                class="w-4 h-4 text-slate-600 dark:text-slate-400"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                            >
+                            <svg class="w-4 h-4 text-fg-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                 <path
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
@@ -747,31 +735,11 @@
                                     d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
                                 />
                             </svg>
-                            <h3
-                                class="text-xs sm:text-sm font-semibold tracking-wide text-slate-900 dark:text-slate-100 uppercase opacity-60"
-                            >
+                            <h3 class="text-xs sm:text-sm font-semibold tracking-wide text-fg-muted uppercase">
                                 Drafts
                             </h3>
                         </div>
-                        <button
-                            class="rounded-lg p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors active:scale-95"
-                            onclick={() => closeDraftsDrawer()}
-                            aria-label="Close drafts panel"
-                        >
-                            <svg
-                                class="w-5 h-5 text-slate-500 dark:text-slate-400"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
-                            </svg>
-                        </button>
+                        <CloseButton label="Close drafts panel" onclick={() => closeDraftsDrawer()} />
                     </div>
 
                     <div class="px-2 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:py-4">

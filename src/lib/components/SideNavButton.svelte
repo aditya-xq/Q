@@ -7,35 +7,37 @@
         label: string
         active: boolean
         isMobile: boolean
-        square?: boolean
         emoji?: string
         onNavigate: (view: View) => void
     }
 
-    let { view, label, active, isMobile, square = false, emoji, onNavigate }: Props = $props()
+    let { view, label, active, isMobile, emoji, onNavigate }: Props = $props()
 </script>
 
 <button
     type="button"
     onclick={() => onNavigate(view)}
     aria-label={label}
-    class="group rounded-lg border border-slate-200 dark:border-slate-700
-    bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
-    shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300
+    class="group rounded-lg border border-line
+    bg-surface text-fg-muted
+    shadow-sm hover:shadow-md hover:border-accent transition-all duration-300
     hover:scale-105 active:scale-95
-    data-[active=true]:bg-sky-100 dark:data-[active=true]:bg-sky-900/30
-    data-[active=true]:border-sky-400 data-[active=true]:text-sky-600 dark:data-[active=true]:text-sky-400
-    {isMobile ? 'w-full p-4 flex items-center gap-3' : square ? 'p-0' : 'p-2'}"
+    data-[active=true]:bg-accent-soft
+    data-[active=true]:border-accent data-[active=true]:text-fg
+    {isMobile ? 'w-full p-4 flex items-center gap-3' : 'p-2'}"
     data-active={active}
     aria-current={active ? 'page' : undefined}
     data-tooltip={isMobile ? null : label}
     data-tooltip-position="right"
 >
-    <span class="block md:text-sm transition-transform duration-300 group-hover:scale-110 {isMobile ? 'text-2xl' : ''}">
+    <span
+        class="flex shrink-0 items-center justify-center text-fg transition-transform duration-300 group-hover:scale-110
+        {isMobile ? 'h-9 w-9 text-2xl' : 'h-6 w-6 text-xl'}"
+    >
         {#if emoji}
             {emoji}
         {:else}
-            <div class="w-9 h-9"><Icon /></div>
+            <Icon />
         {/if}
     </span>
     {#if isMobile}

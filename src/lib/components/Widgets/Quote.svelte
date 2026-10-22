@@ -188,12 +188,12 @@
     <div class="max-w-lg mx-auto mb-12">
         <div>
             <blockquote class="text-left">
-                <p class="text-base md:text-xl text-slate-400 dark:text-slate-700">
+                <p class="text-base md:text-xl text-fg-subtle">
                     {quote.text}
                 </p>
                 {#if quote.author}
                     <footer class="text-end">
-                        <cite class="text-sm md:text-lg text-slate-400 dark:text-slate-700 italic">
+                        <cite class="text-sm md:text-lg text-fg-subtle italic">
                             — {quote.author}
                         </cite>
                     </footer>
