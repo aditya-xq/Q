@@ -16,6 +16,10 @@ async function addTask(page: Page, text: string): Promise<void> {
     await expect(page.getByText(text, { exact: true })).toBeVisible()
 }
 
+async function completeTask(page: Page, text: string): Promise<void> {
+    await page.locator('div.group', { hasText: text }).first().locator('label:has(input[type="checkbox"])').click()
+}
+
 test.describe('Projects', () => {
     test('create project, add/complete/delete a task', async ({ page }) => {
         await openViewShortcut(page, 'p')
@@ -189,6 +193,71 @@ test.describe('Projects', () => {
 
         await toggle.click()
         await expect(page.getByText('Done thing')).toBeVisible()
+    })
+
+    test('clears every completed task in one go', async ({ page }) => {
+        await openViewShortcut(page, 'p')
+        await createProject(page, 'Bulk clear')
+        await addTask(page, 'Still active')
+        await addTask(page, 'Done one')
+        await addTask(page, 'Done two')
+
+        await completeTask(page, 'Done one')
+        await completeTask(page, 'Done two')
+        await expect(page.getByText('Completed Tasks (2)')).toBeVisible()
+
+        await page.getByRole('button', { name: 'Delete all completed tasks' }).click()
+        await expect(page.getByText('Delete 2 completed tasks?')).toBeVisible()
+        await page.getByRole('button', { name: 'Delete all', exact: true }).click()
+
+        await expect(page.getByText('Deleted 2 completed tasks')).toBeVisible()
+        await expect(page.getByText('Done one')).toHaveCount(0)
+        await expect(page.getByText('Done two')).toHaveCount(0)
+        await expect(page.getByText('Still active')).toBeVisible()
+        await expect(page.getByText('Completed Tasks')).toHaveCount(0)
+        await expect(page.getByText('0 of 1 completed')).toBeVisible()
+
+        await page.reload()
+        await page.goto('/?view=projects')
+        await expect(page.getByText('Still active')).toBeVisible()
+        await expect(page.getByText('Done one')).toHaveCount(0)
+        await expect(page.getByText('Done two')).toHaveCount(0)
+    })
+
+    test('cancels clearing completed tasks', async ({ page }) => {
+        await openViewShortcut(page, 'p')
+        await createProject(page, 'Keep done')
+        await addTask(page, 'Finished')
+        await completeTask(page, 'Finished')
+
+        await page.getByRole('button', { name: 'Delete all completed tasks' }).click()
+        await page.getByRole('button', { name: 'Cancel' }).click()
+
+        await expect(page.getByText('Delete 1 completed task?')).toHaveCount(0)
+        await expect(page.getByText('Finished')).toBeVisible()
+        await expect(page.getByText('Completed Tasks (1)')).toBeVisible()
+    })
+
+    test('dismisses the clear confirmation without deleting', async ({ page }) => {
+        await openViewShortcut(page, 'p')
+        await createProject(page, 'Dismiss')
+        await addTask(page, 'Nearly gone')
+        await completeTask(page, 'Nearly gone')
+
+        const clear = page.getByRole('button', { name: 'Delete all completed tasks' })
+        await clear.click()
+        await expect(page.getByText('Delete 1 completed task?')).toBeVisible()
+
+        // A second press of the pill closes it again.
+        await clear.click()
+        await expect(page.getByText('Delete 1 completed task?')).toHaveCount(0)
+
+        // Clicking elsewhere also dismisses it.
+        await clear.click()
+        await expect(page.getByText('Delete 1 completed task?')).toBeVisible()
+        await page.getByRole('heading', { name: 'Dismiss', level: 1 }).click()
+        await expect(page.getByText('Delete 1 completed task?')).toHaveCount(0)
+        await expect(page.getByText('Nearly gone')).toBeVisible()
     })
 
     test('shows the per-project task count', async ({ page }) => {

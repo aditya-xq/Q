@@ -70,3 +70,15 @@ export async function deleteTask(taskId: number): Promise<void> {
     await ensureDBReady()
     await db.tasks.delete(taskId)
 }
+
+// Clears a project's finished tasks in one transaction; resolves with the number removed.
+export async function deleteCompletedTasks(projectId: number): Promise<number> {
+    await ensureDBReady()
+    return db.transaction('rw', db.tasks, () =>
+        db.tasks
+            .where('projectId')
+            .equals(projectId)
+            .filter((task) => task.completed)
+            .delete()
+    )
+}

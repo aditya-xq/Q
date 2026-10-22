@@ -1,6 +1,9 @@
 <script lang="ts">
     import { appState } from '$lib/state.svelte'
     import { createMobileDrawer } from '$lib/utils/mobileDrawer.svelte'
+    import { deleteCompletedTasks } from '$lib/utils/stores'
+    import { toast } from '$lib/utils/notification'
+    import { clickOutside } from '$lib/utils/utils'
     import { fade, slide, fly } from 'svelte/transition'
     import { quintOut } from 'svelte/easing'
     import TaskItem from './TaskItem.svelte'
@@ -11,6 +14,8 @@
 
     let selectedProjectId = $state<number | null>(null)
     let showCompleted = $state(false)
+    let confirmingClear = $state(false)
+    let clearing = $state(false)
     // Tracks ids seen in the store so a freshly created (not-yet-observed) project
     // is not mistaken for a deleted one.
     let knownProjectIds = new Set<number>()
@@ -34,6 +39,23 @@
 
     function onProjectSelection(id: number) {
         selectedProjectId = id
+        confirmingClear = false
+    }
+
+    async function clearCompletedTasks() {
+        if (!selectedProject || clearing) return
+        clearing = true
+        try {
+            const removed = await deleteCompletedTasks(selectedProject.id as number)
+            confirmingClear = false
+            if (removed > 0) {
+                toast.success(removed === 1 ? 'Deleted 1 completed task' : `Deleted ${removed} completed tasks`)
+            }
+        } catch {
+            toast.error('Could not delete completed tasks')
+        } finally {
+            clearing = false
+        }
     }
 
     let selectedProject = $derived(appState.projectStore.find((p) => p.id === selectedProjectId))
@@ -127,28 +149,95 @@
                                     <!-- Completed Tasks Accordion -->
                                     {#if completedTasks.length > 0}
                                         <div class="pt-2">
-                                            <button
-                                                onclick={() => (showCompleted = !showCompleted)}
-                                                class="w-full flex items-center justify-between px-1 py-2 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200"
-                                            >
-                                                <span>Completed Tasks ({completedTasks.length})</span>
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    class="h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform duration-300 {showCompleted
-                                                        ? 'rotate-180'
-                                                        : ''}"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M19 9l-7 7-7-7"
-                                                    />
-                                                </svg>
-                                            </button>
+                                            <div use:clickOutside={() => (confirmingClear = false)}>
+                                                <div class="flex items-center gap-1.5 pr-2 sm:pr-3">
+                                                    <button
+                                                        onclick={() => (showCompleted = !showCompleted)}
+                                                        aria-expanded={showCompleted}
+                                                        class="grow min-w-0 flex items-center justify-between px-1 py-2 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200"
+                                                    >
+                                                        <span>Completed Tasks ({completedTasks.length})</span>
+                                                        <svg
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            class="h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform duration-300 {showCompleted
+                                                                ? 'rotate-180'
+                                                                : ''}"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
+                                                        >
+                                                            <path
+                                                                stroke-linecap="round"
+                                                                stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M19 9l-7 7-7-7"
+                                                            />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onclick={() => (confirmingClear = !confirmingClear)}
+                                                        aria-label="Delete all completed tasks"
+                                                        aria-expanded={confirmingClear}
+                                                        title="Delete all completed tasks"
+                                                        class={`shrink-0 flex items-center gap-1 rounded-full border px-2 py-1.5 text-[0.65rem] sm:text-xs font-medium transition-all duration-200 active:scale-95 ${
+                                                            confirmingClear
+                                                                ? 'border-red-300 bg-red-50/80 text-red-600 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300'
+                                                                : 'border-slate-200/70 bg-white/60 text-slate-500 hover:border-red-200 hover:text-red-500 dark:border-slate-700/70 dark:bg-slate-800/40 dark:text-slate-400 dark:hover:border-red-900/60 dark:hover:text-red-400'
+                                                        }`}
+                                                    >
+                                                        <svg
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            class="h-3 w-3 sm:h-3.5 sm:w-3.5"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
+                                                            aria-hidden="true"
+                                                        >
+                                                            <path
+                                                                stroke-linecap="round"
+                                                                stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                            />
+                                                        </svg>
+                                                        <span class="hidden lg:inline">Clear</span>
+                                                    </button>
+                                                </div>
+
+                                                {#if confirmingClear}
+                                                    <div
+                                                        class="mt-2 mr-2 sm:mr-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-200 bg-red-50/80 px-3 py-2 dark:border-red-900/50 dark:bg-red-950/30"
+                                                        transition:slide={{ duration: 180 }}
+                                                        role="group"
+                                                        aria-label="Confirm deleting completed tasks"
+                                                    >
+                                                        <p class="text-xs text-red-700 dark:text-red-300">
+                                                            Delete {completedTasks.length}
+                                                            {completedTasks.length === 1
+                                                                ? 'completed task'
+                                                                : 'completed tasks'}?
+                                                        </p>
+                                                        <div class="flex items-center gap-1.5">
+                                                            <button
+                                                                type="button"
+                                                                onclick={() => (confirmingClear = false)}
+                                                                class="rounded-lg border border-red-200 px-2.5 py-2 sm:py-1 text-[0.7rem] text-red-700 transition hover:bg-red-100/70 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-900/40"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onclick={clearCompletedTasks}
+                                                                disabled={clearing}
+                                                                class="rounded-lg bg-red-500/95 px-2.5 py-2 sm:py-1 text-[0.7rem] text-white transition hover:bg-red-600/95 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-red-700 dark:hover:bg-red-600"
+                                                            >
+                                                                Delete all
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                {/if}
+                                            </div>
 
                                             {#if showCompleted}
                                                 <div
