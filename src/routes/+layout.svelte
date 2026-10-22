@@ -53,10 +53,10 @@
 <div class="flex h-screen text-slate-900 dark:text-slate-100 overflow-hidden bg-slate-50 dark:bg-slate-950">
     <!-- Top-Left Minimal "Queue" Label -->
     <div
-        class="fixed top-4 left-16 md:left-20 z-40 select-none font-light text-xl tracking-wide text-slate-400 dark:text-slate-600"
+        class="fixed top-4 left-16 md:left-20 z-40 select-none font-light text-lg tracking-wide text-slate-500 dark:text-slate-400"
     >
         <span>Queue</span>
-        <span class="ml-1.5 align-baseline text-[0.6rem] tracking-widest tabular-nums opacity-50">
+        <span class="ml-1 align-baseline text-[0.65rem] tracking-wide tabular-nums">
             v{__APP_VERSION__}
         </span>
     </div>
