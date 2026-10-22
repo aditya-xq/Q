@@ -1,10 +1,14 @@
 {
     "manifest_version": 3,
     "name": "Q",
-    "version": "0.3.5",
+    "version": "0.4.0",
     "description": "An extension that converts your new tab into a productivity powerhouse.",
     "minimum_chrome_version": "114",
-    "permissions": ["topSites", "geolocation", "clipboardWrite"],
+    "permissions": [
+        "topSites",
+        "geolocation",
+        "clipboardWrite"
+    ],
     "chrome_url_overrides": {
         "newtab": "index.html"
     },
@@ -20,8 +24,13 @@
     },
     "web_accessible_resources": [
         {
-            "resources": ["icons/*", "assets/*"],
-            "matches": ["<all_urls>"]
+            "resources": [
+                "icons/*",
+                "assets/*"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
         }
     ],
     "content_security_policy": {
