@@ -55,7 +55,10 @@
     <div
         class="fixed top-4 left-16 md:left-20 z-40 select-none font-light text-xl tracking-wide text-slate-400 dark:text-slate-600"
     >
-        Queue
+        <span>Queue</span>
+        <span class="ml-1.5 align-baseline text-[0.6rem] tracking-widest tabular-nums opacity-50">
+            v{__APP_VERSION__}
+        </span>
     </div>
     <!-- Sidebar / Floating Navigation -->
     <div

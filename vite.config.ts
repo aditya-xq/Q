@@ -1,11 +1,18 @@
 import tailwindcss from '@tailwindcss/vite'
 import { sveltekit } from '@sveltejs/kit/vite'
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import { SvelteKitPWA } from '@vite-pwa/sveltekit'
 
 const isExtension = process.env.BUILD_TARGET === 'extension'
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')) as {
+    version: string
+}
 
 export default defineConfig({
+    define: {
+        __APP_VERSION__: JSON.stringify(version),
+    },
     plugins: [
         tailwindcss(),
         sveltekit(),

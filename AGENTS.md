@@ -38,6 +38,8 @@ bun run test:e2e:install    # one-time browser download
 
 MV3 `extension_pages` CSP allows only `'self'`/`'none'`/`'wasm-unsafe-eval'` and rejects inline scripts _and_ hashes/nonces, so `build:ext` runs `scripts/fix-extension-inline-scripts.js` after Vite to externalize every inline `<script>` (SvelteKit's bootstrap plus the `app.html` theme pre-paint script) into `script-<sha256>.js` and drop stale ones. Without it the extension renders but never hydrates. `static/` is shared by both targets, so `build:web` runs `scripts/clean-web-build.js` to delete the MV3-only `manifest.json`/`background.js` from `build/` (otherwise the web output is loadable as an unpacked extension and hits the same CSP wall).
 
+The shipped version shown next to the "Queue" imprint in `+layout.svelte` comes from `__APP_VERSION__`, defined in `vite.config.ts` from `package.json` (readonly global declared in `src/app.d.ts`, listed in `eslint.config.js`). It is baked in at build time, so both targets report the released version without runtime fetches.
+
 `bun run release` reads `version` from `package.json`, syncs `static/manifest.json`, builds both targets, packages `q-web.zip`/`q-extension.zip`, tags `vX.Y.Z`, creates the GitHub release, then (unless `--skip-edge`) uploads the extension and submits it for review via `scripts/edge-publish.js` using the `EDGE_EXTENSION_*` vars in `.env`. Use `bun run publish:edge` to retry only the store upload.
 
 **Definition of done:** `bun run check` and `bun run lint` exit 0, and `bun run test:unit` passes. Run `bun run test:e2e` after UI or data-flow changes.
