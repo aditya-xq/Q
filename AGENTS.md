@@ -49,7 +49,7 @@ The shipped version shown next to the "Queue" imprint in `+layout.svelte` comes 
 ```
 src/
   routes/
-    +layout.svelte     App shell: sidebars, global Alt+Q/P/W keys, DB liveQuery subscriptions
+    +layout.svelte     App shell: sidebars, global shortcuts (Alt+Q/P/W, quick-link letters), DB liveQuery subscriptions
     +layout.ts         prerender = true
     +page.svelte       View router (home|projects|writer) + deep-link sync; home board (StickyNotes); lazy-imports WriterView
     +error.svelte      Error page
@@ -60,6 +60,7 @@ src/
       stores.ts        Project/Task CRUD + observeProjects()
       tasks.ts         Pure helpers: project/task sorting + grouping (unit-tested)
       constants.ts     Shared quick-link/category defaults, icons (bundled brand marks), URL helpers
+      shortcuts.ts     Quick-link letter map + lookup, isShortcutBlocked guard, openQuickLink
       browser.ts       Typed chrome/browser API access (topSites, permissions)
       utils.ts         deriveTitle(), clickOutside action
       writeup.ts       Derived draft title + Writeup -> WriteupSummary projection (unit-tested)
@@ -87,7 +88,8 @@ static/
 ### Data & state rules
 
 - IndexedDB is the source of truth. `utils/stores.ts` hides the legacy Quick Todo pseudo-project (id `-1`) from project lists without deleting it; `< 0` ids are never user projects.
-- Cross-tab/global sync uses Dexie `liveQuery` subscriptions created in `+layout.svelte` (`observeProjects`, `observeWriteups`, `observeNotes`). Mutations write to Dexie and rely on the observers to refresh `appState`; do not refresh `appState` manually or query Dexie ad-hoc from components when a store helper exists.
+- Cross-tab/global sync uses Dexie `liveQuery` subscriptions created in `+layout.svelte` (`observeProjects`, `observeWriteups`, `observeNotes`, `observeQuickLinks`). Mutations write to Dexie and rely on the observers to refresh `appState`; do not refresh `appState` manually or query Dexie ad-hoc from components when a store helper exists.
+- Quick links are observed into `appState.quickLinks` (one entry per category, defaults filling gaps) and feed both the rail and the bare-letter shortcuts. `utils/shortcuts.ts` maps `e/m/o/a/s/c` to Email/Messaging/OTT/AI/Social/Custom and `isShortcutBlocked` refuses to fire while typing (input/textarea/select/contenteditable), composing, with Alt/Ctrl/Meta held, or when a `[role="dialog"]` / `[data-shortcut-blocker]` overlay is open — any new panel that owns the keyboard must add that attribute.
 - liveQuery queriers must issue their first Dexie read synchronously (no `await` of an external promise such as `ensureDBReady()` before `db.*`), or Dexie's query scope is lost and the subscription never re-fires. `ensureDBReady()` guards every other DB call.
 - Clearing a project's finished tasks goes through `deleteCompletedTasks(projectId)` (`utils/stores.ts`): one Dexie transaction that resolves the removed count. `ProjectGrid` asks for an inline confirmation first and toasts the result; the `Clear` control sits in the Completed Tasks header row.
 - Sticky notes are a **home-only board**: `appState.notes` is observed from Dexie, positions are viewport pixels clamped by `utils/notes.ts`, and `Alt+Q` (global, in `+layout.svelte`) switches to Home and calls `createNote()` (which stages the note at the viewport centre; on its first commit it glides to the nearest free parking slot via `nextFreeNoteSlot`, avoiding any `[data-note-obstacle]` region — the home content column — plus the side rails). Existing notes fly in staggered when the board mounts (a `note-pop` CSS animation on the card, so the note's measured position is unaffected); a note created in this session (`isStagedNote`) enters without a delay. Notes must never change the URL/view beyond that Home switch. `StickyNoteHint` is a persistent desktop-only pill above the home quote. Per-note UX: the whole header bar is the drag surface (plus arrow-key nudge, Shift = 10px), a colour palette (10 colours in a roving-tabindex 5×2 grid with arrow-key navigation), multi-point checklist editing (each point has its own checkbox), and a short fade-out exit + undo delete (undo keeps the last 5). `Note.points` is an ordered `{ text, done }[]`: Enter splits at the caret, a second Enter on a blank point finishes and drops it, Backspace on a blank point removes it, Shift+Enter wraps within a point, and blur commits (an all-blank note is discarded). A hint inside the note ("Press Enter twice to finish" / "Saves automatically" on mobile) is visible the whole time it is being drafted. Toggling a point's checkbox persists immediately. On `md+` notes are free-floating (`position: fixed`, width `min(clamp(208px,15vw,272px), 100vw-24px)`) and refit/re-clamp on window resize; `clampIntoView` must skip while `noteEl` is unbound (the textarea autosize action runs before `bind:this`) or it clamps with the default `NOTE_HEIGHT`. Notes wear an opaque tinted-paper theme (`noteTheme.ts`: neutral text, tinted hairline, whisper shadows, ±2° tilt) and the board's handle/colour/delete controls are hidden until hover or focus-within so the resting board stays clean. All `stores/notes.ts` mutations catch failures and toast, so callers may ignore rejections. `nextNoteZ()`/`NOTE_Z_BASE` live in `state.svelte.ts` so `utils/notes.ts` stays pure.

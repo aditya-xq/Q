@@ -1,17 +1,9 @@
 <script lang="ts">
-    import { onMount } from 'svelte'
-    import { liveQuery } from 'dexie'
-    import { db, type QuickLink } from '$lib/utils/db'
-    import {
-        DEFAULT_QUICK_LINKS,
-        FALLBACK_ICON,
-        QUICK_LINK_CATEGORIES,
-        extractNameFromUrl,
-        getFaviconUrl,
-        getQuickLinkIcon,
-    } from '$lib/utils/constants'
+    import { appState } from '$lib/state.svelte'
+    import { FALLBACK_ICON, getFaviconUrl, getQuickLinkIcon, type QuickLinkCategory } from '$lib/utils/constants'
+    import { QUICK_LINK_SHORTCUTS, openQuickLink } from '$lib/utils/shortcuts'
 
-    let quickLinks = $state<QuickLink[]>([])
+    let quickLinks = $derived(appState.quickLinks)
     let isOpen = $state(false)
 
     // Curated icons are local, so an error means a custom link's remote favicon failed.
@@ -30,35 +22,13 @@
         img.src = favicon
     }
 
-    function openLink(url: string) {
-        if (!url) return
-        window.location.href = url
-        isOpen = false
+    function shortcutLabel(category: string): string | undefined {
+        return QUICK_LINK_SHORTCUTS[category as QuickLinkCategory]?.toUpperCase()
     }
 
-    onMount(() => {
-        const subscription = liveQuery(async () => {
-            // The Dexie read is issued synchronously so liveQuery can track it.
-            const stored = await db.quicklinks.toArray()
-            const filtered = stored.filter((link) =>
-                (QUICK_LINK_CATEGORIES as readonly string[]).includes(link.category)
-            )
-            return filtered.length > 0 ? filtered : DEFAULT_QUICK_LINKS
-        }).subscribe((links) => {
-            quickLinks = QUICK_LINK_CATEGORIES.map((category) => {
-                const link =
-                    links.find((item) => item.category === category) ??
-                    DEFAULT_QUICK_LINKS.find((item) => item.category === category)
-                if (!link) return undefined
-                if (link.name === 'Other' && link.url) {
-                    return { ...link, name: extractNameFromUrl(link.url) }
-                }
-                return link
-            }).filter((link): link is QuickLink => Boolean(link))
-        })
-
-        return () => subscription.unsubscribe()
-    })
+    function openLink(url: string) {
+        if (openQuickLink(url)) isOpen = false
+    }
 </script>
 
 <!-- Desktop: Fixed sidebar on the right -->
@@ -69,14 +39,16 @@
 >
     <div class="fixed top-5 right-3.5 flex flex-col gap-3">
         {#each quickLinks as link (link.category)}
+            {@const shortcut = shortcutLabel(link.category)}
             <button
                 class="group rounded-lg p-2 border border-slate-200 dark:border-slate-700
 					bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300
 					shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300
 					hover:scale-105 active:scale-95"
-                data-tooltip={link.name}
+                data-tooltip={shortcut ? `${link.name} (${shortcut})` : link.name}
                 onclick={() => openLink(link.url)}
                 aria-label={link.name}
+                aria-keyshortcuts={shortcut}
             >
                 <img
                     src={getQuickLinkIcon(link.name, link.url)}
@@ -106,10 +78,12 @@
         class="fixed top-15 right-3 z-50 transition-all duration-300 ease-out origin-top-right"
         style:transform={isOpen ? 'scale(1)' : 'scale(0)'}
         style:opacity={isOpen ? '1' : '0'}
+        data-shortcut-blocker={isOpen ? '' : undefined}
     >
         <div class="rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-3 min-w-50">
             <div class="grid grid-cols-2 gap-3">
                 {#each quickLinks as link (link.category)}
+                    {@const shortcut = shortcutLabel(link.category)}
                     <button
                         class="group flex flex-col items-center gap-1.5 p-4 rounded-xl
 							bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700
@@ -117,6 +91,7 @@
 							transition-all duration-200 active:scale-95"
                         onclick={() => openLink(link.url)}
                         aria-label={link.name}
+                        aria-keyshortcuts={shortcut}
                     >
                         <img
                             src={getQuickLinkIcon(link.name, link.url)}

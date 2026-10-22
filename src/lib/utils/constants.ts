@@ -9,6 +9,8 @@ export interface QuickLinkCategoryConfig {
 
 export const QUICK_LINK_CATEGORIES = ['Email', 'Messaging', 'OTT', 'AI', 'Social', 'Custom'] as const
 
+export type QuickLinkCategory = (typeof QUICK_LINK_CATEGORIES)[number]
+
 export const CATEGORY_CONFIGS: QuickLinkCategoryConfig[] = [
     {
         title: 'Email',
@@ -64,6 +66,21 @@ export const DEFAULT_QUICK_LINKS: QuickLink[] = [
     { category: 'Social', name: 'X', url: 'https://x.com' },
     { category: 'Custom', name: 'Techflix', url: 'https://techflix.club' },
 ]
+
+/**
+ * One link per category in category order — the first stored row wins, with the
+ * defaults filling any gap. Custom rows saved as "Other" are named after their hostname.
+ */
+export function resolveQuickLinks(stored: QuickLink[]): QuickLink[] {
+    return QUICK_LINK_CATEGORIES.map((category) => {
+        const link =
+            stored.find((item) => item.category === category) ??
+            DEFAULT_QUICK_LINKS.find((item) => item.category === category)
+        if (!link) return undefined
+        if (link.name === 'Other' && link.url) return { ...link, name: extractNameFromUrl(link.url) }
+        return link
+    }).filter((link): link is QuickLink => Boolean(link))
+}
 
 // Brand marks ship with the app (static/icons/brands) so the rail renders offline
 // and never breaks when a vendor moves or retires its hosted logo.

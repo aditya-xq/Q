@@ -1,4 +1,4 @@
-import type { Note, WriteupSummary } from './utils/db'
+import type { Note, QuickLink, WriteupSummary } from './utils/db'
 import type { ProjectWithTasks } from './utils/stores'
 
 export type View = 'projects' | 'writer' | 'home'
@@ -7,6 +7,7 @@ interface AppState {
     projectStore: ProjectWithTasks[]
     writeups: WriteupSummary[]
     notes: Note[]
+    quickLinks: QuickLink[]
     view: View
     composeNoteId?: number
     showQuote?: boolean
@@ -24,6 +25,7 @@ export const appState: AppState = $state({
     view: 'home',
     writeups: [],
     notes: [],
+    quickLinks: [],
     showQuote: true,
     showWeather: false,
 })

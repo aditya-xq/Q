@@ -9,6 +9,8 @@
     import { observeProjects } from '$lib/utils/stores'
     import { observeWriteups } from '$lib/stores/writeups'
     import { createNote, observeNotes } from '$lib/stores/notes'
+    import { observeQuickLinks } from '$lib/stores/quicklinks'
+    import { findQuickLinkForShortcut, isShortcutBlocked, openQuickLink } from '$lib/utils/shortcuts'
 
     let { children } = $props()
     let handleKey: ((e: KeyboardEvent) => void) | undefined
@@ -16,22 +18,30 @@
 
     onMount(() => {
         handleKey = (e: KeyboardEvent) => {
-            if (!e.altKey || e.repeat) return
+            if (e.repeat) return
             const key = e.key.toLowerCase()
-            if (key === 'q') {
-                if (appState.view !== 'home') updateView('home')
-                void createNote()
-            } else if (key === 'p') {
-                updateView('projects')
-            } else if (key === 'w') {
-                updateView('writer')
+            if (e.altKey) {
+                if (key === 'q') {
+                    if (appState.view !== 'home') updateView('home')
+                    void createNote()
+                } else if (key === 'p') {
+                    updateView('projects')
+                } else if (key === 'w') {
+                    updateView('writer')
+                }
+                return
             }
+            // Bare letters open the configured link for their category, but never while
+            // typing, composing, holding a modifier, or a dialog/panel owns the keyboard.
+            if (isShortcutBlocked(e)) return
+            const link = findQuickLinkForShortcut(appState.quickLinks, e.key)
+            if (link) openQuickLink(link.url)
         }
 
         window.addEventListener('keydown', handleKey)
 
         // Keep global state in sync across tabs and mutations.
-        subscriptions = [observeProjects(), observeWriteups(), observeNotes()]
+        subscriptions = [observeProjects(), observeWriteups(), observeNotes(), observeQuickLinks()]
 
         void getAllSettings().then((settings) => {
             appState.showQuote = (settings.showQuote as boolean) ?? true

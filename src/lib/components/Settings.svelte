@@ -132,7 +132,12 @@
     }
 </script>
 
-<div class="fixed bottom-3 sm:bottom-5 left-2 sm:left-3 z-1000" data-settings-panel bind:this={panelEl}>
+<div
+    class="fixed bottom-3 sm:bottom-5 left-2 sm:left-3 z-1000"
+    data-settings-panel
+    data-shortcut-blocker={showSettings ? '' : undefined}
+    bind:this={panelEl}
+>
     {#if showSettings}
         <div
             class="absolute bottom-full mb-2 sm:mb-3 w-[calc(100vw-1rem)] sm:w-[calc(100vw-2.5rem)] max-w-xl origin-bottom-left"

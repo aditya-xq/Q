@@ -293,6 +293,7 @@
                 class="md:hidden fixed right-0 top-0 bottom-0 w-84 max-w-[85vw] bg-slate-50 dark:bg-slate-950 z-50 shadow-2xl overflow-y-auto border-l border-slate-200 dark:border-slate-800 transition-transform duration-300 ease-out"
                 class:translate-x-0={drawer.animating}
                 class:translate-x-full={!drawer.animating}
+                data-shortcut-blocker
             >
                 <!-- Header with close button -->
                 <div

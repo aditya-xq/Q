@@ -20,11 +20,24 @@ Transform every new tab into a focused productivity hub. Stay organized, write d
 | Projects                | Organize work streams in one place                                                                  |
 | Writer Mode             | Distraction-free writing when you need to focus                                                     |
 | Voice Typing            | Dictate into the editor with native speech recognition                                              |
-| Quick Links & Top Sites | One-click access to your most visited sites                                                         |
+| Quick Links & Top Sites | One-click access to your most visited sites (shortcuts below)                                       |
 | Weather Widget          | Check conditions at a glance                                                                        |
 | Daily Inspiration       | Quotes and facts to spark curiosity                                                                 |
 | Deep Links              | Share a view with `?view=projects` / `?view=writer`                                                 |
 | Customizable            | Tailor Q to match your workflow                                                                     |
+
+---
+
+## Keyboard Shortcuts
+
+| Keys                              | Action                                                             |
+| --------------------------------- | ------------------------------------------------------------------ |
+| `Alt + Q`                         | Go home and start a new sticky note                                |
+| `Alt + P` / `Alt + W`             | Open Projects / Writer                                             |
+| `Alt + S`                         | Open Settings                                                      |
+| `E` / `M` / `O` / `A` / `S` / `C` | Open the Email / Messaging / OTT / AI / Social / Custom quick link |
+
+Bare letters only fire when you are not typing — they are ignored inside text fields, the editor, dialogs and open panels, and while a modifier key is held.
 
 ---
 

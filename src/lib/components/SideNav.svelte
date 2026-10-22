@@ -90,6 +90,7 @@
         : 'top-5 left-4 flex flex-col gap-3'}"
     class:translate-x-0={isMobile && mobileMenuOpen}
     class:-translate-x-full={isMobile && !mobileMenuOpen}
+    data-shortcut-blocker={isMobile && mobileMenuOpen ? '' : undefined}
 >
     <SideNavButton view="home" label="Home" active={appState.view === 'home'} square {isMobile} onNavigate={navigate} />
 

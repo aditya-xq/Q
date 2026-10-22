@@ -8,6 +8,7 @@ import {
     getFaviconUrl,
     getQuickLinkIcon,
     normalizeUrl,
+    resolveQuickLinks,
 } from '$lib/utils/constants'
 
 describe('normalizeUrl', () => {
@@ -68,6 +69,41 @@ describe('getQuickLinkIcon', () => {
 
     test('uses the placeholder for unparseable urls', () => {
         expect(getQuickLinkIcon('Unknown', 'bad url')).toBe(FALLBACK_ICON)
+    })
+})
+
+describe('resolveQuickLinks', () => {
+    test('falls back to the defaults when nothing is stored', () => {
+        expect(resolveQuickLinks([])).toEqual(DEFAULT_QUICK_LINKS)
+    })
+
+    test('keeps one link per category in category order', () => {
+        const resolved = resolveQuickLinks([
+            { category: 'AI', name: 'Claude', url: 'https://claude.ai' },
+            { category: 'Email', name: 'Outlook', url: 'https://outlook.live.com' },
+        ])
+        expect(resolved.map((link) => link.category)).toEqual(['Email', 'Messaging', 'OTT', 'AI', 'Social', 'Custom'])
+        expect(resolved[0].name).toBe('Outlook')
+        expect(resolved[3].name).toBe('Claude')
+        expect(resolved[1].name).toBe('WhatsApp')
+    })
+
+    test('names custom "Other" rows after their hostname', () => {
+        const resolved = resolveQuickLinks([
+            { category: 'Custom', name: 'Other', url: 'https://docs.example.com/page' },
+        ])
+        expect(resolved.at(-1)).toMatchObject({ name: 'Example', url: 'https://docs.example.com/page' })
+    })
+
+    test('drops rows from unknown categories and keeps the stored order of duplicates', () => {
+        const resolved = resolveQuickLinks([
+            { category: 'Email', name: 'First', url: 'https://first.example' },
+            { category: 'Email', name: 'Second', url: 'https://second.example' },
+            { category: 'Legacy', name: 'Stale', url: 'https://stale.example' },
+        ])
+        expect(resolved).toHaveLength(6)
+        expect(resolved[0].name).toBe('First')
+        expect(resolved.some((link) => link.name === 'Stale')).toBe(false)
     })
 })
 
