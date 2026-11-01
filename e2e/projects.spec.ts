@@ -166,6 +166,29 @@ test.describe('Projects', () => {
         await expect(page.getByText('Keep this')).toBeVisible()
     })
 
+    test('copies an active task to the clipboard', async ({ page, context }) => {
+        await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+        await openViewShortcut(page, 'p')
+        await createProject(page, 'Clipboard')
+        await addTask(page, 'Copy me exactly')
+
+        await page.getByRole('button', { name: 'Copy task text' }).click()
+
+        await expect(page.getByText('Task copied to clipboard')).toBeVisible()
+        await expect(page.getByRole('button', { name: 'Task copied' })).toBeVisible()
+        await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('Copy me exactly')
+    })
+
+    test('hides the copy button for completed tasks', async ({ page }) => {
+        await openViewShortcut(page, 'p')
+        await createProject(page, 'No copy')
+        await addTask(page, 'Finished item')
+        await completeTask(page, 'Finished item')
+
+        await expect(page.getByText('Completed Tasks (1)')).toBeVisible()
+        await expect(page.getByRole('button', { name: 'Copy task text' })).toHaveCount(0)
+    })
+
     test('unchecks a completed task and removes the completed section', async ({ page }) => {
         await openViewShortcut(page, 'p')
         await createProject(page, 'Toggle')

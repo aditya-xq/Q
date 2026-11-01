@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { Task } from '$lib/utils/db'
     import { updateTask, deleteTask } from '$lib/utils/stores'
+    import { createClipboardCopy } from '$lib/utils/clipboard.svelte'
     import { DeleteButton } from '../shared'
 
     interface Props {
@@ -10,9 +11,18 @@
 
     let { task, onToggleComplete }: Props = $props()
 
+    const clipboard = createClipboardCopy()
+
     let editing = $state(false)
     let editedText = $state('')
     let editInput = $state<HTMLInputElement | undefined>(undefined)
+
+    function copyTask() {
+        void clipboard.copy(task.text, {
+            success: 'Task copied to clipboard',
+            error: 'Failed to copy task',
+        })
+    }
 
     $effect(() => {
         if (!editing) editedText = task.text
@@ -104,6 +114,52 @@
             class={`shrink-0 ml-3 flex items-center gap-1 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100 ${editing ? 'opacity-100' : 'opacity-0'}`}
         >
             {#if !editing}
+                {#if !task.completed}
+                    <button
+                        class={`p-1.5 rounded-full transition-colors ${
+                            clipboard.copied
+                                ? 'text-success bg-success-soft'
+                                : 'text-fg-subtle hover:text-accent-text hover:bg-surface-2'
+                        }`}
+                        onclick={copyTask}
+                        aria-label={clipboard.copied ? 'Task copied' : 'Copy task text'}
+                        title={clipboard.copied ? 'Copied' : 'Copy task'}
+                    >
+                        {#if clipboard.copied}
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M5 13l4 4L19 7"
+                                />
+                            </svg>
+                        {:else}
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M8 7V5a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2h-2M6 8h8a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2v-8a2 2 0 012-2z"
+                                />
+                            </svg>
+                        {/if}
+                    </button>
+                {/if}
                 <button
                     class="p-1.5 rounded-full transition-colors text-fg-subtle hover:text-accent-text hover:bg-surface-2"
                     onclick={() => (editing = true)}

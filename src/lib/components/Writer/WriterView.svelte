@@ -8,6 +8,7 @@
     import DraftsPanel from './DraftsPanel.svelte'
     import { CloseButton } from '../shared'
     import { createMobileDrawer } from '$lib/utils/mobileDrawer.svelte'
+    import { createClipboardCopy } from '$lib/utils/clipboard.svelte'
     import { formatAutosaveTime } from '$lib/utils/datetime'
     import { countWords } from '$lib/utils/writeup'
 
@@ -28,8 +29,7 @@
     let voiceSupported = $state(true)
     let voiceTogglePending = $state(false)
     let voiceControllerVersion = 0
-    let copied = $state(false)
-    let copyResetTimer: number | undefined
+    const clipboard = createClipboardCopy()
     let skipNextEditorSync = $state(true)
     let onKeyboardShortcut: ((event: KeyboardEvent) => void) | null = null
     let drawerBreakpoint: MediaQueryList | null = null
@@ -224,18 +224,10 @@
 
     async function copyMarkdown() {
         const markdown = editorApi?.getMarkdown() ?? content
-        try {
-            await navigator.clipboard.writeText(markdown)
-            copied = true
-            toast.success('Markdown copied to clipboard', 2500)
-            if (copyResetTimer) clearTimeout(copyResetTimer)
-            copyResetTimer = window.setTimeout(() => {
-                copyResetTimer = undefined
-                copied = false
-            }, 2000)
-        } catch {
-            toast.error('Failed to copy markdown', 3500)
-        }
+        await clipboard.copy(markdown, {
+            success: 'Markdown copied to clipboard',
+            error: 'Failed to copy markdown',
+        })
     }
 
     function isVoiceShortcut(event: KeyboardEvent) {
@@ -449,10 +441,6 @@
             drawerBreakpoint = null
         }
         clearAutosaveTimer()
-        if (copyResetTimer) {
-            clearTimeout(copyResetTimer)
-            copyResetTimer = undefined
-        }
         if (voiceController) {
             const controllerToDestroy = voiceController
             voiceController = null
@@ -576,7 +564,7 @@
 
                 <button
                     class={`group flex min-h-10 min-w-10 items-center justify-center rounded-lg px-2.5 py-1.5 border transition-all shadow-sm active:scale-95 sm:px-3 sm:py-2 ${
-                        copied
+                        clipboard.copied
                             ? 'bg-success-soft border-success/40 text-success'
                             : 'bg-surface border-line text-fg-muted hover:border-line-strong'
                     }`}
@@ -584,7 +572,7 @@
                     aria-label="Copy markdown to clipboard"
                 >
                     <div class="flex items-center gap-1.5 sm:gap-2">
-                        {#if copied}
+                        {#if clipboard.copied}
                             <svg
                                 class="w-3.5 h-3.5 sm:w-4 sm:h-4"
                                 viewBox="0 0 24 24"
@@ -612,7 +600,7 @@
                                 <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
                             </svg>
                         {/if}
-                        <span class="hidden text-xs font-medium sm:inline">{copied ? 'Copied' : 'Copy'}</span>
+                        <span class="hidden text-xs font-medium sm:inline">{clipboard.copied ? 'Copied' : 'Copy'}</span>
                     </div>
                 </button>
 
