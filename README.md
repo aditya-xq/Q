@@ -43,13 +43,13 @@ Themes apply instantly, follow you across tabs and survive reloads. Everything i
 
 ## Keyboard Shortcuts
 
-| Keys                              | Action                                                             |
-| --------------------------------- | ------------------------------------------------------------------ |
-| `Alt + Q`                         | Go home and start a new sticky note                                |
-| `Alt + P` / `Alt + W`             | Open Projects / Writer                                             |
-| `Alt + S`                         | Open Settings                                                      |
-| `Alt + A`                         | Open the theme designer                                            |
-| `E` / `M` / `O` / `A` / `S` / `C` | Open the Email / Messaging / OTT / AI / Social / Custom quick link |
+| Keys                          | Action                                                                            |
+| ----------------------------- | --------------------------------------------------------------------------------- |
+| `Alt + Q`                     | Go home and start a new sticky note                                               |
+| `Alt + P` / `Alt + W`         | Open Projects / Writer                                                            |
+| `Alt + S`                     | Open Settings                                                                     |
+| `Alt + A`                     | Open the theme designer                                                           |
+| First letter of a link's name | Open that quick link (e.g. `N` for Netflix; collisions add a digit: `T` then `1`) |
 
 Bare letters only fire when you are not typing — they are ignored inside text fields, the editor, dialogs and open panels, and while a modifier key is held.
 

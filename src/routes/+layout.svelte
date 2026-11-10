@@ -11,17 +11,38 @@
     import { createNote, observeNotes } from '$lib/stores/notes'
     import { observeQuickLinks } from '$lib/stores/quicklinks'
     import { destroyTheme, initTheme, toggleThemeDesigner } from '$lib/stores/theme'
-    import { findQuickLinkForShortcut, isShortcutBlocked, openQuickLink } from '$lib/utils/shortcuts'
+    import {
+        SHORTCUT_SEQUENCE_TIMEOUT_MS,
+        buildQuickLinkShortcutIndex,
+        findQuickLinkForSequence,
+        isShortcutBlocked,
+        openQuickLink,
+    } from '$lib/utils/shortcuts'
 
     let { children } = $props()
     let handleKey: ((e: KeyboardEvent) => void) | undefined
     let subscriptions: { unsubscribe: () => void }[] = []
+
+    // A bare prefix with numbered alternatives waits briefly for a digit suffix.
+    let pendingPrefix: { key: string; timer: ReturnType<typeof setTimeout> } | null = null
+
+    function clearPendingPrefix() {
+        if (!pendingPrefix) return
+        clearTimeout(pendingPrefix.timer)
+        pendingPrefix = null
+    }
+
+    function openSequence(sequence: string) {
+        const link = findQuickLinkForSequence(appState.quickLinks, sequence)
+        if (link) openQuickLink(link.url)
+    }
 
     onMount(() => {
         handleKey = (e: KeyboardEvent) => {
             if (e.repeat) return
             const key = e.key.toLowerCase()
             if (e.altKey) {
+                clearPendingPrefix()
                 // The theme designer is modal: keep the view shortcuts from firing behind it.
                 if (appState.themeDesignerOpen && key !== 'a') return
                 if (key === 'q') {
@@ -36,14 +57,49 @@
                 }
                 return
             }
-            // Bare letters open the configured link for their category, but never while
+            // Bare letters open the configured link named after them, but never while
             // typing, composing, holding a modifier, or a dialog/panel owns the keyboard.
-            if (isShortcutBlocked(e)) return
-            const link = findQuickLinkForShortcut(appState.quickLinks, e.key)
-            if (link) openQuickLink(link.url)
+            if (isShortcutBlocked(e)) {
+                clearPendingPrefix()
+                return
+            }
+
+            const { bySequence, ambiguousPrefixes } = buildQuickLinkShortcutIndex(appState.quickLinks)
+
+            if (pendingPrefix) {
+                const prefix = pendingPrefix.key
+                clearPendingPrefix()
+                if (/^[0-9]$/.test(key)) {
+                    const link = bySequence.get(`${prefix}${key}`)
+                    if (link) {
+                        openQuickLink(link.url)
+                        return
+                    }
+                }
+                // Any other key abandons the pending prefix; handle it fresh below.
+            }
+
+            const link = bySequence.get(key)
+            if (!link) return
+
+            if (!ambiguousPrefixes.has(key)) {
+                openQuickLink(link.url)
+                return
+            }
+
+            pendingPrefix = {
+                key,
+                timer: setTimeout(() => {
+                    pendingPrefix = null
+                    openSequence(key)
+                }, SHORTCUT_SEQUENCE_TIMEOUT_MS),
+            }
         }
 
         window.addEventListener('keydown', handleKey)
+        // A pointer press or lost focus cancels an unfinished prefix sequence.
+        window.addEventListener('pointerdown', clearPendingPrefix)
+        window.addEventListener('blur', clearPendingPrefix)
 
         // Keep global state in sync across tabs and mutations.
         subscriptions = [observeProjects(), observeWriteups(), observeNotes(), observeQuickLinks()]
@@ -56,7 +112,12 @@
     })
 
     onDestroy(() => {
-        if (handleKey) window.removeEventListener('keydown', handleKey)
+        clearPendingPrefix()
+        if (typeof window !== 'undefined') {
+            window.removeEventListener('pointerdown', clearPendingPrefix)
+            window.removeEventListener('blur', clearPendingPrefix)
+            if (handleKey) window.removeEventListener('keydown', handleKey)
+        }
         for (const subscription of subscriptions) subscription.unsubscribe()
         destroyTheme()
     })

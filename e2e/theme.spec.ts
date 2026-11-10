@@ -170,7 +170,7 @@ test.describe('Theme', () => {
 
         const dialog = page.getByRole('dialog', { name: 'Theme designer' })
         await expect(dialog).toBeVisible()
-        await page.keyboard.press('e')
+        await page.keyboard.press('g')
         await expect(page).toHaveURL(/localhost:4173/)
 
         // The designer is modal: view/settings shortcuts stay out of the way.

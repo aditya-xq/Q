@@ -1,9 +1,11 @@
 <script lang="ts">
     import { appState } from '$lib/state.svelte'
-    import { FALLBACK_ICON, getFaviconUrl, getQuickLinkIcon, type QuickLinkCategory } from '$lib/utils/constants'
-    import { QUICK_LINK_SHORTCUTS, openQuickLink } from '$lib/utils/shortcuts'
+    import type { QuickLink } from '$lib/utils/db'
+    import { FALLBACK_ICON, getFaviconUrl, getQuickLinkIcon } from '$lib/utils/constants'
+    import { openQuickLink, resolveQuickLinkShortcuts } from '$lib/utils/shortcuts'
 
     let quickLinks = $derived(appState.quickLinks)
+    let shortcuts = $derived(resolveQuickLinkShortcuts(quickLinks))
     let isOpen = $state(false)
 
     // Curated icons are local, so an error means a custom link's remote favicon failed.
@@ -22,8 +24,12 @@
         img.src = favicon
     }
 
-    function shortcutLabel(category: string): string | undefined {
-        return QUICK_LINK_SHORTCUTS[category as QuickLinkCategory]?.toUpperCase()
+    function shortcutLabel(link: QuickLink): string | undefined {
+        return shortcuts.get(link)?.toUpperCase()
+    }
+
+    function shortcutAriaKeys(sequence: string): string {
+        return sequence.toUpperCase().split('').join(' ')
     }
 
     function openLink(url: string) {
@@ -40,7 +46,7 @@
 >
     <div class="fixed top-5 right-3.5 flex flex-col gap-3">
         {#each quickLinks as link (link.category)}
-            {@const shortcut = shortcutLabel(link.category)}
+            {@const shortcut = shortcutLabel(link)}
             <button
                 class="group rounded-lg p-2 border border-line
 					bg-surface text-fg-muted
@@ -49,7 +55,7 @@
                 data-tooltip={shortcut ? `${link.name} (${shortcut})` : link.name}
                 onclick={() => openLink(link.url)}
                 aria-label={link.name}
-                aria-keyshortcuts={shortcut}
+                aria-keyshortcuts={shortcut ? shortcutAriaKeys(shortcut) : undefined}
             >
                 <img
                     src={getQuickLinkIcon(link.name, link.url)}
@@ -95,7 +101,7 @@
         <div class="rounded-2xl border border-line bg-surface p-3 shadow-2xl min-w-50">
             <div class="grid grid-cols-2 gap-3">
                 {#each quickLinks as link (link.category)}
-                    {@const shortcut = shortcutLabel(link.category)}
+                    {@const shortcut = shortcutLabel(link)}
                     <button
                         class="group flex flex-col items-center gap-1.5 p-4 rounded-xl
 							bg-surface-2 border border-line
@@ -103,7 +109,7 @@
 							transition-all duration-200 active:scale-95"
                         onclick={() => openLink(link.url)}
                         aria-label={link.name}
-                        aria-keyshortcuts={shortcut}
+                        aria-keyshortcuts={shortcut ? shortcutAriaKeys(shortcut) : undefined}
                     >
                         <img
                             src={getQuickLinkIcon(link.name, link.url)}
