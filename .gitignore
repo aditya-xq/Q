@@ -11,6 +11,9 @@ node_modules
 build.zip
 q-*.zip
 
+# Local-only promo film (not part of the app)
+/promo/
+
 # OS
 .DS_Store
 Thumbs.db
