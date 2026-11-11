@@ -7,6 +7,7 @@ import Links from './Links.svelte'
 import Settings from './Settings.svelte'
 import Quote from './Widgets/Quote.svelte'
 import Weather from './Widgets/Weather.svelte'
+import Markets from './Widgets/Markets.svelte'
 import ProjectGrid from './Projects/ProjectGrid.svelte'
 import ThemeDesigner from './ThemeDesigner.svelte'
 
@@ -21,5 +22,6 @@ export {
     Settings,
     Quote,
     Weather,
+    Markets,
     ThemeDesigner,
 }

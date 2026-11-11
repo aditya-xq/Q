@@ -116,7 +116,7 @@
         }
     }
 
-    async function toggleWidget(widget: 'showQuote' | 'showWeather') {
+    async function toggleWidget(widget: 'showQuote' | 'showWeather' | 'showMarkets') {
         const newVal = !appState[widget]
         if (widget === 'showWeather' && newVal) {
             const granted = await ensureGeolocationPermission()
@@ -125,8 +125,13 @@
                 return
             }
         }
-        await setSetting(widget, newVal)
         appState[widget] = newVal
+        try {
+            await setSetting(widget, newVal)
+        } catch (e) {
+            appState[widget] = !newVal
+            console.error('Failed to save widget setting', e)
+        }
     }
 
     function selectApp(index: number, app: string) {
@@ -305,6 +310,23 @@
                                         <span
                                             class="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 sm:h-5 sm:w-5
 											{appState.showWeather ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'}"
+                                        ></span>
+                                    </button>
+                                </div>
+
+                                <!-- Markets Widget -->
+                                <div class="flex items-center gap-2 sm:gap-3">
+                                    <p class="text-xs text-fg-muted sm:text-sm">Markets</p>
+                                    <button
+                                        onclick={() => toggleWidget('showMarkets')}
+                                        aria-pressed={appState.showMarkets}
+                                        aria-label="Toggle markets widget"
+                                        class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none sm:h-6 sm:w-11
+											{appState.showMarkets ? 'bg-accent' : 'bg-surface-2'}"
+                                    >
+                                        <span
+                                            class="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 sm:h-5 sm:w-5
+											{appState.showMarkets ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'}"
                                         ></span>
                                     </button>
                                 </div>

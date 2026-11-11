@@ -185,7 +185,7 @@
 </script>
 
 {#if quote}
-    <div class="max-w-lg mx-auto mb-12">
+    <div class="max-w-lg mx-auto">
         <div>
             <blockquote class="text-left">
                 <p class="text-base md:text-xl text-fg-subtle">

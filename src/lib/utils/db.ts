@@ -155,6 +155,9 @@ async function initializeDefaultSettings() {
     const defaultSettings: Setting[] = [
         { key: 'showQuote', value: true },
         { key: 'showWeather', value: false },
+        { key: 'showMarkets', value: false },
+        { key: 'marketsRegion', value: 'auto' },
+        { key: 'marketSymbols', value: '' },
     ]
 
     const existingKeys = new Set((await db.settings.toArray()).map((setting) => setting.key))

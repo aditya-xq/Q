@@ -108,6 +108,9 @@
         void getAllSettings().then((settings) => {
             appState.showQuote = (settings.showQuote as boolean) ?? true
             appState.showWeather = (settings.showWeather as boolean) ?? false
+            appState.showMarkets = (settings.showMarkets as boolean) ?? false
+            appState.marketsRegion = (settings.marketsRegion as string) ?? 'auto'
+            appState.marketSymbols = (settings.marketSymbols as string) ?? ''
         })
     })
 

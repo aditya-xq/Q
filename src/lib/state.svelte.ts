@@ -13,6 +13,9 @@ interface AppState {
     composeNoteId?: number
     showQuote?: boolean
     showWeather?: boolean
+    showMarkets?: boolean
+    marketsRegion: string
+    marketSymbols: string
     theme: ThemeConfig
     themeResolved: ResolvedMode
     themeDesignerOpen: boolean
@@ -32,6 +35,9 @@ export const appState: AppState = $state({
     quickLinks: [],
     showQuote: true,
     showWeather: false,
+    showMarkets: false,
+    marketsRegion: 'auto',
+    marketSymbols: '',
     theme: { ...DEFAULT_THEME },
     themeResolved: 'dark',
     themeDesignerOpen: false,

@@ -1,6 +1,7 @@
 <script lang="ts">
     import {
         FrequentSites,
+        Markets,
         Notification,
         ProjectGrid,
         Quote,
@@ -13,7 +14,7 @@
     import { getViewFromUrl } from '$lib/utils/view'
     import type { Component } from 'svelte'
     import { onMount } from 'svelte'
-    import { fade, fly } from 'svelte/transition'
+    import { fade, fly, slide } from 'svelte/transition'
     import { cubicOut, quintOut } from 'svelte/easing'
 
     let frequentSites = $state<BrowserSite[]>([])
@@ -93,7 +94,7 @@
     {:else}
         <!-- Home View -->
         <div
-            class={`flex flex-col items-center justify-center flex-1 w-full ${appState.showQuote ? '-mt-44' : '-mt-24'} px-4 sm:px-6 lg:px-8 transition-all duration-500 ease-out`}
+            class={`flex flex-col items-center justify-center flex-1 w-full ${appState.showQuote ? '-mt-44' : '-mt-24'} px-4 sm:px-6 lg:px-8 transition-all duration-300 ease-out`}
             in:fade={{ duration: 400, easing: cubicOut }}
         >
             <h1 class="sr-only">Queue home</h1>
@@ -106,11 +107,18 @@
                     <div class="mb-6">
                         <StickyNoteHint />
                     </div>
-                    {#if appState.showQuote}<Quote />{/if}
+                    {#if appState.showQuote}
+                        <div class="pb-8" transition:slide={{ duration: 300, easing: cubicOut }}>
+                            <div transition:fade={{ duration: 300, easing: cubicOut }}>
+                                <Quote />
+                            </div>
+                        </div>
+                    {/if}
                     <FrequentSites sites={frequentSites} />
                 </div>
             </div>
         </div>
+        <Markets />
         <StickyNotes />
     {/if}
 </div>

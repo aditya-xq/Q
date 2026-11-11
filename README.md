@@ -22,10 +22,13 @@ Transform every new tab into a focused productivity hub. Stay organized, write d
 | Voice Typing            | Dictate into the editor with native speech recognition                                              |
 | Quick Links & Top Sites | One-click access to your most visited sites (shortcuts below)                                       |
 | Weather Widget          | Check conditions at a glance                                                                        |
+| Markets Widget          | Track a regional index, futures, crude and gold, plus your own symbols                              |
 | Daily Inspiration       | Quotes and facts to spark curiosity                                                                 |
 | Themes                  | Light, dark or system, plus a designer with presets, colours, corners and type (Alt + A)            |
 | Deep Links              | Share a view with `?view=projects` / `?view=writer`                                                 |
 | Customizable            | Tailor Q to match your workflow                                                                     |
+
+Market quotes use CNBC's public quote feed and may be delayed by up to 15 minutes. The default lineup follows your device's timezone; open the customize control in the Markets widget to pick a region or add symbols.
 
 ---
 
@@ -115,7 +118,7 @@ The build target is selected with `BUILD_TARGET=web|extension` (wired into the b
 
 ### Testing
 
-Unit tests cover the pure modules (title/draft-title derivation, voice text post-processing, URL/date/weather/view/task/note helpers) with [Bun's test runner](https://bun.sh/docs/cli/test):
+Unit tests cover the pure modules (title/draft-title derivation, voice text post-processing, URL/date/weather/markets/view/task/note helpers) with [Bun's test runner](https://bun.sh/docs/cli/test):
 
 ```bash
 bun run test:unit           # run unit tests

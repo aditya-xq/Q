@@ -56,6 +56,29 @@ test.describe('Chrome extension (MV3)', () => {
             })
             expect(geocode).toEqual({ ok: true, city: 'Testville' })
 
+            // The extension CSP must also allow the keyless market quote feed.
+            await page.route('https://quote.cnbc.com/**', (route) =>
+                route.fulfill({
+                    json: {
+                        FormattedQuoteResult: {
+                            FormattedQuote: [{ symbol: '.SPX', code: 0, last: '7,000.00' }],
+                        },
+                    },
+                })
+            )
+            const quote = await page.evaluate(async () => {
+                try {
+                    const response = await fetch(
+                        'https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=.SPX&output=json'
+                    )
+                    const body = await response.json()
+                    return { ok: response.ok, last: body.FormattedQuoteResult.FormattedQuote[0].last }
+                } catch (error) {
+                    return { error: String(error) }
+                }
+            })
+            expect(quote).toEqual({ ok: true, last: '7,000.00' })
+
             expect(cspErrors).toEqual([])
         } finally {
             await context.close()
