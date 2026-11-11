@@ -1,19 +1,25 @@
 <script lang="ts">
     import { appState } from '$lib/state.svelte'
     import {
-        MAX_CUSTOM_SYMBOLS,
-        MAX_MARKET_SYMBOLS,
         MARKET_REGIONS,
         MARKET_STATUS_LABELS,
+        MAX_MARKET_SYMBOLS,
+        TRADINGVIEW_SCAN_ENDPOINT,
         buildMarketAriaLabel,
         buildMarketQuoteUrl,
         buildMarketQuotes,
+        buildTradingViewBody,
+        getMarketProvider,
         getMarketWatchlist,
         getRegionLabel,
+        hasDefaultWatchlist,
         isMarketRegion,
         parseCnbcQuotes,
         parseCustomSymbols,
+        parseTradingViewQuotes,
+        resolveMarketInstrument,
         resolveMarketRegion,
+        type MarketInstrument,
         type MarketQuote,
         type MarketRegion,
         type MarketTone,
@@ -23,7 +29,7 @@
     import { fly, slide } from 'svelte/transition'
     import { cubicOut } from 'svelte/easing'
 
-    const CACHE_KEY = 'markets:quotes:v4'
+    const CACHE_KEY = 'markets:quotes:v5'
     const CACHE_TTL = 5 * 60 * 1000
     const REFRESH_INTERVAL = 5 * 60 * 1000
     const FETCH_TIMEOUT_MS = 15 * 1000
@@ -56,6 +62,7 @@
     )
     const region: MarketRegion = $derived(selectedRegion === 'auto' ? autoRegion : (selectedRegion as MarketRegion))
     const customSymbols = $derived(parseCustomSymbols(appState.marketSymbols))
+    const regionDefaults = $derived(getMarketWatchlist(region))
     const watchlist = $derived(getMarketWatchlist(region, customSymbols))
     const watchlistKey = $derived(watchlist.join('|'))
 
@@ -98,6 +105,29 @@
         return Date.now() - cached.ts < CACHE_TTL
     }
 
+    async function requestCnbcQuotes(instruments: MarketInstrument[], signal: AbortSignal): Promise<MarketQuote[]> {
+        const response = await fetch(buildMarketQuoteUrl(instruments.map((instrument) => instrument.symbol)), {
+            signal,
+        })
+        if (!response.ok) throw new Error(`quote request failed (${response.status})`)
+        return parseCnbcQuotes(await response.json())
+    }
+
+    async function requestTradingViewQuotes(
+        instruments: MarketInstrument[],
+        signal: AbortSignal
+    ): Promise<MarketQuote[]> {
+        const response = await fetch(TRADINGVIEW_SCAN_ENDPOINT, {
+            method: 'POST',
+            // text/plain keeps the request CORS-safelisted; the scanner still parses the JSON body.
+            headers: { 'Content-Type': 'text/plain' },
+            body: buildTradingViewBody(instruments),
+            signal,
+        })
+        if (!response.ok) throw new Error(`market scan failed (${response.status})`)
+        return parseTradingViewQuotes(await response.json(), instruments)
+    }
+
     async function fetchQuotes(symbols: string[], key: string, parentSignal: AbortSignal) {
         const generation = ++fetchGeneration
         const controller = new AbortController()
@@ -107,15 +137,23 @@
         loading = true
         try {
             if (parentSignal.aborted) return
-            const response = await fetch(buildMarketQuoteUrl(symbols), { signal: controller.signal })
-            if (!response.ok) throw new Error(`quote request failed (${response.status})`)
-            const rows = buildMarketQuotes(symbols, parseCnbcQuotes(await response.json()))
+            const instruments = symbols.map(resolveMarketInstrument)
+            const cnbc = instruments.filter((instrument) => getMarketProvider(instrument) === 'cnbc')
+            const tradingView = instruments.filter((instrument) => getMarketProvider(instrument) === 'tradingview')
+            const requests: Promise<MarketQuote[]>[] = []
+            if (cnbc.length) requests.push(requestCnbcQuotes(cnbc, controller.signal))
+            if (tradingView.length) requests.push(requestTradingViewQuotes(tradingView, controller.signal))
+            if (!requests.length) throw new Error('no market instruments configured')
+
+            const settled = await Promise.allSettled(requests)
+            const parsed = settled.flatMap((result) => (result.status === 'fulfilled' ? result.value : []))
+            const rows = buildMarketQuotes(symbols, parsed)
             if (!rows.length) throw new Error('quote feed returned no usable rows')
             if (generation !== fetchGeneration || key !== watchlistKey) return
             quotes = rows
             updatedAt = new Date()
             loadedKey = key
-            failed = false
+            failed = settled.some((result) => result.status === 'rejected')
             writeCache(key, rows)
         } catch (error) {
             if (parentSignal.aborted || generation !== fetchGeneration || key !== watchlistKey) return
@@ -147,10 +185,14 @@
     }
 
     async function saveSymbols() {
-        const value = symbolsDraft.trim()
+        symbolSaveTimer = undefined
+        const parsed = parseCustomSymbols(symbolsDraft)
+        const usesDefaults = !parsed.length || hasDefaultWatchlist(region, parsed)
+        const value = usesDefaults ? '' : parsed.join(', ')
         try {
             await setSetting('marketSymbols', value)
             appState.marketSymbols = value
+            if (usesDefaults) symbolsDraft = regionDefaults.join(', ')
             flashConfigSaved()
         } catch (error) {
             console.error('Failed to save market symbols', error)
@@ -165,8 +207,16 @@
     }
 
     async function selectRegion(value: string) {
+        const draftSymbols = parseCustomSymbols(symbolsDraft)
+        const wasUsingDefaults = !draftSymbols.length || hasDefaultWatchlist(region, draftSymbols)
+        flushSymbolsSave()
+
         const next = value === 'auto' || isMarketRegion(value) ? value : 'auto'
         appState.marketsRegion = next
+        if (wasUsingDefaults) {
+            const nextRegion = next === 'auto' ? autoRegion : next
+            symbolsDraft = getMarketWatchlist(nextRegion).join(', ')
+        }
         try {
             await setSetting('marketsRegion', next)
             flashConfigSaved()
@@ -180,7 +230,7 @@
             clearTimeout(symbolSaveTimer)
             symbolSaveTimer = undefined
         }
-        symbolsDraft = ''
+        symbolsDraft = getMarketWatchlist(autoRegion).join(', ')
         appState.marketsRegion = 'auto'
         appState.marketSymbols = ''
         try {
@@ -198,13 +248,13 @@
             void tick().then(() => configButton?.focus())
             return
         }
-        symbolsDraft = appState.marketSymbols
+        symbolsDraft = appState.marketSymbols || regionDefaults.join(', ')
         configOpen = true
         void tick().then(() => configEl?.querySelector<HTMLElement>('select')?.focus())
     }
 
     onDestroy(() => {
-        if (symbolSaveTimer) clearTimeout(symbolSaveTimer)
+        flushSymbolsSave()
         if (configSavedTimer) clearTimeout(configSavedTimer)
     })
 
@@ -409,25 +459,27 @@
                                 for="markets-symbols-inline"
                                 class="text-[10px] font-semibold uppercase tracking-wide text-fg-muted md:text-[11px]"
                             >
-                                Extra symbols
+                                Instruments
                             </label>
                             <input
                                 id="markets-symbols-inline"
                                 bind:value={symbolsDraft}
                                 oninput={scheduleSymbolsSave}
-                                placeholder="AAPL, NVDA"
-                                maxlength={120}
+                                placeholder={regionDefaults.join(', ')}
+                                maxlength={200}
                                 autocomplete="off"
                                 spellcheck="false"
                                 aria-describedby="markets-symbols-inline-help"
                                 class="mt-1 w-full rounded-md border border-line bg-surface px-2 py-1 text-[11px] text-fg transition-colors placeholder:text-fg-subtle hover:border-line-strong focus:border-accent focus:outline-none md:text-xs"
                             />
                             <p id="markets-symbols-inline-help" class="mt-1 text-[10px] text-fg-muted md:text-[11px]">
-                                Up to {MAX_CUSTOM_SYMBOLS} CNBC symbols, comma separated. Regional defaults stay.
+                                Up to {MAX_MARKET_SYMBOLS} symbols, comma separated. Editing replaces the {getRegionLabel(
+                                    region
+                                )} defaults.
                             </p>
                         </div>
                         <div class="flex items-center gap-2 pb-4">
-                            {#if symbolsDraft.trim() || selectedRegion !== 'auto'}
+                            {#if appState.marketSymbols || selectedRegion !== 'auto'}
                                 <button
                                     type="button"
                                     onclick={() => void resetConfig()}
@@ -468,9 +520,9 @@
                     {#if quotes.length}
                         {#each quotes as quote (quote.symbol)}
                             <a
-                                href={`https://www.cnbc.com/quotes/${quote.symbol}`}
+                                href={quote.url}
                                 target="_blank"
-                                rel="noopener noreferrer"
+                                rel="external noopener noreferrer"
                                 class="group min-w-0 rounded-md transition-colors hover:bg-surface-2/60 focus-visible:bg-surface-2/60"
                                 title={quoteTitle(quote)}
                                 aria-label={buildMarketAriaLabel(quote)}
@@ -494,17 +546,6 @@
                                     class="mt-1 text-[18px] font-semibold leading-none tracking-tight tabular-nums text-fg md:text-2xl"
                                 >
                                     {quote.valueText}
-                                </div>
-                                <div
-                                    class="mt-1.5 hidden items-baseline text-[10px] tabular-nums text-fg-muted md:flex md:text-[11px]"
-                                >
-                                    {#if quote.quoteTimeLabel || MARKET_STATUS_LABELS[quote.status]}
-                                        <span class="truncate" title="All quote times use your device timezone">
-                                            {quote.quoteTimeLabel
-                                                ? `as of ${quote.quoteTimeLabel}`
-                                                : MARKET_STATUS_LABELS[quote.status]}
-                                        </span>
-                                    {/if}
                                 </div>
                             </a>
                         {/each}

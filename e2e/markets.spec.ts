@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { openHome } from './helpers'
 
 const QUOTE_URL = 'https://quote.cnbc.com/**'
+const TV_QUOTE_URL = 'https://scanner.tradingview.com/**'
 
 interface Fixture {
     last: string
@@ -9,6 +10,17 @@ interface Fixture {
     pct: string
     low: string
     high: string
+}
+
+interface TvFixture {
+    last: number
+    pct: number
+    change: number
+    low: number
+    high: number
+    currency: string
+    description: string
+    mode: string
 }
 
 const FIXTURES: Record<string, Fixture> = {
@@ -21,6 +33,19 @@ const FIXTURES: Record<string, Fixture> = {
     '.FTSE': { last: '10,791.62', change: '+8.75', pct: '+0.08%', low: '10,767.77', high: '10,868.51' },
     AAPL: { last: '346.93', change: '+2.14', pct: '+0.62%', low: '342.10', high: '349.22' },
     NVDA: { last: '171.48', change: '+1.02', pct: '+0.60%', low: '169.90', high: '173.05' },
+}
+
+const TV_FIXTURES: Record<string, TvFixture> = {
+    'NSEIX:NIFTY1!': {
+        last: 25205,
+        pct: -0.4876,
+        change: -123.5,
+        low: 25156.5,
+        high: 25472.5,
+        currency: 'USD',
+        description: 'GIFT NIFTY 50 INDEX FUTURES',
+        mode: 'streaming',
+    },
 }
 
 function quotePayload(symbols: string[]) {
@@ -56,6 +81,36 @@ async function mockQuotes(page: Page): Promise<void> {
             .split('|')
             .filter((symbol) => symbol && symbol !== 'BOGUS')
         return route.fulfill({ json: quotePayload(symbols) })
+    })
+
+    await page.route(TV_QUOTE_URL, (route) => {
+        const body = JSON.parse(route.request().postData() ?? '{}') as { symbols?: { tickers?: string[] } }
+        const tickers = body.symbols?.tickers ?? []
+        return route.fulfill({
+            json: {
+                totalCount: tickers.length,
+                data: tickers.flatMap((ticker) => {
+                    const fixture = TV_FIXTURES[ticker]
+                    return fixture
+                        ? [
+                              {
+                                  s: ticker,
+                                  d: [
+                                      fixture.last,
+                                      fixture.pct,
+                                      fixture.change,
+                                      fixture.high,
+                                      fixture.low,
+                                      fixture.currency,
+                                      fixture.description,
+                                      fixture.mode,
+                                  ],
+                              },
+                          ]
+                        : []
+                }),
+            },
+        })
     })
 }
 
@@ -93,31 +148,47 @@ test.describe('Markets widget', () => {
         await expect(markets.getByRole('link')).toHaveCount(4)
     })
 
-    test('persists custom symbols across reloads', async ({ page }) => {
+    test('replaces the regional defaults with a custom instrument list', async ({ page }) => {
         await mockQuotes(page)
         await enableMarkets(page)
         await openMarketsConfig(page)
 
-        const symbols = page.getByLabel('Extra symbols')
-        await symbols.fill('AAPL, NVDA')
+        const symbols = page.getByLabel('Instruments')
+        await expect(symbols).toHaveValue('.SPX, @SP.1, @CL.1, @GC.1')
+        await symbols.fill('AAPL, NVDA, @CL.1, @GC.1')
         await expect(page.getByText('Saved')).toBeVisible()
 
         await expect(board(page).getByRole('link', { name: /Apple Inc\./ })).toBeVisible()
         await expect(board(page).getByRole('link', { name: /NVIDIA Corporation/ })).toBeVisible()
+        await expect(board(page).getByRole('link', { name: /S&P 500 Index/ })).toHaveCount(0)
 
         const links = board(page).getByRole('link')
-        await expect(links).toHaveCount(6)
+        await expect(links).toHaveCount(4)
         const tops = await links.evaluateAll((elements) =>
             elements.map((element) => Math.round(element.getBoundingClientRect().top))
         )
-        expect(tops[4]).toBeGreaterThan(tops[2])
+        expect(tops[2]).toBeGreaterThan(tops[0])
 
         await page.reload()
         await openHome(page)
         await expect(board(page).getByRole('link', { name: /Apple Inc\./ })).toBeVisible()
 
         await openMarketsConfig(page)
-        await expect(page.getByLabel('Extra symbols')).toHaveValue('AAPL, NVDA')
+        await expect(page.getByLabel('Instruments')).toHaveValue('AAPL, NVDA, @CL.1, @GC.1')
+    })
+
+    test('restores the regional defaults when the custom list is cleared', async ({ page }) => {
+        await mockQuotes(page)
+        await enableMarkets(page)
+        await openMarketsConfig(page)
+
+        const symbols = page.getByLabel('Instruments')
+        await symbols.fill('AAPL')
+        await expect(board(page).getByRole('link', { name: /Apple Inc\./ })).toBeVisible()
+
+        await symbols.fill('')
+        await expect(board(page).getByRole('link', { name: /S&P 500 Index/ })).toBeVisible()
+        await expect(page.getByLabel('Instruments')).toHaveValue('.SPX, @SP.1, @CL.1, @GC.1')
     })
 
     test('reports symbols the feed could not resolve', async ({ page }) => {
@@ -125,9 +196,10 @@ test.describe('Markets widget', () => {
         await enableMarkets(page)
         await openMarketsConfig(page)
 
-        await page.getByLabel('Extra symbols').fill('BOGUS')
+        await page.getByLabel('Instruments').fill('AAPL, BOGUS')
         await expect(page.getByText('1 unavailable')).toBeVisible()
         await expect(page.locator('[aria-label="Unavailable: BOGUS"]')).toBeVisible()
+        await expect(board(page).getByRole('link', { name: /Apple Inc\./ })).toBeVisible()
     })
 
     test('shows an error and recovers after retry', async ({ page }) => {
@@ -168,8 +240,11 @@ test.describe('Markets widget region', () => {
 
         const markets = board(page)
         await expect(page.getByTestId('markets-region')).toHaveText('India')
-        await expect(markets.getByRole('link', { name: /Nifty 50 Index/ })).toContainText('25,044.65')
+        await expect(markets.getByRole('link', { name: /GIFT Nifty 50 Index Futures/ })).toContainText('25,205.00')
+        await expect(markets.getByRole('link', { name: /^Nifty 50 Index\./ })).toContainText('25,044.65')
         await expect(markets.getByRole('link', { name: /Brent Crude Oil Futures/ })).toBeVisible()
+        await expect(markets.getByRole('link', { name: /Gold Futures/ })).toBeVisible()
+        await expect(markets.getByRole('link')).toHaveCount(4)
     })
 
     test('honors a region override', async ({ page }) => {

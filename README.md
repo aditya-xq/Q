@@ -22,13 +22,13 @@ Transform every new tab into a focused productivity hub. Stay organized, write d
 | Voice Typing            | Dictate into the editor with native speech recognition                                              |
 | Quick Links & Top Sites | One-click access to your most visited sites (shortcuts below)                                       |
 | Weather Widget          | Check conditions at a glance                                                                        |
-| Markets Widget          | Track a regional index, futures, crude and gold, plus your own symbols                              |
+| Markets Widget          | Track a regional index, futures, crude and gold, or replace them with your own instruments          |
 | Daily Inspiration       | Quotes and facts to spark curiosity                                                                 |
 | Themes                  | Light, dark or system, plus a designer with presets, colours, corners and type (Alt + A)            |
 | Deep Links              | Share a view with `?view=projects` / `?view=writer`                                                 |
 | Customizable            | Tailor Q to match your workflow                                                                     |
 
-Market quotes use CNBC's public quote feed and may be delayed by up to 15 minutes. The default lineup follows your device's timezone; open the customize control in the Markets widget to pick a region or add symbols.
+Market quotes use CNBC's public quote feed, plus TradingView for GIFT Nifty, and may be delayed by up to 15 minutes. The default lineup follows your device's timezone (India tracks GIFT Nifty, NIFTY 50, crude and gold); open the customize control in the Markets widget to pick a region or replace the defaults with up to eight instruments.
 
 ---
 

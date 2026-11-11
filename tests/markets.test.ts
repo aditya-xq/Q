@@ -4,11 +4,14 @@ import {
     buildMarketAriaLabel,
     buildMarketQuoteUrl,
     buildMarketQuotes,
+    buildTradingViewBody,
     formatMarketNumber,
     getMarketWatchlist,
+    hasDefaultWatchlist,
     parseCnbcQuotes,
     parseCustomSymbols,
     parseMarketNumber,
+    parseTradingViewQuotes,
     resolveMarketRegion,
 } from '$lib/utils/markets'
 
@@ -117,6 +120,70 @@ describe('buildMarketQuotes', () => {
     })
 })
 
+describe('TradingView-backed instruments', () => {
+    const tradingViewPayload = {
+        totalCount: 2,
+        data: [
+            {
+                s: 'NSEIX:NIFTY1!',
+                d: [25205, -0.4876, -123.5, 25472.5, 25156.5, 'USD', 'GIFT NIFTY 50 INDEX FUTURES', 'streaming'],
+            },
+            { s: 'NSEIX:MISSING', d: [1, 0, 0, 1, 1, 'USD', 'Missing contract', 'streaming'] },
+        ],
+    }
+
+    test('builds a scanner request for catalog provider symbols', () => {
+        const body = JSON.parse(buildTradingViewBody([MARKET_CATALOG.GIFTNIFTY]))
+        expect(body.symbols.tickers).toEqual(['NSEIX:NIFTY1!'])
+        expect(body.columns).toContain('close')
+        expect(body.columns).toContain('change_abs')
+    })
+
+    test('maps scanner rows back to configured instruments', () => {
+        const quotes = parseTradingViewQuotes(tradingViewPayload, [MARKET_CATALOG.GIFTNIFTY])
+        expect(quotes).toHaveLength(1)
+
+        const [quote] = quotes
+        expect(quote.symbol).toBe('GIFTNIFTY')
+        expect(quote.label).toBe('Gift Nifty')
+        expect(quote.name).toBe('GIFT Nifty 50 Index Futures')
+        expect(quote.value).toBe(25205)
+        expect(quote.valueText).toBe('25,205.00')
+        expect(quote.change).toBe(-123.5)
+        expect(quote.changeText).toBe('-123.50')
+        expect(quote.changePctText).toBe('-0.49%')
+        expect(quote.changePctAbsText).toBe('0.49%')
+        expect(quote.tone).toBe('down')
+        expect(quote.low).toBe(25156.5)
+        expect(quote.high).toBe(25472.5)
+        expect(quote.currency).toBe('USD')
+        expect(quote.status).toBe('unknown')
+        expect(quote.quoteTimeLabel).toBe('')
+        expect(quote.delayed).toBe(false)
+        expect(quote.range).toBeGreaterThan(0)
+    })
+
+    test('flags delayed scanner rows and ignores unknown payloads', () => {
+        const [delayed] = parseTradingViewQuotes(
+            {
+                data: [
+                    {
+                        s: 'NSEIX:NIFTY1!',
+                        d: [25205, 0.5, 123.5, 25400, 25000, 'USD', 'GIFT NIFTY', 'delayed_streaming_600'],
+                    },
+                ],
+            },
+            [MARKET_CATALOG.GIFTNIFTY]
+        )
+        expect(delayed.delayed).toBe(true)
+        expect(delayed.tone).toBe('up')
+
+        expect(parseTradingViewQuotes(null, [MARKET_CATALOG.GIFTNIFTY])).toEqual([])
+        expect(parseTradingViewQuotes({ data: 'nope' }, [MARKET_CATALOG.GIFTNIFTY])).toEqual([])
+        expect(parseTradingViewQuotes({ data: [{ s: 'UNKNOWN', d: [1] }] }, [MARKET_CATALOG.GIFTNIFTY])).toEqual([])
+    })
+})
+
 describe('resolveMarketRegion', () => {
     test('maps common device timezones', () => {
         expect(resolveMarketRegion({ timeZone: 'Asia/Kolkata' })).toBe('in')
@@ -147,22 +214,34 @@ describe('parseCustomSymbols', () => {
         expect(parseCustomSymbols('A B C D E F', 2)).toEqual(['A', 'B'])
     })
 
+    test('defaults to the eight-instrument cap', () => {
+        expect(parseCustomSymbols('A B C D E F G H I')).toHaveLength(8)
+    })
+
     test('ignores blank input', () => {
         expect(parseCustomSymbols(' ,  ')).toEqual([])
     })
 })
 
 describe('getMarketWatchlist', () => {
-    test('prepends regional defaults and removes duplicates', () => {
-        const symbols = getMarketWatchlist('in', ['.NSEI', 'AAPL'])
-        expect(symbols[0]).toBe('.NSEI')
-        expect(symbols).toContain('AAPL')
-        expect(symbols.filter((symbol) => symbol === '.NSEI')).toHaveLength(1)
+    test('uses regional defaults when no instruments are configured', () => {
+        expect(getMarketWatchlist('in')).toEqual(['GIFTNIFTY', '.NSEI', '@LCO.1', '@GC.1'])
+        expect(getMarketWatchlist('us')).toEqual(['.SPX', '@SP.1', '@CL.1', '@GC.1'])
     })
 
-    test('caps the board at eight instruments', () => {
+    test('treats a custom list as a replacement for the regional defaults', () => {
+        expect(getMarketWatchlist('in', ['AAPL', 'NVDA'])).toEqual(['AAPL', 'NVDA'])
+    })
+
+    test('deduplicates and caps the board at eight instruments', () => {
+        expect(getMarketWatchlist('global', ['.SPX', '.SPX', 'AAPL'])).toEqual(['.SPX', 'AAPL'])
         const symbols = getMarketWatchlist('global', ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'])
         expect(symbols).toHaveLength(8)
+    })
+
+    test('detects a list that still matches the regional defaults', () => {
+        expect(hasDefaultWatchlist('us', ['.SPX', '@SP.1', '@CL.1', '@GC.1'])).toBe(true)
+        expect(hasDefaultWatchlist('us', ['.SPX'])).toBe(false)
     })
 })
 

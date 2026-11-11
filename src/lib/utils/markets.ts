@@ -16,12 +16,16 @@ export type MarketRegion =
 
 export type MarketTone = 'up' | 'down' | 'flat'
 export type MarketStatus = 'regular' | 'pre' | 'post' | 'closed' | 'halted' | 'unknown'
+export type MarketProvider = 'cnbc' | 'tradingview'
 
 export interface MarketInstrument {
     symbol: string
     label: string
     shortLabel: string
     name: string
+    provider?: MarketProvider
+    providerSymbol?: string
+    url?: string
 }
 
 export interface MarketQuote {
@@ -44,6 +48,7 @@ export interface MarketQuote {
     quoteTimeLabel: string
     currency: string
     delayed: boolean
+    url: string
 }
 
 /**
@@ -52,7 +57,13 @@ export interface MarketQuote {
  */
 export const MARKET_QUOTE_ENDPOINT = 'https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol'
 
-export const MAX_CUSTOM_SYMBOLS = 4
+/**
+ * TradingView's public scanner endpoint covers instruments CNBC does not list,
+ * such as GIFT Nifty. It is keyless, CORS-open and accepts a JSON body as a
+ * CORS-safelisted `text/plain` request, so no preflight is needed.
+ */
+export const TRADINGVIEW_SCAN_ENDPOINT = 'https://scanner.tradingview.com/global/scan'
+
 export const MAX_MARKET_SYMBOLS = 8
 
 export const MARKET_CATALOG: Record<string, MarketInstrument> = {
@@ -70,6 +81,15 @@ export const MARKET_CATALOG: Record<string, MarketInstrument> = {
     '.SSMI': { symbol: '.SSMI', label: 'SMI', shortLabel: 'SMI', name: 'Swiss Market Index' },
     '.NSEI': { symbol: '.NSEI', label: 'NIFTY 50', shortLabel: 'NIFTY', name: 'Nifty 50 Index' },
     '.NSEBANK': { symbol: '.NSEBANK', label: 'Bank Nifty', shortLabel: 'BANK', name: 'Nifty Bank Index' },
+    GIFTNIFTY: {
+        symbol: 'GIFTNIFTY',
+        label: 'Gift Nifty',
+        shortLabel: 'GIFT',
+        name: 'GIFT Nifty 50 Index Futures',
+        provider: 'tradingview',
+        providerSymbol: 'NSEIX:NIFTY1!',
+        url: 'https://www.tradingview.com/symbols/NSEIX-NIFTY1!/',
+    },
     '.N225': { symbol: '.N225', label: 'Nikkei 225', shortLabel: 'N225', name: 'Nikkei 225' },
     '.HSI': { symbol: '.HSI', label: 'Hang Seng', shortLabel: 'HSI', name: 'Hang Seng Index' },
     '.SSEC': { symbol: '.SSEC', label: 'Shanghai', shortLabel: 'SSEC', name: 'Shanghai Composite' },
@@ -119,7 +139,7 @@ export const REGION_WATCHLISTS: Record<MarketRegion, string[]> = {
     br: ['.BVSP', '@SP.1', '@CL.1', '@GC.1'],
     uk: ['.FTSE', '@SP.1', '@LCO.1', '@GC.1'],
     eu: ['.GDAXI', '@SP.1', '@LCO.1', '@GC.1'],
-    in: ['.NSEI', '@SP.1', '@LCO.1', '@GC.1'],
+    in: ['GIFTNIFTY', '.NSEI', '@LCO.1', '@GC.1'],
     jp: ['.N225', '@SP.1', '@CL.1', '@GC.1'],
     hk: ['.HSI', '@SP.1', '@CL.1', '@GC.1'],
     cn: ['.SSEC', '@SP.1', '@CL.1', '@GC.1'],
@@ -233,7 +253,7 @@ export function getRegionLabel(region: MarketRegion): string {
 }
 
 /** Normalizes comma/space separated symbols, dropping duplicates and unsafe characters. */
-export function parseCustomSymbols(raw: string, limit = MAX_CUSTOM_SYMBOLS): string[] {
+export function parseCustomSymbols(raw: string, limit = MAX_MARKET_SYMBOLS): string[] {
     const symbols: string[] = []
     const seen = new Set<string>()
     for (const token of raw.split(/[\s,]+/)) {
@@ -246,13 +266,33 @@ export function parseCustomSymbols(raw: string, limit = MAX_CUSTOM_SYMBOLS): str
     return symbols
 }
 
+/** A non-empty custom list replaces the region preset; an empty one keeps the defaults. */
 export function getMarketWatchlist(region: MarketRegion, customSymbols: string[] = []): string[] {
-    const symbols = [...(REGION_WATCHLISTS[region] ?? REGION_WATCHLISTS.global), ...customSymbols]
+    const defaults = REGION_WATCHLISTS[region] ?? REGION_WATCHLISTS.global
+    const symbols = customSymbols.length ? customSymbols : defaults
     return [...new Set(symbols)].slice(0, MAX_MARKET_SYMBOLS)
+}
+
+export function hasDefaultWatchlist(region: MarketRegion, symbols: string[]): boolean {
+    const defaults = getMarketWatchlist(region)
+    return symbols.length === defaults.length && symbols.every((symbol, index) => symbol === defaults[index])
 }
 
 export function getMarketInstrument(symbol: string): MarketInstrument | undefined {
     return MARKET_CATALOG[symbol]
+}
+
+/** Catalog entry for a configured symbol, or a CNBC-backed row for a user-typed one. */
+export function resolveMarketInstrument(symbol: string): MarketInstrument {
+    return MARKET_CATALOG[symbol] ?? { symbol, label: symbol, shortLabel: symbol, name: symbol }
+}
+
+export function getMarketProvider(instrument: MarketInstrument): MarketProvider {
+    return instrument.provider ?? 'cnbc'
+}
+
+export function getProviderSymbol(instrument: MarketInstrument): string {
+    return instrument.providerSymbol ?? instrument.symbol
 }
 
 export function buildMarketQuoteUrl(symbols: string[]): string {
@@ -322,6 +362,15 @@ function parseQuoteTime(value: string | undefined): { at: number; hasTime: boole
 function formatSignedNumber(value: number): string {
     const sign = value > 0 ? '+' : value < 0 ? '-' : ''
     return `${sign}${formatMarketNumber(Math.abs(value))}`
+}
+
+function formatSignedPercent(value: number): string {
+    const sign = value > 0 ? '+' : value < 0 ? '-' : ''
+    const formatted = new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(Math.abs(value))
+    return `${sign}${formatted}%`
 }
 
 function normalizeStatus(raw: string | undefined): MarketStatus {
@@ -398,6 +447,7 @@ function toQuote(raw: Record<string, unknown>): MarketQuote | null {
         quoteTimeLabel,
         currency: readText(raw.currencyCode) ?? '',
         delayed: readText(raw.realTime) !== 'true',
+        url: instrument?.url ?? `https://www.cnbc.com/quotes/${symbol}`,
     }
 }
 
@@ -411,6 +461,99 @@ export function parseCnbcQuotes(payload: unknown): MarketQuote[] {
         const record = asRecord(entry)
         if (!record || record.code !== 0) continue
         const quote = toQuote(record)
+        if (quote) quotes.push(quote)
+    }
+    return quotes
+}
+
+export const TRADINGVIEW_COLUMNS = [
+    'close',
+    'change',
+    'change_abs',
+    'high',
+    'low',
+    'currency',
+    'description',
+    'update_mode',
+] as const
+
+/** Builds the scanner request body for the TradingView-backed instruments. */
+export function buildTradingViewBody(instruments: MarketInstrument[]): string {
+    return JSON.stringify({
+        symbols: { tickers: instruments.map(getProviderSymbol), query: { types: [] } },
+        columns: [...TRADINGVIEW_COLUMNS],
+    })
+}
+
+function readNumber(value: unknown): number | null {
+    if (typeof value === 'number') return Number.isFinite(value) ? value : null
+    if (typeof value === 'string') {
+        const parsed = Number(value.replace(/[,\s%]/g, ''))
+        return Number.isFinite(parsed) ? parsed : null
+    }
+    return null
+}
+
+function toTradingViewQuote(instrument: MarketInstrument, row: unknown[]): MarketQuote | null {
+    const value = readNumber(row[0])
+    if (value === null) return null
+
+    const changePct = readNumber(row[1])
+    const change = readNumber(row[2])
+    const high = readNumber(row[3])
+    const low = readNumber(row[4])
+    const currency = readText(row[5]) ?? ''
+    const description = readText(row[6])
+    const updateMode = readText(row[7]) ?? ''
+    const toneValue = changePct ?? change ?? 0
+    const changePctText = changePct !== null ? formatSignedPercent(changePct) : ''
+    const changeText = change !== null ? formatSignedNumber(change) : ''
+
+    return {
+        symbol: instrument.symbol,
+        label: instrument.label || description || instrument.symbol,
+        shortLabel: instrument.shortLabel || description || instrument.symbol,
+        name: instrument.name || description || instrument.symbol,
+        value,
+        valueText: formatMarketNumber(value),
+        change,
+        changeText,
+        changePct,
+        changePctText,
+        changePctAbsText: changePctText.replace(/^[+-]/, '') || '—',
+        tone: toneValue > 0 ? 'up' : toneValue < 0 ? 'down' : 'flat',
+        low,
+        high,
+        range:
+            low !== null && high !== null && high > low
+                ? Math.min(100, Math.max(0, ((value - low) / (high - low)) * 100))
+                : null,
+        status: 'unknown',
+        quoteTimeLabel: '',
+        currency,
+        delayed: updateMode ? !updateMode.startsWith('streaming') : false,
+        url:
+            instrument.url ?? `https://www.tradingview.com/symbols/${getProviderSymbol(instrument).replace(':', '-')}/`,
+    }
+}
+
+/** Parses the TradingView scanner payload, matching rows back to the requested instruments. */
+export function parseTradingViewQuotes(payload: unknown, instruments: MarketInstrument[]): MarketQuote[] {
+    const data = asRecord(payload)?.data
+    if (!Array.isArray(data)) return []
+
+    const byProviderSymbol = new Map(
+        instruments.map((instrument) => [getProviderSymbol(instrument).toUpperCase(), instrument])
+    )
+    const quotes: MarketQuote[] = []
+    for (const entry of data) {
+        const record = asRecord(entry)
+        const providerSymbol = readText(record?.s)?.toUpperCase()
+        const row = record?.d
+        if (!providerSymbol || !Array.isArray(row)) continue
+        const instrument = byProviderSymbol.get(providerSymbol)
+        if (!instrument) continue
+        const quote = toTradingViewQuote(instrument, row)
         if (quote) quotes.push(quote)
     }
     return quotes

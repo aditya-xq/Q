@@ -79,6 +79,47 @@ test.describe('Chrome extension (MV3)', () => {
             })
             expect(quote).toEqual({ ok: true, last: '7,000.00' })
 
+            // GIFT Nifty comes from TradingView's scanner, which needs its own CSP entry.
+            await page.route('https://scanner.tradingview.com/**', (route) =>
+                route.fulfill({
+                    json: {
+                        totalCount: 1,
+                        data: [
+                            {
+                                s: 'NSEIX:NIFTY1!',
+                                d: [
+                                    25205,
+                                    -0.48,
+                                    -123.5,
+                                    25472.5,
+                                    25156.5,
+                                    'USD',
+                                    'GIFT NIFTY 50 INDEX FUTURES',
+                                    'streaming',
+                                ],
+                            },
+                        ],
+                    },
+                })
+            )
+            const scan = await page.evaluate(async () => {
+                try {
+                    const response = await fetch('https://scanner.tradingview.com/global/scan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify({
+                            symbols: { tickers: ['NSEIX:NIFTY1!'], query: { types: [] } },
+                            columns: ['close'],
+                        }),
+                    })
+                    const body = await response.json()
+                    return { ok: response.ok, last: body.data[0].d[0] }
+                } catch (error) {
+                    return { error: String(error) }
+                }
+            })
+            expect(scan).toEqual({ ok: true, last: 25205 })
+
             expect(cspErrors).toEqual([])
         } finally {
             await context.close()
