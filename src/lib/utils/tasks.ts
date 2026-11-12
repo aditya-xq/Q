@@ -4,8 +4,8 @@ export interface ProjectWithTasks extends Project {
     tasks: Task[]
 }
 
-export function sortProjectsByCreatedAtDesc(projects: Project[]): Project[] {
-    return projects.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+export function sortProjectsByUpdatedAtDesc(projects: Project[]): Project[] {
+    return projects.sort((a, b) => (b.updatedAt ?? b.createdAt).getTime() - (a.updatedAt ?? a.createdAt).getTime())
 }
 
 export function groupTasksByProject(projects: Project[], tasks: Task[]): ProjectWithTasks[] {

@@ -38,6 +38,28 @@ test.describe('Weather widget', () => {
         await expect(page.getByText('AQI 43').last()).toBeVisible()
     })
 
+    test('shows a card-shaped skeleton while loading', async ({ page }) => {
+        await page.route(GEOCODE_URL, async (route) => {
+            await new Promise((resolve) => setTimeout(resolve, 800))
+            return route.fulfill({ json: { city: 'Testville', locality: 'Testville', countryName: 'Testland' } })
+        })
+        await page.route(FORECAST_URL, (route) =>
+            route.fulfill({
+                json: { current: { temperature_2m: 27.6, relative_humidity_2m: 55.4, weather_code: 3 } },
+            })
+        )
+        await page.route(AIR_QUALITY_URL, (route) => route.fulfill({ json: { current: { us_aqi: 42.7 } } }))
+
+        await enableWeather(page)
+
+        const skeleton = page.getByTestId('weather-loading')
+        await expect(skeleton).toBeVisible()
+        await expect(page.getByText('Loading weather…')).toHaveCount(1)
+
+        await expect(page.getByText('Testville').last()).toBeVisible()
+        await expect(skeleton).toHaveCount(0)
+    })
+
     test('shows a retry affordance when the service fails', async ({ page }) => {
         await page.route(GEOCODE_URL, (route) => route.fulfill({ status: 500, body: 'nope' }))
         await page.route(FORECAST_URL, (route) => route.fulfill({ status: 500, body: 'nope' }))

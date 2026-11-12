@@ -146,10 +146,43 @@
     >
         {#if loading}
             <div
-                class="flex w-full items-center justify-center gap-2.5 rounded-xl border border-line bg-surface px-4 py-3 shadow-xl md:w-[420px]"
+                class="w-full rounded-xl border border-line bg-surface px-4 py-3 shadow-xl md:w-[420px]"
+                role="status"
+                data-testid="weather-loading"
             >
-                <div class="h-3 w-3 animate-spin rounded-full border-2 border-fg-subtle border-t-transparent"></div>
-                <span class="text-[11px] font-medium text-fg-muted">Locating weather…</span>
+                <span class="sr-only">Loading weather…</span>
+                <div class="flex animate-pulse items-center justify-between gap-3" aria-hidden="true">
+                    <div class="flex items-center gap-2.5">
+                        <div class="h-2.5 w-20 rounded-sm bg-surface-2 md:w-24"></div>
+                        <div class="h-4 w-10 rounded-sm bg-surface-2"></div>
+                    </div>
+                    <div class="flex items-center gap-2.5">
+                        <div class="h-6 w-6 rounded-full bg-surface-2"></div>
+                        <div class="flex flex-col gap-0.5">
+                            <div class="h-6 w-12 rounded-sm bg-surface-2"></div>
+                            <div class="h-2.5 w-16 rounded-sm bg-surface-2"></div>
+                        </div>
+                    </div>
+                    <div class="hidden flex-col items-center gap-1.5 md:flex">
+                        <div class="h-2 w-10 rounded-sm bg-surface-2"></div>
+                        <div class="h-1.5 w-16 rounded-full bg-surface-2"></div>
+                        <div class="h-2 w-8 rounded-sm bg-surface-2"></div>
+                    </div>
+                    <div class="hidden items-center gap-2 md:flex">
+                        <div class="h-3.5 w-3.5 rounded-full bg-surface-2"></div>
+                        <div class="h-4 w-8 rounded-sm bg-surface-2"></div>
+                    </div>
+                </div>
+                <div
+                    class="mt-3 flex animate-pulse items-center justify-between border-t border-line pt-3 md:hidden"
+                    aria-hidden="true"
+                >
+                    <div class="h-2.5 w-20 rounded-sm bg-surface-2"></div>
+                    <div class="flex items-center gap-3">
+                        <div class="h-2.5 w-14 rounded-sm bg-surface-2"></div>
+                        <div class="h-2.5 w-10 rounded-sm bg-surface-2"></div>
+                    </div>
+                </div>
             </div>
         {:else if error}
             <div

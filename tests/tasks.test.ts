@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import type { Project, Task } from '$lib/utils/db'
-import { groupTasksByProject, sortProjectsByCreatedAtDesc } from '$lib/utils/tasks'
+import { groupTasksByProject, sortProjectsByUpdatedAtDesc } from '$lib/utils/tasks'
 
 function makeTask(overrides: Partial<Task> & { id: number; projectId: number }): Task {
     return {
@@ -16,14 +16,23 @@ function makeProject(overrides: Partial<Project> & { id: number }): Project {
     return { title: `project-${overrides.id}`, createdAt: new Date(0), ...overrides }
 }
 
-describe('sortProjectsByCreatedAtDesc', () => {
-    test('orders projects newest first', () => {
+describe('sortProjectsByUpdatedAtDesc', () => {
+    test('orders projects by most recent activity first', () => {
+        const projects: Project[] = [
+            makeProject({ id: 1, createdAt: new Date(1000), updatedAt: new Date(2000) }),
+            makeProject({ id: 2, createdAt: new Date(3000), updatedAt: new Date(4000) }),
+            makeProject({ id: 3, createdAt: new Date(2000), updatedAt: new Date(5000) }),
+        ]
+        expect(sortProjectsByUpdatedAtDesc(projects).map((p) => p.id)).toEqual([3, 2, 1])
+    })
+
+    test('falls back to createdAt for projects without an updatedAt', () => {
         const projects: Project[] = [
             makeProject({ id: 1, createdAt: new Date(1000) }),
             makeProject({ id: 2, createdAt: new Date(3000) }),
             makeProject({ id: 3, createdAt: new Date(2000) }),
         ]
-        expect(sortProjectsByCreatedAtDesc(projects).map((p) => p.id)).toEqual([2, 3, 1])
+        expect(sortProjectsByUpdatedAtDesc(projects).map((p) => p.id)).toEqual([2, 3, 1])
     })
 })
 

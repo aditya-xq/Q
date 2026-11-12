@@ -71,6 +71,20 @@ test.describe('Projects', () => {
         await expect(page.getByRole('heading', { name: 'Second', level: 1 })).toBeVisible()
     })
 
+    test('moves a project to the top of the list after it is updated', async ({ page }) => {
+        await openViewShortcut(page, 'p')
+        await createProject(page, 'Older')
+        await createProject(page, 'Newer')
+
+        const list = page.getByTestId('project-list')
+        await expect(list.getByRole('heading', { level: 3 })).toHaveText(['Newer', 'Older'])
+
+        await list.getByRole('button', { name: /Older/ }).click()
+        await addTask(page, 'Touches the older project')
+
+        await expect(list.getByRole('heading', { level: 3 })).toHaveText(['Older', 'Newer'])
+    })
+
     test('ignores blank project names', async ({ page }) => {
         await openViewShortcut(page, 'p')
         await page.getByRole('button', { name: 'New Project' }).click()

@@ -78,7 +78,7 @@
 <div class="container mx-auto px-3 sm:px-4 md:px-8 transition-all duration-300 ease-in-out">
     <div class="flex gap-4 lg:gap-6 h-[calc(100dvh-6rem)] sm:h-[calc(100dvh-8rem)] relative">
         <!-- Desktop Left Sidebar - Project List -->
-        <div class="hidden md:block h-full">
+        <div class="hidden md:block h-full" data-testid="project-list">
             <ProjectList {selectedProjectId} {onProjectSelection} />
         </div>
 
