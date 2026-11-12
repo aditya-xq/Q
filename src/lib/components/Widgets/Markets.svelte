@@ -290,16 +290,8 @@
         }
     })
 
-    function toneChip(tone: MarketTone): string {
-        return tone === 'up'
-            ? 'bg-success-soft text-success'
-            : tone === 'down'
-              ? 'bg-danger-soft text-danger'
-              : 'bg-surface-2 text-fg-muted'
-    }
-
-    function trendGlyph(tone: MarketTone): string {
-        return tone === 'up' ? '▲' : tone === 'down' ? '▼' : '—'
+    function toneText(tone: MarketTone): string {
+        return tone === 'up' ? 'text-success' : tone === 'down' ? 'text-danger' : 'text-fg-muted'
     }
 
     function formatUpdated(date: Date): string {
@@ -318,7 +310,7 @@
 
 {#if appState.showMarkets}
     <div
-        class={`fixed top-[54px] left-4 right-4 z-40 transition-[top] duration-300 ease-out md:right-24 md:left-auto md:w-[420px] ${
+        class={`z-40 w-full md:fixed md:right-24 md:left-auto md:w-[var(--q-widget-width)] md:transition-[top] md:duration-300 md:ease-out ${
             appState.showWeather ? 'md:top-25' : 'md:top-6'
         }`}
         in:fly={{ y: -16, duration: 300, easing: cubicOut }}
@@ -330,13 +322,14 @@
             aria-busy={loading && !quotes.length}
         >
             <div class="flex items-center justify-between gap-3 border-b border-line px-4 py-2 md:px-5 md:py-2.5">
-                <div class="flex min-w-0 items-center gap-2">
+                <div class="flex min-w-0 items-center gap-1.5">
                     <h2
                         id="markets-heading"
                         class="text-[10px] font-semibold uppercase tracking-wide text-fg-muted md:text-[11px]"
                     >
                         Markets
                     </h2>
+                    <span class="text-fg-subtle" aria-hidden="true">·</span>
                     <span data-testid="markets-region" class="truncate text-[10px] text-fg-muted md:text-[11px]"
                         >{getRegionLabel(region)}</span
                     >
@@ -344,7 +337,7 @@
                 <div class="flex shrink-0 items-center gap-2 text-[10px] text-fg-muted md:text-[11px]">
                     {#if failed && quotes.length > 0}
                         <span
-                            class="rounded bg-warning-soft px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-warning"
+                            class="text-[9px] font-semibold uppercase tracking-wide text-warning"
                             title="The last update did not reach the quote feed"
                         >
                             Stale
@@ -353,10 +346,11 @@
                     {#if updatedAt}
                         <time
                             datetime={updatedAt.toISOString()}
+                            class="tabular-nums"
                             title="Time this widget last fetched quotes. Quotes may be delayed by up to 15 minutes."
                             aria-label={`Last fetched ${formatUpdated(updatedAt)}. Quotes may be delayed by up to 15 minutes.`}
                         >
-                            <span class="hidden min-[380px]:inline">Updated&nbsp;</span>{formatUpdated(updatedAt)}
+                            {formatUpdated(updatedAt)}
                         </time>
                     {/if}
                     {#if unavailable.length}
@@ -368,7 +362,7 @@
                             {unavailable.length} unavailable
                         </span>
                     {/if}
-                    <div class="ml-0.5 flex items-center gap-1 border-l border-line pl-2">
+                    <div class="flex items-center gap-0.5">
                         <button
                             type="button"
                             bind:this={configButton}
@@ -516,34 +510,33 @@
                     </button>
                 </div>
             {:else}
-                <div class="grid grid-cols-2 gap-x-3 gap-y-2 px-4 py-2 md:gap-x-6 md:gap-y-3 md:px-5 md:py-3">
+                <div class="grid grid-cols-2 gap-x-4 gap-y-3 px-4 py-2.5 md:gap-x-6 md:gap-y-3.5 md:px-5 md:py-3.5">
                     {#if quotes.length}
                         {#each quotes as quote (quote.symbol)}
                             <a
                                 href={quote.url}
                                 target="_blank"
                                 rel="external noopener noreferrer"
-                                class="group min-w-0 rounded-md transition-colors hover:bg-surface-2/60 focus-visible:bg-surface-2/60"
+                                class="group -mx-1 min-w-0 rounded-md px-1 py-0.5 transition-colors hover:bg-surface-2/50 focus-visible:bg-surface-2/50"
                                 title={quoteTitle(quote)}
                                 aria-label={buildMarketAriaLabel(quote)}
                             >
-                                <div class="flex items-baseline justify-between gap-1.5">
+                                <div class="flex items-baseline justify-between gap-2">
                                     <span
-                                        class="min-w-0 truncate text-[10px] font-semibold uppercase tracking-wide text-fg-muted md:text-[11px]"
+                                        class="min-w-0 truncate text-[10px] font-medium uppercase tracking-wide text-fg-muted md:text-[11px]"
                                     >
                                         {quote.label}
                                     </span>
                                     <span
-                                        class="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold tabular-nums md:px-1.5 md:text-[11px] {toneChip(
+                                        class="shrink-0 text-[10px] font-medium tabular-nums md:text-[11px] {toneText(
                                             quote.tone
                                         )}"
                                     >
-                                        {trendGlyph(quote.tone)}
-                                        {quote.changePctAbsText}
+                                        {quote.changePctText || '—'}
                                     </span>
                                 </div>
                                 <div
-                                    class="mt-1 text-[18px] font-semibold leading-none tracking-tight tabular-nums text-fg md:text-2xl"
+                                    class="mt-1.5 text-[15px] font-semibold leading-none tracking-tight tabular-nums text-fg md:text-[18px]"
                                 >
                                     {quote.valueText}
                                 </div>
@@ -553,7 +546,7 @@
                         {#each [...Array(placeholderCount).keys()] as index (index)}
                             <div aria-hidden="true">
                                 <div class="h-2 w-16 rounded-sm bg-surface-2"></div>
-                                <div class="mt-2.5 h-5 w-20 rounded-sm bg-surface-2"></div>
+                                <div class="mt-2 h-[15px] w-20 rounded-sm bg-surface-2 md:h-[18px]"></div>
                             </div>
                         {/each}
                     {/if}

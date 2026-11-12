@@ -30,6 +30,8 @@
     --q-warning-soft: #f6eae1;
     --q-selection: rgb(34 197 94 / 0.3);
     --q-radius: 2px;
+    --q-widget-width: 350px;
+    --q-weather-width: 440px;
     --q-font: ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
     --q-shadow-card: 0 0 #0000;
     --q-app-bg: none;

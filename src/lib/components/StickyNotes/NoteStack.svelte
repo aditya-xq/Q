@@ -81,11 +81,11 @@
 
 <svelte:window onkeydown={onWindowKeydown} />
 
-<!-- Mobile entry point: a small notes button that opens the sheet. -->
+<!-- Mobile entry point: a notes button grouped beside the fixed Settings control. -->
 <button
     bind:this={fabEl}
     type="button"
-    class="fixed right-4 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-[55] flex h-12 w-12 items-center justify-center rounded-2xl border border-line/80 bg-surface/85 text-fg-muted shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-14px_rgba(15,23,42,0.4)] backdrop-blur-md transition duration-200 hover:scale-105 hover:border-line-strong hover:text-fg active:scale-95"
+    class="fixed bottom-3 left-14 z-[55] flex h-10 w-10 items-center justify-center rounded-lg border border-line bg-surface text-fg-muted shadow-lg transition-all duration-300 hover:scale-105 hover:border-accent hover:text-accent-text hover:shadow-xl active:scale-95"
     aria-label={noteCount > 0 ? `Open notes (${noteCount})` : 'Open notes'}
     aria-haspopup="dialog"
     aria-expanded={open}

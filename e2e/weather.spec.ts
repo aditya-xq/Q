@@ -55,9 +55,37 @@ test.describe('Weather widget', () => {
         const skeleton = page.getByTestId('weather-loading')
         await expect(skeleton).toBeVisible()
         await expect(page.getByText('Loading weather…')).toHaveCount(1)
+        await expect(skeleton).toHaveCSS('width', '440px')
+        expect(await skeleton.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
 
         await expect(page.getByText('Testville').last()).toBeVisible()
         await expect(skeleton).toHaveCount(0)
+    })
+
+    test('keeps the desktop card inside its bounds with long content', async ({ page }) => {
+        await page.route(GEOCODE_URL, (route) =>
+            route.fulfill({
+                json: {
+                    city: 'Thiruvananthapuram',
+                    locality: 'Thiruvananthapuram',
+                    countryName: 'India',
+                },
+            })
+        )
+        await page.route(FORECAST_URL, (route) =>
+            route.fulfill({
+                json: { current: { temperature_2m: 27.6, relative_humidity_2m: 100, weather_code: 80 } },
+            })
+        )
+        await page.route(AIR_QUALITY_URL, (route) => route.fulfill({ json: { current: { us_aqi: 120 } } }))
+
+        await enableWeather(page)
+
+        const card = page.getByTestId('weather-card')
+        await expect(card).toBeVisible()
+        await expect(card).toHaveCSS('width', '440px')
+        await expect(card.getByText('100%')).toBeVisible()
+        expect(await card.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
     })
 
     test('shows a retry affordance when the service fails', async ({ page }) => {
@@ -69,6 +97,10 @@ test.describe('Weather widget', () => {
 
         await expect(page.getByText('Service Unavailable')).toBeVisible()
         await expect(page.getByRole('button', { name: 'Retry weather' })).toBeVisible()
+        const errorCard = page.getByTestId('weather-error')
+        await expect(errorCard).toBeVisible()
+        await expect(errorCard).toHaveCSS('width', '440px')
+        expect(await errorCard.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
     })
 
     test('does not request weather until the widget is enabled', async ({ page }) => {

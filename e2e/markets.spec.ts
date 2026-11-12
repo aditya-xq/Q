@@ -277,12 +277,6 @@ test.describe('Markets widget mobile', () => {
         expect(tops[0]).toBe(tops[1])
         expect(tops[2]).toBe(tops[3])
         expect(tops[2]).toBeGreaterThan(tops[0])
-
-        await page.locator('#main-content').evaluate((element) => {
-            element.scrollTop = 0
-        })
-        const quoteTop = await page.locator('blockquote').evaluate((element) => element.getBoundingClientRect().top)
-        expect(quoteTop).toBeGreaterThan(60)
     })
 })
 
@@ -305,6 +299,66 @@ test.describe('Markets widget small mobile', () => {
         expect(tops[0]).toBe(tops[1])
         expect(tops[2]).toBe(tops[3])
         expect(tops[2]).toBeGreaterThan(tops[0])
+    })
+})
+
+test.describe('Markets widget mobile stacking', () => {
+    test.use({
+        viewport: { width: 390, height: 844 },
+        timezoneId: 'America/New_York',
+        permissions: ['geolocation'],
+        geolocation: { latitude: 40.71, longitude: -74.01 },
+    })
+
+    test('sits below Weather when both are enabled', async ({ page }) => {
+        await mockQuotes(page)
+        await page.route('https://api-bdc.io/**', (route) =>
+            route.fulfill({ json: { city: 'Testville', locality: 'Testville', countryName: 'Testland' } })
+        )
+        await page.route('https://api.open-meteo.com/**', (route) =>
+            route.fulfill({
+                json: { current: { temperature_2m: 21, relative_humidity_2m: 50, weather_code: 1 } },
+            })
+        )
+        await page.route('https://air-quality-api.open-meteo.com/**', (route) =>
+            route.fulfill({ json: { current: { us_aqi: 30 } } })
+        )
+
+        await openHome(page)
+        await page.getByRole('button', { name: 'Settings (Alt + S)' }).click()
+        await page.getByRole('button', { name: 'Toggle markets widget' }).click()
+        await page.getByRole('button', { name: 'Toggle weather widget' }).click()
+        await page.getByRole('button', { name: 'Close settings' }).click()
+        await expect(page.getByText('Testville').first()).toBeVisible()
+        await expect(board(page)).toBeVisible()
+        await page.waitForTimeout(500)
+
+        const weatherBox = await page.getByTestId('weather-widget').boundingBox()
+        const marketsBox = await board(page).boundingBox()
+        const sitesBox = await page.getByTestId('frequent-sites').boundingBox()
+        expect(weatherBox).not.toBeNull()
+        expect(marketsBox).not.toBeNull()
+        expect(sitesBox).not.toBeNull()
+        expect(weatherBox!.y).toBeGreaterThanOrEqual(sitesBox!.y + sitesBox!.height)
+        expect(marketsBox!.y).toBeGreaterThanOrEqual(weatherBox!.y + weatherBox!.height)
+        expect(Math.abs(marketsBox!.x - weatherBox!.x)).toBeLessThan(2)
+        expect(Math.abs(marketsBox!.width - weatherBox!.width)).toBeLessThan(2)
+        expect(await page.getByTestId('weather-widget').evaluate((el) => getComputedStyle(el).position)).not.toBe(
+            'fixed'
+        )
+        expect(await board(page).evaluate((el) => getComputedStyle(el).position)).not.toBe('fixed')
+    })
+
+    test('places Markets in flow below the top sites when Weather is off', async ({ page }) => {
+        await mockQuotes(page)
+        await enableMarkets(page)
+        await page.waitForTimeout(300)
+        const sitesBox = await page.getByTestId('frequent-sites').boundingBox()
+        const box = await board(page).boundingBox()
+        expect(sitesBox).not.toBeNull()
+        expect(box).not.toBeNull()
+        expect(box!.y).toBeGreaterThanOrEqual(sitesBox!.y + sitesBox!.height)
+        expect(await board(page).evaluate((el) => getComputedStyle(el).position)).not.toBe('fixed')
     })
 })
 

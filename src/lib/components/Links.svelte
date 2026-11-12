@@ -41,16 +41,16 @@
 <aside
     aria-label="Quick links"
     class="hidden md:flex fixed right-0 top-0 h-full w-16 z-50 flex-col items-center pt-4 pb-6
-	   bg-surface border-l border-line
+	   border-l border-line
 	   shadow-xl"
 >
-    <div class="fixed top-5 right-3.5 flex flex-col gap-3">
+    <div class="fixed top-5 right-4 flex flex-col gap-3">
         {#each quickLinks as link (link.category)}
             {@const shortcut = shortcutLabel(link)}
             <button
                 class="group rounded-lg p-2 border border-line
 					bg-surface text-fg-muted
-					shadow-sm hover:shadow-md hover:border-accent hover:text-accent-text transition-all duration-300
+					shadow-sm hover:shadow-md hover:border-accent transition-all duration-300
 					hover:scale-105 active:scale-95"
                 data-tooltip={shortcut ? `${link.name} (${shortcut})` : link.name}
                 onclick={() => openLink(link.url)}
@@ -60,7 +60,7 @@
                 <img
                     src={getQuickLinkIcon(link.name, link.url)}
                     alt={link.name}
-                    class="w-5 h-5 transition-transform duration-300 group-hover:scale-110"
+                    class="w-6 h-6 transition-transform duration-300 group-hover:scale-110"
                     onerror={(event) => onIconError(event, link.url)}
                 />
             </button>
@@ -128,11 +128,11 @@
 
     <!-- Floating Toggle Button -->
     <button
-        class="fixed top-3 right-3 z-50 w-10 h-10 rounded-lg
-			border border-line bg-surface text-fg-muted
-			shadow-lg hover:shadow-xl hover:border-accent hover:text-accent-text active:shadow-md
+        class="fixed top-3 right-3 z-50 rounded-lg
+			border border-line bg-surface p-2 text-fg
+			shadow-lg hover:shadow-xl hover:bg-surface-2
 			flex items-center justify-center
-			transition-all duration-300 ease-out
+			transition-all duration-300
 			hover:scale-105 active:scale-95"
         onclick={() => (isOpen = !isOpen)}
         aria-label="Toggle quick links"
@@ -140,6 +140,6 @@
         aria-controls="quick-links-menu"
         style:transform={isOpen ? 'rotate(90deg)' : 'rotate(0deg)'}
     >
-        <span class="text-xl">🔗</span>
+        <span class="flex h-6 w-6 items-center justify-center text-xl leading-none">🔗</span>
     </button>
 </div>

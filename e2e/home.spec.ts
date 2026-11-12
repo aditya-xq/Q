@@ -39,3 +39,22 @@ test.describe('Home', () => {
         await expect(page.locator('blockquote')).toHaveCount(0)
     })
 })
+
+test.describe('Home mobile layout', () => {
+    test.use({ viewport: { width: 390, height: 844 } })
+
+    test('centers the quote and top sites when both widgets are off', async ({ page }) => {
+        await openHome(page)
+        await page.waitForTimeout(300)
+
+        const quote = await page.locator('blockquote').boundingBox()
+        const sites = await page.getByTestId('frequent-sites').boundingBox()
+        expect(quote).not.toBeNull()
+        expect(sites).not.toBeNull()
+
+        const contentCenter = (quote!.y + sites!.y + sites!.height) / 2
+        expect(Math.abs(contentCenter - 844 / 2)).toBeLessThan(60)
+        expect(quote!.y).toBeGreaterThan(80)
+        expect(sites!.y + sites!.height).toBeLessThan(800)
+    })
+})

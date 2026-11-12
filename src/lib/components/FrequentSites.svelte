@@ -39,7 +39,7 @@
     }
 </script>
 
-<div class="flex justify-center">
+<div class="flex justify-center" data-testid="frequent-sites">
     <div class="grid grid-cols-4 md:grid-cols-8 gap-2 md:gap-4 max-w-5xl mx-auto">
         {#each sites as site (site.url)}
             <a
