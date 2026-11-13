@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Q",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "description": "An extension that converts your new tab into a productivity powerhouse.",
     "minimum_chrome_version": "114",
     "permissions": [
