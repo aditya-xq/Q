@@ -17,6 +17,19 @@ test.describe('Mobile drawers', () => {
         await expect(page.getByRole('button', { name: 'New Project' })).toBeHidden()
     })
 
+    test('projects drawer closes on Escape and restores focus', async ({ page }) => {
+        await page.goto('/?view=projects')
+        await page.waitForLoadState('networkidle')
+
+        const openButton = page.getByRole('button', { name: 'Open projects' })
+        await openButton.click()
+        await expect(page.getByRole('button', { name: 'New Project' })).toBeVisible()
+
+        await page.keyboard.press('Escape')
+        await expect(page.getByRole('button', { name: 'New Project' })).toBeHidden()
+        await expect(openButton).toBeFocused()
+    })
+
     test('mobile menu navigates between views', async ({ page }) => {
         await page.goto('/')
         await page.waitForLoadState('networkidle')

@@ -18,12 +18,6 @@ test.describe('Chrome extension (MV3)', () => {
         })
 
         try {
-            let [serviceWorker] = context.serviceWorkers()
-            if (!serviceWorker) {
-                serviceWorker = await context.waitForEvent('serviceworker', { timeout: 10_000 })
-            }
-            const extensionId = new URL(serviceWorker.url()).host
-
             const page = await context.newPage()
             const cspErrors: string[] = []
             page.on('console', (message) => {
@@ -32,7 +26,10 @@ test.describe('Chrome extension (MV3)', () => {
                 }
             })
 
-            await page.goto(`chrome-extension://${extensionId}/index.html`)
+            // The new-tab override is the most direct proof that the MV3 page loads;
+            // it also gives us the extension id without relying on a service worker.
+            await page.goto('chrome://newtab')
+            expect(page.url()).toMatch(/^chrome-extension:\/\//)
 
             await expect(page.getByText('Queue', { exact: true })).toBeVisible()
             await expect(page.getByRole('button', { name: 'Settings (Alt + S)' })).toBeVisible()

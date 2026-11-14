@@ -25,11 +25,12 @@
         type MarketTone,
     } from '$lib/utils/markets'
     import { setSetting } from '$lib/utils/db'
+    import { isSessionCacheFresh, readSessionCache, writeSessionCache } from '$lib/utils/sessionCache'
     import { onDestroy, tick } from 'svelte'
     import { fly, slide } from 'svelte/transition'
     import { cubicOut } from 'svelte/easing'
 
-    const CACHE_KEY = 'markets:quotes:v5'
+    const CACHE_KEY = 'markets:quotes:v6'
     const CACHE_TTL = 5 * 60 * 1000
     const REFRESH_INTERVAL = 5 * 60 * 1000
     const FETCH_TIMEOUT_MS = 15 * 1000
@@ -66,24 +67,15 @@
     const watchlist = $derived(getMarketWatchlist(region, customSymbols))
     const watchlistKey = $derived(watchlist.join('|'))
 
-    function readCache(key: string): { quotes: MarketQuote[]; ts: number } | null {
-        try {
-            const raw = sessionStorage.getItem(CACHE_KEY)
-            if (!raw) return null
-            const parsed = JSON.parse(raw) as { key?: unknown; ts?: unknown; quotes?: unknown }
-            if (parsed.key !== key || typeof parsed.ts !== 'number' || !Array.isArray(parsed.quotes)) return null
-            return { quotes: parsed.quotes as MarketQuote[], ts: parsed.ts }
-        } catch {
-            return null
-        }
+    interface MarketsCache {
+        key: string
+        quotes: MarketQuote[]
     }
 
-    function writeCache(key: string, rows: MarketQuote[]) {
-        try {
-            sessionStorage.setItem(CACHE_KEY, JSON.stringify({ key, ts: Date.now(), quotes: rows }))
-        } catch {
-            /* storage unavailable (private mode / quota) */
-        }
+    function isMarketsCache(value: unknown): value is MarketsCache {
+        if (typeof value !== 'object' || value === null) return false
+        const record = value as Record<string, unknown>
+        return typeof record.key === 'string' && Array.isArray(record.quotes)
     }
 
     /** Loads cached rows for this watchlist and reports whether they are still fresh. */
@@ -94,15 +86,15 @@
         fetchGeneration += 1
         loading = false
         failed = false
-        const cached = readCache(key)
-        if (!cached) {
+        const cached = readSessionCache(CACHE_KEY, isMarketsCache)
+        if (!cached || cached.data.key !== key) {
             quotes = []
             updatedAt = null
             return false
         }
-        quotes = cached.quotes
+        quotes = cached.data.quotes
         updatedAt = new Date(cached.ts)
-        return Date.now() - cached.ts < CACHE_TTL
+        return isSessionCacheFresh(cached, CACHE_TTL)
     }
 
     async function requestCnbcQuotes(instruments: MarketInstrument[], signal: AbortSignal): Promise<MarketQuote[]> {
@@ -154,7 +146,7 @@
             updatedAt = new Date()
             loadedKey = key
             failed = settled.some((result) => result.status === 'rejected')
-            writeCache(key, rows)
+            writeSessionCache(CACHE_KEY, { key, quotes: rows } satisfies MarketsCache)
         } catch (error) {
             if (parentSignal.aborted || generation !== fetchGeneration || key !== watchlistKey) return
             if (!quotes.length) console.warn('Markets fetch error:', error)
@@ -253,6 +245,12 @@
         void tick().then(() => configEl?.querySelector<HTMLElement>('select')?.focus())
     }
 
+    function onWindowKeydown(event: KeyboardEvent) {
+        if (event.key !== 'Escape' || !configOpen) return
+        event.preventDefault()
+        toggleConfig()
+    }
+
     onDestroy(() => {
         flushSymbolsSave()
         if (configSavedTimer) clearTimeout(configSavedTimer)
@@ -269,20 +267,44 @@
         if (!symbols.length) return
 
         const fresh = hydrate(key)
-        const controller = new AbortController()
-        if (!fresh) void fetchQuotes(symbols, key, controller.signal)
+        let controller = new AbortController()
+        let timer: ReturnType<typeof setInterval> | undefined
 
-        const tick = () => {
+        const refreshIfVisible = () => {
             if (document.visibilityState === 'visible') void fetchQuotes(symbols, key, controller.signal)
         }
-        const timer = setInterval(tick, REFRESH_INTERVAL)
+        const startTimer = () => {
+            if (timer) return
+            timer = setInterval(refreshIfVisible, REFRESH_INTERVAL)
+        }
+        const stopTimer = () => {
+            if (!timer) return
+            clearInterval(timer)
+            timer = undefined
+        }
+
+        if (document.visibilityState === 'visible') {
+            if (!fresh) void fetchQuotes(symbols, key, controller.signal)
+            startTimer()
+        }
+
         const onVisible = () => {
-            if (document.visibilityState === 'visible') tick()
+            if (document.visibilityState === 'visible') {
+                refreshIfVisible()
+                startTimer()
+                return
+            }
+            // Stop polling and cancel in-flight requests while the tab is hidden.
+            stopTimer()
+            controller.abort()
+            refreshController?.abort()
+            refreshController = null
+            controller = new AbortController()
         }
         document.addEventListener('visibilitychange', onVisible)
 
         return () => {
-            clearInterval(timer)
+            stopTimer()
             document.removeEventListener('visibilitychange', onVisible)
             controller.abort()
             refreshController?.abort()
@@ -307,6 +329,8 @@
         quotes.length ? watchlist.filter((symbol) => !quotes.some((quote) => quote.symbol === symbol)) : []
     )
 </script>
+
+<svelte:window onkeydown={onWindowKeydown} />
 
 {#if appState.showMarkets}
     <div

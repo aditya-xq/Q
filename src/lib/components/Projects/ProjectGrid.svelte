@@ -1,9 +1,11 @@
 <script lang="ts">
     import { appState } from '$lib/state.svelte'
     import { createMobileDrawer } from '$lib/utils/mobileDrawer.svelte'
+    import { focusTrap } from '$lib/utils/focusTrap'
     import { deleteCompletedTasks } from '$lib/utils/stores'
     import { toast } from '$lib/utils/notification'
     import { clickOutside } from '$lib/utils/utils'
+    import { tick } from 'svelte'
     import { fade, slide, fly } from 'svelte/transition'
     import { quintOut } from 'svelte/easing'
     import TaskItem from './TaskItem.svelte'
@@ -17,9 +19,26 @@
     let showCompleted = $state(false)
     let confirmingClear = $state(false)
     let clearing = $state(false)
+    let projectsButtonEl = $state<HTMLButtonElement | undefined>(undefined)
+    let drawerPanelEl = $state<HTMLElement | undefined>(undefined)
+    let drawerWasOpen = false
     // Tracks ids seen in the store so a freshly created (not-yet-observed) project
     // is not mistaken for a deleted one.
     let knownProjectIds = new Set<number>()
+
+    const drawer = createMobileDrawer()
+
+    $effect(() => {
+        if (drawer.open) {
+            drawerWasOpen = true
+            void tick().then(() => drawerPanelEl?.focus())
+            return
+        }
+        if (drawerWasOpen) {
+            drawerWasOpen = false
+            projectsButtonEl?.focus()
+        }
+    })
 
     // Auto-select the first project once loaded, and recover if the current one is deleted.
     $effect(() => {
@@ -34,8 +53,8 @@
         knownProjectIds = currentIds
     })
 
-    function onToggleComplete() {
-        showCompleted = true
+    function onToggleComplete(completed: boolean) {
+        if (completed) showCompleted = true
     }
 
     function onProjectSelection(id: number) {
@@ -70,9 +89,6 @@
             .filter((t) => t.completed)
             .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()) || []
     )
-
-    // Mobile sidebar state
-    const drawer = createMobileDrawer()
 </script>
 
 <div class="container mx-auto px-3 sm:px-4 md:px-8 transition-all duration-300 ease-in-out">
@@ -87,6 +103,7 @@
             <!-- Mobile Header with Projects Button -->
             <div class="md:hidden flex items-center justify-end mb-3 sm:mb-4">
                 <button
+                    bind:this={projectsButtonEl}
                     class="group relative rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-surface border border-line hover:border-line-strong transition-all shadow-sm hover:shadow active:scale-95"
                     onclick={drawer.toggleDrawer}
                     aria-label="Open projects"
@@ -284,10 +301,16 @@
 
             <!-- Sliding panel from right -->
             <div
+                bind:this={drawerPanelEl}
                 class="md:hidden fixed right-0 top-0 bottom-0 w-84 max-w-[85vw] bg-bg z-50 shadow-2xl overflow-y-auto border-l border-line transition-transform duration-300 ease-out"
                 class:translate-x-0={drawer.animating}
                 class:translate-x-full={!drawer.animating}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Projects"
+                tabindex="-1"
                 data-shortcut-blocker
+                use:focusTrap
             >
                 <!-- Header with close button -->
                 <div

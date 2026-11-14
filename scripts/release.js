@@ -24,7 +24,13 @@ try {
     const tagName = `v${version}`
     console.log(`📦 Preparing release for tag: ${tagName}`)
 
-    // 2. Keep static/manifest.json version in sync with package.json
+    // 2. Require a clean working tree before creating any commit or tag.
+    const dirty = execSync('git status --porcelain').toString().trim()
+    if (dirty) {
+        throw new Error(`Working tree is not clean:\n${dirty}\nCommit or stash changes before releasing.`)
+    }
+
+    // 3. Keep static/manifest.json version in sync with package.json
     const manifestPath = path.resolve(process.cwd(), 'static/manifest.json')
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'))
     if (manifest.version !== version) {
@@ -35,13 +41,8 @@ try {
         run(`git commit -m "chore(release): sync manifest version to ${tagName}"`)
     }
 
-    // 3. Require a clean working tree so the tagged commit matches the build
-    const dirty = execSync('git status --porcelain').toString().trim()
-    if (dirty) {
-        throw new Error(`Working tree is not clean:\n${dirty}\nCommit or stash changes before releasing.`)
-    }
-
-    // 4. Clean + Build both targets
+    // 4. Verify before building and tagging
+    run('bun run verify')
     run('bun run build:web')
     run('bun run build:ext')
 

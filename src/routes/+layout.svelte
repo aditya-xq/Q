@@ -1,7 +1,5 @@
 <script lang="ts">
     import { Links, Settings, SideNav, ThemeDesigner } from '$lib/components'
-    import { cubicOut } from 'svelte/easing'
-    import { slide } from 'svelte/transition'
     import '../app.css'
     import { onDestroy, onMount } from 'svelte'
     import { appState, updateView } from '$lib/state.svelte'
@@ -11,6 +9,7 @@
     import { createNote, observeNotes } from '$lib/stores/notes'
     import { observeQuickLinks } from '$lib/stores/quicklinks'
     import { destroyTheme, initTheme, toggleThemeDesigner } from '$lib/stores/theme'
+    import { toast } from '$lib/utils/notification'
     import {
         SHORTCUT_SEQUENCE_TIMEOUT_MS,
         buildQuickLinkShortcutIndex,
@@ -105,13 +104,18 @@
         subscriptions = [observeProjects(), observeWriteups(), observeNotes(), observeQuickLinks()]
         void initTheme()
 
-        void getAllSettings().then((settings) => {
-            appState.showQuote = (settings.showQuote as boolean) ?? true
-            appState.showWeather = (settings.showWeather as boolean) ?? false
-            appState.showMarkets = (settings.showMarkets as boolean) ?? false
-            appState.marketsRegion = (settings.marketsRegion as string) ?? 'auto'
-            appState.marketSymbols = (settings.marketSymbols as string) ?? ''
-        })
+        void getAllSettings()
+            .then((settings) => {
+                appState.showQuote = (settings.showQuote as boolean) ?? true
+                appState.showWeather = (settings.showWeather as boolean) ?? false
+                appState.showMarkets = (settings.showMarkets as boolean) ?? false
+                appState.marketsRegion = (settings.marketsRegion as string) ?? 'auto'
+                appState.marketSymbols = (settings.marketSymbols as string) ?? ''
+            })
+            .catch((error) => {
+                console.error('Failed to load settings:', error)
+                toast.error('Could not load saved settings')
+            })
     })
 
     onDestroy(() => {
@@ -127,7 +131,7 @@
 </script>
 
 <svelte:head>
-    <title>New Tab</title>
+    <title>Q</title>
 </svelte:head>
 
 <!-- ===== Layout Container ===== -->
@@ -145,8 +149,6 @@
         aria-label="Primary"
         class={`fixed left-0 md:top-0 h-full md:w-16 z-51 flex flex-col items-center pt-4 pb-6 
             md:border-r border-line shadow-xl`}
-        in:slide={{ axis: 'x', duration: 400, easing: cubicOut }}
-        out:slide={{ axis: 'x', duration: 300 }}
     >
         <SideNav />
     </nav>

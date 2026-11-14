@@ -1,12 +1,14 @@
 import Dexie, { type Table } from 'dexie'
+import { toDate } from './datetime'
 import { splitNoteText, type NoteColor, type PointLike } from './notes'
+import { deriveWriteupTitle } from './writeup'
 
 export interface Writeup {
     id?: number
     content: string
     title: string
     updatedAt: Date
-    createdAt: number
+    createdAt: Date
 }
 
 // Lightweight projection held in app state so draft bodies are not kept in memory.
@@ -14,7 +16,7 @@ export interface WriteupSummary {
     id: number
     title: string
     updatedAt: Date
-    createdAt: number
+    createdAt: Date
 }
 
 export interface Project {
@@ -61,6 +63,7 @@ export interface Note {
 
 export class MyAppDB extends Dexie {
     writeups!: Table<Writeup, number>
+    writeupMeta!: Table<WriteupSummary, number>
     projects!: Table<Project, number>
     tasks!: Table<Task, number>
     quicklinks!: Table<QuickLink, number>
@@ -114,6 +117,35 @@ export class MyAppDB extends Dexie {
                         delete stored.done
                     })
             )
+        // Draft summaries move to their own table so autosave never reads every body.
+        this.version(5)
+            .stores({
+                writeups: '++id, updatedAt',
+                writeupMeta: 'id, updatedAt',
+                projects: '++id',
+                tasks: '++id, projectId',
+                quicklinks: '++id, category',
+                settings: '&key',
+                notes: '++id',
+            })
+            .upgrade((tx) =>
+                tx
+                    .table<LegacyWriteup>('writeups')
+                    .toCollection()
+                    .modify((stored) => {
+                        if (stored.id == null) return
+                        const updatedAt = toDate(stored.updatedAt) ?? new Date()
+                        const createdAt = toDate(stored.createdAt) ?? updatedAt
+                        const title =
+                            typeof stored.title === 'string' && stored.title.trim()
+                                ? stored.title.trim()
+                                : deriveWriteupTitle(stored.content ?? '')
+                        stored.title = title
+                        stored.updatedAt = updatedAt
+                        stored.createdAt = createdAt
+                        void tx.table<WriteupSummary>('writeupMeta').put({ id: stored.id, title, updatedAt, createdAt })
+                    })
+            )
     }
 }
 
@@ -121,6 +153,14 @@ interface LegacyNote {
     points?: NotePoint[]
     text?: string
     done?: boolean
+}
+
+interface LegacyWriteup {
+    id?: number
+    content?: string
+    title?: string
+    updatedAt?: Date | number
+    createdAt?: Date | number
 }
 
 export const db = new MyAppDB()

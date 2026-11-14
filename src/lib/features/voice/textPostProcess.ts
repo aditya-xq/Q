@@ -148,11 +148,11 @@ const TABLE_RULES: TextRule[] = [
 function applyRules(text: string, rules: TextRule[]) {
     let next = text
     for (const rule of rules) {
-        if (typeof rule.replacement === 'string') {
-            next = next.replace(rule.pattern, rule.replacement)
-        } else {
-            next = next.replace(rule.pattern, rule.replacement)
-        }
+        // The two branches pick the matching String.replace overload; they are not redundant.
+        next =
+            typeof rule.replacement === 'function'
+                ? next.replace(rule.pattern, rule.replacement)
+                : next.replace(rule.pattern, rule.replacement)
     }
     return next
 }

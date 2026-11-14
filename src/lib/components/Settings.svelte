@@ -5,7 +5,7 @@
     import { CATEGORY_CONFIGS, DEFAULT_QUICK_LINKS, normalizeUrl } from '$lib/utils/constants'
     import { getQuickLinkByCategory, upsertQuickLink } from '$lib/stores/quicklinks'
     import { openThemeDesigner } from '$lib/stores/theme'
-    import { CloseButton, ModeControl } from './shared'
+    import { CloseButton, ModeControl, Toggle } from './shared'
     import { hasPermission, isExtensionContext, requestPermission } from '$lib/utils/browser'
     import { quintOut } from 'svelte/easing'
     import { fly, slide } from 'svelte/transition'
@@ -16,8 +16,10 @@
     let savingState = $state(Array(categoryConfigs.length).fill(false))
     let savedState = $state(Array(categoryConfigs.length).fill(false))
     let saveTimeouts: (ReturnType<typeof setTimeout> | null)[] = Array(categoryConfigs.length).fill(null)
+    const savedTimeouts: (ReturnType<typeof setTimeout> | null)[] = Array(categoryConfigs.length).fill(null)
     let customUrls = $state(Array(categoryConfigs.length).fill(''))
     let showSettings = $state(false)
+    let togglingWidget = $state<string | null>(null)
     let panelEl = $state<HTMLElement | undefined>(undefined)
 
     const hasUnsavedChanges = $derived(savingState.some(Boolean) || savedState.some(Boolean))
@@ -53,10 +55,12 @@
         }
         window.addEventListener('keydown', handleKey)
         window.addEventListener('mousedown', handleClickOutside)
-        void loadSettings()
+        void loadSettings().catch((error) => console.error('Failed to load quick links:', error))
     })
 
     onDestroy(() => {
+        for (const timer of saveTimeouts) if (timer) clearTimeout(timer)
+        for (const timer of savedTimeouts) if (timer) clearTimeout(timer)
         if (typeof window === 'undefined') return
         if (handleKey) window.removeEventListener('keydown', handleKey)
         if (handleClickOutside) window.removeEventListener('mousedown', handleClickOutside)
@@ -81,7 +85,11 @@
             await upsertQuickLink(row)
             quickLinks[index] = row
             savedState[index] = true
-            setTimeout(() => (savedState[index] = false), 1500)
+            if (savedTimeouts[index]) clearTimeout(savedTimeouts[index]!)
+            savedTimeouts[index] = setTimeout(() => {
+                savedTimeouts[index] = null
+                savedState[index] = false
+            }, 1500)
         } catch (e) {
             console.error('Failed to save row', e)
         } finally {
@@ -117,20 +125,27 @@
     }
 
     async function toggleWidget(widget: 'showQuote' | 'showWeather' | 'showMarkets') {
+        if (togglingWidget) return
+        togglingWidget = widget
         const newVal = !appState[widget]
-        if (widget === 'showWeather' && newVal) {
-            const granted = await ensureGeolocationPermission()
-            if (!granted) {
-                console.warn('Geolocation permission not granted.')
-                return
-            }
-        }
-        appState[widget] = newVal
+
         try {
-            await setSetting(widget, newVal)
-        } catch (e) {
-            appState[widget] = !newVal
-            console.error('Failed to save widget setting', e)
+            if (widget === 'showWeather' && newVal) {
+                const granted = await ensureGeolocationPermission()
+                if (!granted) {
+                    console.warn('Geolocation permission not granted.')
+                    return
+                }
+            }
+            appState[widget] = newVal
+            try {
+                await setSetting(widget, newVal)
+            } catch (e) {
+                appState[widget] = !newVal
+                console.error('Failed to save widget setting', e)
+            }
+        } finally {
+            togglingWidget = null
         }
     }
 
@@ -280,56 +295,24 @@
                             </div>
 
                             <div class="flex flex-wrap items-center gap-3 pl-6 sm:gap-4 sm:pl-0">
-                                <!-- Quote Widget -->
-                                <div class="flex items-center gap-2 sm:gap-3">
-                                    <p class="text-xs text-fg-muted sm:text-sm">Quote</p>
-                                    <button
-                                        onclick={() => toggleWidget('showQuote')}
-                                        aria-pressed={appState.showQuote}
-                                        aria-label="Toggle quote widget"
-                                        class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none sm:h-6 sm:w-11
-											{appState.showQuote ? 'bg-accent' : 'bg-surface-2'}"
-                                    >
-                                        <span
-                                            class="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 sm:h-5 sm:w-5
-											{appState.showQuote ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'}"
-                                        ></span>
-                                    </button>
-                                </div>
-
-                                <!-- Weather Widget -->
-                                <div class="flex items-center gap-2 sm:gap-3">
-                                    <p class="text-xs text-fg-muted sm:text-sm">Weather</p>
-                                    <button
-                                        onclick={() => toggleWidget('showWeather')}
-                                        aria-pressed={appState.showWeather}
-                                        aria-label="Toggle weather widget"
-                                        class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none sm:h-6 sm:w-11
-											{appState.showWeather ? 'bg-accent' : 'bg-surface-2'}"
-                                    >
-                                        <span
-                                            class="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 sm:h-5 sm:w-5
-											{appState.showWeather ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'}"
-                                        ></span>
-                                    </button>
-                                </div>
-
-                                <!-- Markets Widget -->
-                                <div class="flex items-center gap-2 sm:gap-3">
-                                    <p class="text-xs text-fg-muted sm:text-sm">Markets</p>
-                                    <button
-                                        onclick={() => toggleWidget('showMarkets')}
-                                        aria-pressed={appState.showMarkets}
-                                        aria-label="Toggle markets widget"
-                                        class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none sm:h-6 sm:w-11
-											{appState.showMarkets ? 'bg-accent' : 'bg-surface-2'}"
-                                    >
-                                        <span
-                                            class="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 sm:h-5 sm:w-5
-											{appState.showMarkets ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'}"
-                                        ></span>
-                                    </button>
-                                </div>
+                                <Toggle
+                                    label="Quote"
+                                    checked={appState.showQuote}
+                                    disabled={togglingWidget !== null}
+                                    onchange={() => toggleWidget('showQuote')}
+                                />
+                                <Toggle
+                                    label="Weather"
+                                    checked={appState.showWeather}
+                                    disabled={togglingWidget !== null}
+                                    onchange={() => toggleWidget('showWeather')}
+                                />
+                                <Toggle
+                                    label="Markets"
+                                    checked={appState.showMarkets}
+                                    disabled={togglingWidget !== null}
+                                    onchange={() => toggleWidget('showMarkets')}
+                                />
                             </div>
                         </div>
                     </section>

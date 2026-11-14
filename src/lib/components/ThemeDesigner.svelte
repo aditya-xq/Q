@@ -3,6 +3,7 @@
     import { fade, fly } from 'svelte/transition'
     import { cubicOut } from 'svelte/easing'
     import { appState } from '$lib/state.svelte'
+    import { focusTrap } from '$lib/utils/focusTrap'
     import { CloseButton, ModeControl } from './shared'
     import { applyThemePreset, closeThemeDesigner, resetTheme, setTheme } from '$lib/stores/theme'
     import {
@@ -42,28 +43,10 @@
     }
 
     function onWindowKeydown(event: KeyboardEvent) {
-        if (!appState.themeDesignerOpen) return
-        if (event.key === 'Escape') {
-            event.preventDefault()
-            event.stopPropagation()
-            closeThemeDesigner()
-            return
-        }
-        if (event.key !== 'Tab') return
-        const focusables = panelEl?.querySelectorAll<HTMLElement>(
-            'button:not([disabled]), input, select, [tabindex]:not([tabindex="-1"])'
-        )
-        if (!focusables || focusables.length === 0) return
-        const first = focusables[0]
-        const last = focusables[focusables.length - 1]
-        const active = document.activeElement
-        if (event.shiftKey && (active === first || active === panelEl)) {
-            event.preventDefault()
-            last.focus()
-        } else if (!event.shiftKey && active === last) {
-            event.preventDefault()
-            first.focus()
-        }
+        if (!appState.themeDesignerOpen || event.key !== 'Escape') return
+        event.preventDefault()
+        event.stopPropagation()
+        closeThemeDesigner()
     }
 </script>
 
@@ -141,6 +124,7 @@
             aria-labelledby="theme-designer-title"
             tabindex="-1"
             data-shortcut-blocker
+            use:focusTrap
         >
             <header
                 class="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line bg-surface/80 px-4 py-3 backdrop-blur sm:px-5"

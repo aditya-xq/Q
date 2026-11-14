@@ -1,5 +1,6 @@
 <script lang="ts">
     import { appState } from '$lib/state.svelte'
+    import type { WriteupSummary } from '$lib/utils/db'
     import { formatRelative, isThisWeek, isToday } from '$lib/utils/datetime'
     import { DeleteButton } from '../shared'
     import { slide } from 'svelte/transition'
@@ -33,13 +34,56 @@
     }
 </script>
 
+{#snippet draftRow(w: WriteupSummary, compact = false)}
+    <article
+        class={`group flex cursor-pointer items-center justify-between rounded-lg transition-colors ${
+            compact ? 'px-2 py-2' : 'relative px-3 py-2.5'
+        } ${
+            w.id === currentWriteupId
+                ? compact
+                    ? 'bg-surface-2'
+                    : 'bg-surface ring-1 ring-line-strong'
+                : compact
+                  ? 'hover:bg-surface-2'
+                  : 'hover:bg-surface-2/60'
+        }`}
+    >
+        <button
+            class={`flex min-w-0 flex-1 flex-col ${compact ? '' : 'gap-0.5'} text-left focus:outline-none`}
+            onclick={() => openDraft(w.id)}
+        >
+            <span
+                class={`truncate ${
+                    compact
+                        ? w.id === currentWriteupId
+                            ? 'text-sm font-medium text-fg'
+                            : 'text-sm text-fg-muted'
+                        : 'text-sm font-medium text-fg'
+                }`}
+            >
+                {w.title}
+            </span>
+            <span
+                class={`truncate ${compact ? 'text-[10px] text-fg-subtle' : 'text-xs text-fg-muted group-hover:text-fg'}`}
+            >
+                {compact ? new Date(w.updatedAt).toLocaleDateString() : formatRelative(new Date(w.updatedAt))}
+            </span>
+        </button>
+        <div
+            class="ml-2 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"
+        >
+            <DeleteButton label="draft" handleDelete={() => removeDraft(w.id)} />
+        </div>
+    </article>
+{/snippet}
+
 <aside class="w-72 max-w-full xl:w-80">
     <div class="hidden lg:flex mb-4 items-center justify-between">
         <h3 class="text-sm font-semibold tracking-wide text-fg-muted uppercase">Drafts</h3>
         <!-- New draft button -->
         <button
             class="group min-h-10 rounded-lg px-3 py-2 bg-surface border border-line hover:border-line-strong transition-all shadow-sm hover:shadow"
-            onclick={createNewDraft}
+            onclick={() => createNewDraft()}
             onkeydown={handleKeyCreate}
             aria-label="Create new draft"
         >
@@ -65,29 +109,7 @@
             <div class="space-y-1">
                 {#if showOlderSection}
                     {#each [...today, ...thisWeek] as w (w.id)}
-                        <article
-                            class="group relative flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 transition-all
-                            {w.id === currentWriteupId
-                                ? 'bg-surface ring-1 ring-line-strong'
-                                : 'hover:bg-surface-2/60'}"
-                        >
-                            <button
-                                class="flex min-w-0 flex-1 flex-col gap-0.5 text-left focus:outline-none"
-                                onclick={() => openDraft(w.id)}
-                            >
-                                <span class="truncate text-sm font-medium text-fg">
-                                    {w.title}
-                                </span>
-                                <span class="truncate text-xs text-fg-muted group-hover:text-fg">
-                                    {formatRelative(new Date(w.updatedAt))}
-                                </span>
-                            </button>
-                            <div
-                                class="ml-2 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"
-                            >
-                                <DeleteButton label="draft" handleDelete={() => removeDraft(w.id)} />
-                            </div>
-                        </article>
+                        {@render draftRow(w)}
                     {/each}
                     <section>
                         <button
@@ -115,60 +137,14 @@
                         {#if openOlder}
                             <div class="mt-1 space-y-1" transition:slide={{ duration: 200, easing: cubicOut }}>
                                 {#each older as w (w.id)}
-                                    <article
-                                        class="group flex cursor-pointer items-center justify-between rounded-lg px-2 py-2 transition-colors
-                                        {w.id === currentWriteupId ? 'bg-surface-2' : 'hover:bg-surface-2'}"
-                                    >
-                                        <button
-                                            class="flex min-w-0 flex-1 flex-col text-left focus:outline-none"
-                                            onclick={() => openDraft(w.id)}
-                                        >
-                                            <span
-                                                class="truncate text-sm text-fg-muted {w.id === currentWriteupId
-                                                    ? 'font-medium text-fg'
-                                                    : ''}"
-                                            >
-                                                {w.title}
-                                            </span>
-                                            <span class="truncate text-[10px] text-fg-subtle">
-                                                {new Date(w.updatedAt).toLocaleDateString()}
-                                            </span>
-                                        </button>
-                                        <div
-                                            class="ml-2 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"
-                                        >
-                                            <DeleteButton label="draft" handleDelete={() => removeDraft(w.id)} />
-                                        </div>
-                                    </article>
+                                    {@render draftRow(w, true)}
                                 {/each}
                             </div>
                         {/if}
                     </section>
                 {:else}
                     {#each [...today, ...thisWeek, ...older] as w (w.id)}
-                        <article
-                            class="group relative flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 transition-all
-                            {w.id === currentWriteupId
-                                ? 'bg-surface ring-1 ring-line-strong'
-                                : 'hover:bg-surface-2/60'}"
-                        >
-                            <button
-                                class="flex min-w-0 flex-1 flex-col gap-0.5 text-left focus:outline-none"
-                                onclick={() => openDraft(w.id)}
-                            >
-                                <span class="truncate text-sm font-medium text-fg">
-                                    {w.title}
-                                </span>
-                                <span class="truncate text-xs text-fg-muted group-hover:text-fg">
-                                    {formatRelative(new Date(w.updatedAt))}
-                                </span>
-                            </button>
-                            <div
-                                class="ml-2 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"
-                            >
-                                <DeleteButton label="draft" handleDelete={() => removeDraft(w.id)} />
-                            </div>
-                        </article>
+                        {@render draftRow(w)}
                     {/each}
                 {/if}
             </div>

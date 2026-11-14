@@ -8,7 +8,7 @@ import { relative, resolve } from 'node:path'
  */
 
 const buildDir = resolve(process.argv[2] ?? 'build')
-const mv3Only = ['manifest.json', 'background.js']
+const mv3Only = ['manifest.json']
 
 for (const file of mv3Only) {
     const target = resolve(buildDir, file)

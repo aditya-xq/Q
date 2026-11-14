@@ -16,20 +16,26 @@ describe('deriveWriteupTitle', () => {
 
 describe('toWriteupSummary', () => {
     const updatedAt = new Date('2026-09-16T12:00:00')
-    const base: Writeup = { id: 7, content: '# Stored', title: 'Stored title', updatedAt, createdAt: 1000 }
+    const createdAt = new Date('2026-09-15T12:00:00')
+    const base: Writeup = { id: 7, content: '# Stored', title: 'Stored title', updatedAt, createdAt }
 
     test('projects the fields needed by the drafts panel', () => {
         expect(toWriteupSummary(base)).toEqual({
             id: 7,
             title: 'Stored title',
             updatedAt,
-            createdAt: 1000,
+            createdAt,
         })
     })
 
     test('derives a title for records saved before titles existed', () => {
         const legacy = { ...base, title: '' }
         expect(toWriteupSummary(legacy).title).toBe('Stored')
+    })
+
+    test('normalizes legacy epoch-millisecond timestamps', () => {
+        const legacy = { ...base, createdAt: 1000 }
+        expect(toWriteupSummary(legacy).createdAt).toEqual(new Date(1000))
     })
 
     test('drops the write-up body from the summary', () => {

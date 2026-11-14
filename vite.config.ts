@@ -13,6 +13,11 @@ export default defineConfig({
     define: {
         __APP_VERSION__: JSON.stringify(version),
     },
+    build: {
+        // The ProseMirror/Crepe editor is loaded on demand (see routes/+page.svelte);
+        // its single chunk is intentionally large and would otherwise trip the warning.
+        chunkSizeWarningLimit: 1500,
+    },
     plugins: [
         tailwindcss(),
         sveltekit(),

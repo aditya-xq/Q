@@ -15,11 +15,31 @@ export function createMobileDrawer(): MobileDrawer {
     let open = $state(false)
     let animating = $state(false)
     let closeTimer: ReturnType<typeof setTimeout> | undefined
+    let onKeydown: ((event: KeyboardEvent) => void) | null = null
+
+    function attachEscape() {
+        if (onKeydown) return
+        onKeydown = (event) => {
+            if (event.key !== 'Escape' || !open) return
+            // A delete confirmation (or another non-modal popover) owns Escape first.
+            if (document.querySelector('[role="dialog"][aria-modal="false"]')) return
+            event.preventDefault()
+            closeDrawer()
+        }
+        window.addEventListener('keydown', onKeydown)
+    }
+
+    function detachEscape() {
+        if (!onKeydown) return
+        window.removeEventListener('keydown', onKeydown)
+        onKeydown = null
+    }
 
     function openDrawer() {
         if (closeTimer) clearTimeout(closeTimer)
         open = true
         document.body.style.overflow = 'hidden'
+        attachEscape()
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 animating = true
@@ -29,6 +49,7 @@ export function createMobileDrawer(): MobileDrawer {
 
     function closeDrawer() {
         animating = false
+        detachEscape()
         if (closeTimer) clearTimeout(closeTimer)
         closeTimer = setTimeout(() => {
             open = false
@@ -43,6 +64,7 @@ export function createMobileDrawer(): MobileDrawer {
 
     onDestroy(() => {
         if (closeTimer) clearTimeout(closeTimer)
+        detachEscape()
         document.body.style.overflow = ''
     })
 

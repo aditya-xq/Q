@@ -53,6 +53,27 @@ test.describe('Projects', () => {
         await expect(page.getByText('Edited text')).toBeVisible()
     })
 
+    test('renames a project inline and cancels with Escape', async ({ page }) => {
+        await openViewShortcut(page, 'p')
+        await createProject(page, 'Delta')
+
+        const list = page.getByTestId('project-list')
+        await list.getByRole('button', { name: 'Rename Delta' }).click()
+        const input = list.getByRole('textbox', { name: 'Rename Delta' })
+        await input.fill('Renamed')
+        await input.press('Enter')
+
+        await expect(page.getByRole('heading', { name: 'Renamed', level: 1 })).toBeVisible()
+        await expect(list.getByRole('heading', { name: 'Renamed' })).toBeVisible()
+
+        await list.getByRole('button', { name: 'Rename Renamed' }).click()
+        const cancelInput = list.getByRole('textbox', { name: 'Rename Renamed' })
+        await cancelInput.fill('Discarded')
+        await cancelInput.press('Escape')
+
+        await expect(list.getByRole('heading', { name: 'Renamed' })).toBeVisible()
+    })
+
     test('auto-selects the most recent project after reload', async ({ page }) => {
         await openViewShortcut(page, 'p')
         await createProject(page, 'Gamma')
@@ -79,7 +100,7 @@ test.describe('Projects', () => {
         const list = page.getByTestId('project-list')
         await expect(list.getByRole('heading', { level: 3 })).toHaveText(['Newer', 'Older'])
 
-        await list.getByRole('button', { name: /Older/ }).click()
+        await list.getByRole('button', { name: 'Older 0 tasks' }).click()
         await addTask(page, 'Touches the older project')
 
         await expect(list.getByRole('heading', { level: 3 })).toHaveText(['Older', 'Newer'])

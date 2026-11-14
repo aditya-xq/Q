@@ -1,6 +1,7 @@
 <script lang="ts">
+    import { tick } from 'svelte'
     import { appState } from '$lib/state.svelte'
-    import { addProject, deleteProject } from '$lib/utils/stores'
+    import { addProject, deleteProject, updateProject, type ProjectWithTasks } from '$lib/utils/stores'
     import { quintOut } from 'svelte/easing'
     import { fly, slide } from 'svelte/transition'
     import { DeleteButton } from '../shared'
@@ -15,22 +16,24 @@
 
     let newProjectTitle = $state('')
     let isAddingProject = $state(false)
+    let newProjectInput = $state<HTMLInputElement | undefined>(undefined)
+    let editingProjectId = $state<number | null>(null)
+    let renameTitle = $state('')
+    let renameInput = $state<HTMLInputElement | undefined>(undefined)
+    let renameActions = $state<HTMLElement | undefined>(undefined)
 
     async function addNewProject() {
-        if (newProjectTitle.trim() !== '') {
-            const id = await addProject(newProjectTitle)
-            newProjectTitle = ''
-            isAddingProject = false
-            onProjectSelection(id)
-        }
+        if (newProjectTitle.trim() === '') return
+        const id = await addProject(newProjectTitle)
+        if (id === undefined) return
+        newProjectTitle = ''
+        isAddingProject = false
+        onProjectSelection(id)
     }
 
     function startAddingProject() {
         isAddingProject = true
-        setTimeout(() => {
-            const input = document.getElementById('new-project-input')
-            if (input) input.focus()
-        }, 50)
+        void tick().then(() => newProjectInput?.focus())
     }
 
     function cancelAddProject() {
@@ -38,8 +41,51 @@
         newProjectTitle = ''
     }
 
+    function startRename(project: ProjectWithTasks) {
+        if (project.id == null) return
+        editingProjectId = project.id
+        renameTitle = project.title
+        void tick().then(() => {
+            renameInput?.focus()
+            renameInput?.select()
+        })
+    }
+
+    function cancelRename() {
+        editingProjectId = null
+    }
+
+    async function commitRename() {
+        const id = editingProjectId
+        if (id == null) return
+        const project = appState.projectStore.find((item) => item.id === id)
+        const title = renameTitle.trim()
+        editingProjectId = null
+        if (!project || !title || title === project.title) return
+        await updateProject(id, title)
+    }
+
+    function onRenameBlur(event: FocusEvent) {
+        const next = event.relatedTarget as Node | null
+        if (next && renameActions?.contains(next)) return
+        void commitRename()
+    }
+
+    function onRenameKeydown(event: KeyboardEvent) {
+        if (event.key === 'Enter') {
+            event.preventDefault()
+            void commitRename()
+        } else if (event.key === 'Escape') {
+            event.preventDefault()
+            event.stopPropagation()
+            cancelRename()
+        }
+    }
+
     function handleKeydown(e: KeyboardEvent) {
         if (e.key === 'Escape') {
+            e.preventDefault()
+            e.stopPropagation()
             cancelAddProject()
         } else if (e.key === 'Enter') {
             addNewProject()
@@ -67,29 +113,89 @@
                         }`}
                         transition:fly={{ y: -10, duration: 300, easing: quintOut }}
                     >
-                        <button
-                            type="button"
-                            aria-current={selectedProjectId === project.id ? 'true' : undefined}
-                            class="block w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg cursor-pointer"
-                            onclick={() => onProjectSelection(project.id as number)}
-                        >
-                            <div class="pr-9">
-                                <h3
-                                    class={`font-medium text-sm sm:text-base truncate ${
-                                        selectedProjectId === project.id ? 'text-fg' : 'text-fg-muted'
-                                    }`}
-                                >
-                                    {project.title}
-                                </h3>
-                                <p class="text-xs text-fg-subtle mt-0.5">
-                                    {project.tasks.length}
-                                    {project.tasks.length === 1 ? 'task' : 'tasks'}
-                                </p>
+                        {#if editingProjectId === project.id}
+                            <div class="px-3 sm:px-4 py-2.5 sm:py-3">
+                                <input
+                                    bind:this={renameInput}
+                                    type="text"
+                                    bind:value={renameTitle}
+                                    aria-label={`Rename ${project.title}`}
+                                    onblur={onRenameBlur}
+                                    onkeydown={onRenameKeydown}
+                                    class="w-full rounded-md border border-line bg-surface px-2 py-1.5 text-sm font-medium text-fg focus:outline-none focus:ring-2 focus:ring-accent/30"
+                                />
+                                <div bind:this={renameActions} class="mt-2 flex justify-end gap-2">
+                                    <button
+                                        type="button"
+                                        class="rounded-md px-2.5 py-1 text-xs font-medium text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
+                                        onmousedown={(event) => event.preventDefault()}
+                                        onclick={cancelRename}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-accent-fg transition-colors hover:bg-accent-strong"
+                                        onmousedown={(event) => event.preventDefault()}
+                                        onclick={() => void commitRename()}
+                                    >
+                                        Save
+                                    </button>
+                                </div>
                             </div>
-                        </button>
-                        <div class="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2">
-                            <DeleteButton label="project" handleDelete={() => deleteProject(project.id as number)} />
-                        </div>
+                        {:else}
+                            <button
+                                type="button"
+                                aria-current={selectedProjectId === project.id ? 'true' : undefined}
+                                class="block w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg cursor-pointer"
+                                onclick={() => onProjectSelection(project.id as number)}
+                            >
+                                <div class="pr-16">
+                                    <h3
+                                        class={`font-medium text-sm sm:text-base truncate ${
+                                            selectedProjectId === project.id ? 'text-fg' : 'text-fg-muted'
+                                        }`}
+                                    >
+                                        {project.title}
+                                    </h3>
+                                    <p class="text-xs text-fg-subtle mt-0.5">
+                                        {project.tasks.length}
+                                        {project.tasks.length === 1 ? 'task' : 'tasks'}
+                                    </p>
+                                </div>
+                            </button>
+                            <div
+                                class="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5"
+                            >
+                                <button
+                                    type="button"
+                                    class="p-1.5 rounded-full text-fg-subtle transition-colors hover:bg-surface-2 hover:text-accent-text"
+                                    aria-label={`Rename ${project.title}`}
+                                    title="Rename project"
+                                    onclick={() => startRename(project)}
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="h-4 w-4"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                        />
+                                    </svg>
+                                </button>
+                                <DeleteButton
+                                    label="project"
+                                    handleDelete={() => deleteProject(project.id as number)}
+                                />
+                            </div>
+                        {/if}
                     </div>
                 {/each}
                 {#if appState.projectStore.length === 0}
@@ -103,6 +209,7 @@
             {#if isAddingProject}
                 <div class="space-y-2" transition:slide={{ duration: 200 }}>
                     <input
+                        bind:this={newProjectInput}
                         id="new-project-input"
                         type="text"
                         placeholder="Project name"

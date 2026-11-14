@@ -278,10 +278,6 @@ export function hasDefaultWatchlist(region: MarketRegion, symbols: string[]): bo
     return symbols.length === defaults.length && symbols.every((symbol, index) => symbol === defaults[index])
 }
 
-export function getMarketInstrument(symbol: string): MarketInstrument | undefined {
-    return MARKET_CATALOG[symbol]
-}
-
 /** Catalog entry for a configured symbol, or a CNBC-backed row for a user-typed one. */
 export function resolveMarketInstrument(symbol: string): MarketInstrument {
     return MARKET_CATALOG[symbol] ?? { symbol, label: symbol, shortLabel: symbol, name: symbol }

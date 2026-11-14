@@ -145,7 +145,7 @@ Override targets with `E2E_BASE_URL` and `LIVE_BASE_URL`.
 
 The script syncs `static/manifest.json`, builds both targets, packages `q-web.zip` and `q-extension.zip`, pushes a `vX.Y.Z` tag, and creates a GitHub release. When the Microsoft Edge Add-ons credentials are configured, it also uploads `q-extension.zip` and submits it for review.
 
-Edge credentials live in `.env` (gitignored; copy `.env.example`): `EDGE_EXTENSION_PUBLISH_API_KEY` and `EDGE_EXTENSION_CLIENT_ID` from Partner Center → Microsoft Edge → **Publish API**, plus `EDGE_EXTENSION_PRODUCT_ID` (a GUID, not the store listing id) from the extension's **Overview** page. Use `bun run release --skip-edge` to skip the store upload, or `bun run publish:edge` to retry it after a failed release.
+Edge credentials live in `.env` (gitignored; copy `.env.example`): `EDGE_EXTENSION_PUBLISH_API_KEY` and `EDGE_EXTENSION_CLIENT_ID` from Partner Center → Microsoft Edge → **Publish API**, plus `EDGE_EXTENSION_PRODUCT_ID` (a GUID, not the store listing id) from the extension's **Overview** page. Use `bun run release --skip-edge` to skip the store upload, or `bun run publish:edge` to retry it after a failed release. `publish:edge` reuses an existing `q-extension.zip`; pass `--rebuild` to rebuild it first.
 
 ### Contributing
 
@@ -163,6 +163,8 @@ Q asks for minimal permissions:
 - Top Sites
 - Geolocation
 - Clipboard Write (for copying drafts)
+
+The optional Weather widget sends your coordinates to [Open-Meteo](https://open-meteo.com/) and BigDataCloud for the forecast and place name. Frequent-site icons are fetched from Google's public favicon service. Your projects, drafts, notes and settings stay in IndexedDB on this device.
 
 ---
 

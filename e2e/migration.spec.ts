@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 type SeedWindow = Window & { __seeded?: boolean; __seedError?: string }
 
 // Creates a version-1 database (matching the pre-v2 schema) with representative data,
-// so the app's Dexie `version(4)` upgrade has something real to migrate.
+// so the app's Dexie `version(5)` upgrade has something real to migrate.
 const SEED_SCRIPT = `
 (() => {
     const req = indexedDB.open('MyAppDB', 1)
@@ -88,7 +88,7 @@ const SEED_V3_SCRIPT = `
 `
 
 test.describe('Database migration', () => {
-    test('upgrades a v1 database to v4 without losing data', async ({ page }) => {
+    test('upgrades a v1 database to v5 without losing data', async ({ page }) => {
         const isRoot = (url: URL) => url.pathname === '/'
         await page.route(isRoot, async (route) => {
             if (route.request().resourceType() !== 'document') {
@@ -110,7 +110,7 @@ test.describe('Database migration', () => {
         expect(await page.evaluate(() => (window as SeedWindow).__seedError ?? null)).toBeNull()
         await page.unrouteAll()
 
-        // Loading the app now triggers the Dexie v1 -> v4 upgrade.
+        // Loading the app now triggers the Dexie v1 -> v5 upgrade.
         await page.goto('/?view=projects')
         await expect(page.getByRole('heading', { name: 'Migrated Project', level: 1 })).toBeVisible()
         await expect(page.getByText('Migrated Task', { exact: true })).toBeVisible()
@@ -148,6 +148,33 @@ test.describe('Database migration', () => {
             })
         })
         expect(storeNames).toContain('notes')
+        expect(storeNames).toContain('writeupMeta')
+
+        // v5 projects the draft into the lightweight summary store.
+        const meta = await page.evaluate(async () => {
+            return await new Promise<{ title: unknown; createdAtIsDate: boolean }[]>((resolve, reject) => {
+                const request = indexedDB.open('MyAppDB')
+                request.onsuccess = () => {
+                    const db = request.result
+                    const all = db.transaction('writeupMeta', 'readonly').objectStore('writeupMeta').getAll()
+                    all.onsuccess = () =>
+                        resolve(
+                            all.result.map((row) => {
+                                const record = row as Record<string, unknown>
+                                return {
+                                    title: record.title,
+                                    createdAtIsDate: record.createdAt instanceof Date,
+                                }
+                            })
+                        )
+                    all.onerror = () => reject(all.error)
+                }
+                request.onerror = () => reject(request.error)
+            })
+        })
+        expect(meta).toHaveLength(1)
+        expect(meta[0].title).toBe('Migrated Draft')
+        expect(meta[0].createdAtIsDate).toBe(true)
     })
 
     test('migrates a legacy note into per-point checkboxes (v3 -> v4)', async ({ page }) => {
@@ -163,7 +190,7 @@ test.describe('Database migration', () => {
             })
         })
 
-        // Seed a v3 database before the app (which opens v4) ever runs.
+        // Seed a v3 database before the app (which opens v5) ever runs.
         await page.goto('/')
         await page.waitForFunction(() => {
             const w = window as SeedWindow

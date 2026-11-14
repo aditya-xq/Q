@@ -43,7 +43,22 @@ describe('getTopSites', () => {
                 get: (cb: (sites: { url: string; title: string }[]) => void) => cb(sites),
             },
         }
-        expect(await getTopSites()).toEqual(sites)
+        expect(await getTopSites()).toEqual([{ url: 'https://x.com/', title: 'X' }])
+    })
+
+    test('filters non-web URLs and duplicates, and fills in missing titles', async () => {
+        const sites = [
+            { url: 'chrome://newtab', title: 'New Tab' },
+            { url: 'https://github.com', title: '' },
+            { url: 'https://github.com', title: 'GitHub' },
+            { url: 'not a url', title: 'Nope' },
+        ]
+        globals.chrome = {
+            topSites: {
+                get: (cb: (sites: { url: string; title: string }[]) => void) => cb(sites),
+            },
+        }
+        expect(await getTopSites()).toEqual([{ url: 'https://github.com/', title: 'github.com' }])
     })
 })
 

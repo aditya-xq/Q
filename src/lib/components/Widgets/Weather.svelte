@@ -1,7 +1,9 @@
 <script lang="ts">
     import { appState } from '$lib/state.svelte'
     import { hasPermission, isExtensionContext } from '$lib/utils/browser'
+    import { isSessionCacheFresh, readSessionCache, writeSessionCache } from '$lib/utils/sessionCache'
     import { buildWeather, type Weather } from '$lib/utils/weather'
+    import { untrack } from 'svelte'
     import { fly } from 'svelte/transition'
     import { cubicOut } from 'svelte/easing'
 
@@ -9,44 +11,49 @@
     let loading = $state(false)
     let error = $state<string | null>(null)
     let started = false
+    let lastFetchedAt = 0
+    let requestId = 0
+    let controller: AbortController | null = null
 
-    const CACHE_KEY = 'weather:status:v2'
+    const CACHE_KEY = 'weather:status:v3'
     const CACHE_TTL = 15 * 60 * 1000
+    const REFRESH_INTERVAL = 15 * 60 * 1000
     const CARD_SURFACE =
         'rounded-2xl border border-line/60 bg-surface/85 px-3.5 py-3 shadow-xl backdrop-blur-xl transition-all hover:shadow-2xl'
     const CARD_WIDTH = 'md:w-[var(--q-weather-width)]'
 
-    const readCache = (): Weather | null => {
-        try {
-            const raw = sessionStorage.getItem(CACHE_KEY)
-            if (!raw) return null
-            const { ts, data } = JSON.parse(raw)
-            return Date.now() - ts < CACHE_TTL ? data : null
-        } catch {
-            return null
-        }
+    function isCachedWeather(value: unknown): value is Weather {
+        if (typeof value !== 'object' || value === null) return false
+        const record = value as Record<string, unknown>
+        return (
+            typeof record.temp === 'number' &&
+            typeof record.location === 'string' &&
+            typeof record.condition === 'string'
+        )
     }
 
-    const writeCache = (data: Weather) => {
-        try {
-            sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }))
-        } catch {
-            /* storage unavailable (private mode / quota) */
-        }
+    function stopRequest() {
+        requestId += 1
+        controller?.abort()
+        controller = null
+        loading = false
     }
 
-    const fetchWeatherData = async (lat: number, lon: number) => {
+    async function fetchWeatherData(lat: number, lon: number, id: number, signal: AbortSignal) {
         try {
             const [gRes, wRes, aRes] = await Promise.all([
                 // api.bigdatacloud.net 307-redirects here; calling the canonical host avoids the extra hop
                 fetch(
-                    `https://api-bdc.io/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
+                    `https://api-bdc.io/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,
+                    { signal }
                 ),
                 fetch(
-                    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code&timezone=auto`
+                    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code&timezone=auto`,
+                    { signal }
                 ),
                 fetch(
-                    `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi&timezone=auto`
+                    `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi&timezone=auto`,
+                    { signal }
                 ),
             ])
 
@@ -54,14 +61,12 @@
                 throw new Error('API request failed')
             }
 
-            const gData = await gRes.json()
-            const wData = await wRes.json()
-            const aData = await aRes.json()
-
+            const [gData, wData, aData] = await Promise.all([gRes.json(), wRes.json(), aRes.json()])
             const current = wData.current
             if (!current) {
                 throw new Error('No weather data available')
             }
+            if (id !== requestId) return
 
             const result = buildWeather({
                 temperature: current.temperature_2m,
@@ -73,28 +78,36 @@
                 lon,
             })
 
-            writeCache(result)
+            writeSessionCache(CACHE_KEY, result)
+            lastFetchedAt = Date.now()
             weather = result
             error = null
         } catch (e) {
+            if (signal.aborted || id !== requestId) return
             console.error('Weather fetch error:', e)
             error = 'Service Unavailable'
         } finally {
-            loading = false
+            if (id === requestId) loading = false
         }
     }
 
-    const init = async () => {
-        if (weather || loading) return
+    async function loadWeather(force = false) {
+        if (loading && !force) return
 
-        const cached = readCache()
-        if (cached) {
-            weather = cached
-            return
+        const cached = readSessionCache(CACHE_KEY, isCachedWeather)
+        if (!force && cached) {
+            weather = cached.data
+            lastFetchedAt = cached.ts
+            if (isSessionCacheFresh(cached, CACHE_TTL)) return
         }
 
-        loading = true
+        loading = !weather
         error = null
+
+        const id = ++requestId
+        controller?.abort()
+        const requestController = new AbortController()
+        controller = requestController
 
         if (!navigator.geolocation) {
             error = 'Geolocation not supported'
@@ -102,7 +115,17 @@
             return
         }
 
-        if (isExtensionContext() && !(await hasPermission('geolocation'))) {
+        let permitted = true
+        if (isExtensionContext()) {
+            try {
+                permitted = await hasPermission('geolocation')
+            } catch (permissionError) {
+                console.error('Weather permission check failed:', permissionError)
+                permitted = false
+            }
+        }
+        if (!permitted) {
+            if (id !== requestId) return
             error = 'Location Access Denied'
             loading = false
             return
@@ -110,9 +133,11 @@
 
         navigator.geolocation.getCurrentPosition(
             (pos) => {
-                void fetchWeatherData(pos.coords.latitude, pos.coords.longitude)
+                if (id !== requestId) return
+                void fetchWeatherData(pos.coords.latitude, pos.coords.longitude, id, requestController.signal)
             },
             (err) => {
+                if (id !== requestId) return
                 console.error('Geolocation error:', err)
                 error = 'Location Access Denied'
                 loading = false
@@ -121,22 +146,38 @@
         )
     }
 
-    export function refresh() {
-        error = null
-        loading = false
-        started = true
-        void init()
+    function refresh() {
+        void loadWeather(true)
     }
 
-    // Single reactive entry point: fetch only while the widget is enabled.
+    function refreshIfStale() {
+        if (document.visibilityState !== 'visible') return
+        if (Date.now() - lastFetchedAt >= CACHE_TTL) void loadWeather(true)
+    }
+
+    // Single reactive entry point: fetch only while the widget is enabled,
+    // and refresh stale data while the tab stays open.
     $effect(() => {
         if (!appState.showWeather) {
             started = false
+            stopRequest()
             return
         }
         if (started) return
         started = true
-        void init()
+        // Loading reads/writes its own weather/loading state; keep those out of the
+        // effect's dependency set so a progress update cannot tear down the request.
+        void untrack(() => loadWeather())
+
+        const timer = setInterval(refreshIfStale, REFRESH_INTERVAL)
+        const onVisible = () => refreshIfStale()
+        document.addEventListener('visibilitychange', onVisible)
+
+        return () => {
+            clearInterval(timer)
+            document.removeEventListener('visibilitychange', onVisible)
+            stopRequest()
+        }
     })
 </script>
 

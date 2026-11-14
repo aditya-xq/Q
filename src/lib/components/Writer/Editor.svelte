@@ -3,7 +3,18 @@
     import { Crepe } from '@milkdown/crepe'
     import { editorViewCtx } from '@milkdown/kit/core'
     import { replaceAll } from '@milkdown/kit/utils'
-    import '@milkdown/crepe/theme/common/style.css'
+    // Import the feature styles individually: the aggregate `common/style.css`
+    // also pulls latex, image-block and block-edit CSS, including ~1 MB of
+    // KaTeX fonts for features this editor disables below.
+    import '@milkdown/crepe/theme/common/prosemirror.css'
+    import '@milkdown/crepe/theme/common/reset.css'
+    import '@milkdown/crepe/theme/common/code-mirror.css'
+    import '@milkdown/crepe/theme/common/cursor.css'
+    import '@milkdown/crepe/theme/common/link-tooltip.css'
+    import '@milkdown/crepe/theme/common/list-item.css'
+    import '@milkdown/crepe/theme/common/placeholder.css'
+    import '@milkdown/crepe/theme/common/toolbar.css'
+    import '@milkdown/crepe/theme/common/table.css'
     import '@milkdown/crepe/theme/nord.css'
     import type { EditorApi, EditorRange } from '$lib/features/voice/types'
     type CrepeWithObserver = InstanceType<typeof Crepe> & {
@@ -175,6 +186,8 @@
         --crepe-color-inline-area: var(--q-surface-2);
         --crepe-shadow-1: 0 1px 3px 1px rgba(15, 23, 42, 0.12), 0 1px 2px 0 rgba(15, 23, 42, 0.18);
         --crepe-shadow-2: 0 2px 6px 2px rgba(15, 23, 42, 0.12), 0 1px 2px 0 rgba(15, 23, 42, 0.18);
+        --crepe-font-title: var(--q-font);
+        --crepe-font-default: var(--q-font);
 
         background: transparent;
         width: 100%;

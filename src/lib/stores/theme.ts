@@ -142,6 +142,8 @@ export async function initTheme(): Promise<void> {
         if (event.key !== THEME_STORAGE_KEY || !event.newValue) return
         const next = parseThemeCache(event.newValue)
         if (!next) return
+        // A frame can arrive out of order; never let an older cache win.
+        if (next.savedAt < lastSavedAt) return
         lastSavedAt = next.savedAt
         appState.theme = next.theme
         applyTheme(next.theme, next.savedAt)

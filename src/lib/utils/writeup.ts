@@ -1,3 +1,4 @@
+import { toDate } from './datetime'
 import { deriveTitle } from './utils'
 import type { Writeup, WriteupSummary } from './db'
 
@@ -7,13 +8,20 @@ export function deriveWriteupTitle(content: string): string {
     return deriveTitle(content, { fallback: WRITEUP_TITLE_FALLBACK })
 }
 
+/** A stored row, or a legacy row whose timestamps are still epoch milliseconds. */
+type WriteupLike = Omit<Writeup, 'createdAt' | 'updatedAt'> & {
+    createdAt: Date | number
+    updatedAt: Date | number
+}
+
 /** Projects a stored write-up to the lightweight summary held in app state. */
-export function toWriteupSummary(writeup: Writeup): WriteupSummary {
+export function toWriteupSummary(writeup: WriteupLike): WriteupSummary {
+    const updatedAt = toDate(writeup.updatedAt) ?? new Date(0)
     return {
         id: writeup.id as number,
         title: writeup.title || deriveWriteupTitle(writeup.content),
-        updatedAt: writeup.updatedAt,
-        createdAt: writeup.createdAt,
+        updatedAt,
+        createdAt: toDate(writeup.createdAt) ?? updatedAt,
     }
 }
 

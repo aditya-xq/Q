@@ -11,9 +11,9 @@ interface AppState {
     quickLinks: QuickLink[]
     view: View
     composeNoteId?: number
-    showQuote?: boolean
-    showWeather?: boolean
-    showMarkets?: boolean
+    showQuote: boolean
+    showWeather: boolean
+    showMarkets: boolean
     marketsRegion: string
     marketSymbols: string
     theme: ThemeConfig

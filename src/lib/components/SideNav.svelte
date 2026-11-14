@@ -1,12 +1,14 @@
 <script lang="ts">
-    import { onMount } from 'svelte'
     import { fade } from 'svelte/transition'
     import { appState, updateView, type View } from '$lib/state.svelte'
     import { openThemeDesigner } from '$lib/stores/theme'
+    import { focusTrap } from '$lib/utils/focusTrap'
+    import { createMediaQuery } from '$lib/utils/mediaQuery.svelte'
     import SideNavButton from './SideNavButton.svelte'
 
     let mobileMenuOpen = $state(false)
-    let isMobile = $state(false)
+    const mobile = createMediaQuery('(max-width: 767.98px)')
+    const isMobile = $derived(mobile.matches)
 
     const menuItems = [
         {
@@ -23,10 +25,6 @@
         },
     ]
 
-    function checkMobile() {
-        isMobile = window.innerWidth < 768 // md breakpoint
-    }
-
     function navigate(view: View) {
         if (isMobile) {
             mobileMenuOpen = false
@@ -36,15 +34,6 @@
             updateView(view)
         }
     }
-
-    onMount(() => {
-        checkMobile()
-        window.addEventListener('resize', checkMobile)
-
-        return () => {
-            window.removeEventListener('resize', checkMobile)
-        }
-    })
 </script>
 
 <svelte:window
@@ -103,6 +92,7 @@
     data-shortcut-blocker={isMobile && mobileMenuOpen ? '' : undefined}
     inert={isMobile && !mobileMenuOpen}
     aria-hidden={isMobile && !mobileMenuOpen}
+    use:focusTrap={isMobile && mobileMenuOpen}
 >
     <SideNavButton view="home" label="Home" active={appState.view === 'home'} {isMobile} onNavigate={navigate} />
 

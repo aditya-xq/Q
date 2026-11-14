@@ -1,5 +1,5 @@
 import { execSync } from 'child_process'
-import { existsSync, readFileSync } from 'fs'
+import { existsSync, readFileSync, statSync } from 'fs'
 
 // Microsoft Edge Add-ons Update REST API (v1.1).
 // https://learn.microsoft.com/microsoft-edge/extensions/update/api/using-addons-api
@@ -136,11 +136,24 @@ if (import.meta.main) {
     const args = process.argv.slice(2)
     const notesFlag = args.indexOf('--notes')
     const notes = notesFlag >= 0 && args[notesFlag + 1] ? args[notesFlag + 1] : `Automated release v${packageVersion()}`
+    const rebuild = args.includes('--rebuild')
+    const zipPath = 'q-extension.zip'
 
-    // Make `bun run publish:edge` self-contained: build + package if the artifact is missing.
-    if (!existsSync('q-extension.zip')) {
+    // Rebuild when requested, when the artifact is missing, or when package.json changed
+    // after the last package (usually a version bump), so a stale zip is never uploaded.
+    let needsBuild = rebuild || !existsSync(zipPath)
+    if (!needsBuild) {
+        try {
+            needsBuild = statSync(zipPath).mtimeMs < statSync('package.json').mtimeMs
+        } catch {
+            needsBuild = true
+        }
+    }
+    if (needsBuild) {
         execSync('bun run build:ext', { stdio: 'inherit' })
-        execSync('bestzip q-extension.zip build-extension/*', { stdio: 'inherit' })
+        execSync(`bestzip ${zipPath} build-extension/*`, { stdio: 'inherit' })
+    } else {
+        console.log('Using the existing q-extension.zip (pass --rebuild to rebuild it).')
     }
 
     publishToEdge({ notes }).catch((error) => {

@@ -1,5 +1,4 @@
 @import 'tailwindcss';
-@plugin '@tailwindcss/typography';
 
 /* Explicit light/dark mode: the theme store (and the pre-paint script) own the `.dark` class. */
 @custom-variant dark (&:where(.dark, .dark *));

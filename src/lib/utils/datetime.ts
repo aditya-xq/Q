@@ -1,3 +1,10 @@
+/** Accept a stored Date, epoch milliseconds or nothing and return a valid Date. */
+export function toDate(value: Date | number | null | undefined): Date | null {
+    if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
+    if (typeof value === 'number' && Number.isFinite(value)) return new Date(value)
+    return null
+}
+
 export function startOfDay(d: Date): Date {
     const x = new Date(d.getTime())
     x.setHours(0, 0, 0, 0)

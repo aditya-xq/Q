@@ -1,22 +1,12 @@
 <script lang="ts">
     import defaultFaviconSvg from '$lib/assets/default-favicon.svg?raw'
+    import { getFaviconUrl } from '$lib/utils/constants'
 
     let { sites = [] } = $props<{ sites?: { url: string; title: string }[] }>()
 
     const DEFAULT_FAVICON = `data:image/svg+xml;utf8,${encodeURIComponent(defaultFaviconSvg)}`
 
     const MIN_FAVICON_SIZE = 32
-
-    // Function to get the favicon for a site
-    function getFavicon(url: string | URL) {
-        try {
-            const domain = new URL(url).hostname
-            return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
-        } catch {
-            // Fallback icon if URL parsing fails
-            return DEFAULT_FAVICON
-        }
-    }
 
     // Handle favicon loading errors
     function handleImageError(event: Event) {
@@ -51,7 +41,7 @@
                     class="relative w-12 h-12 md:w-14 md:h-14 mb-2 rounded-full overflow-hidden flex items-center justify-center"
                 >
                     <img
-                        src={getFavicon(site.url)}
+                        src={getFaviconUrl(site.url)}
                         alt={`${site.title} icon`}
                         class="w-8 h-8 md:w-10 md:h-10 object-contain"
                         onload={handleImageLoad}

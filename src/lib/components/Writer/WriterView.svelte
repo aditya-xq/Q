@@ -1,6 +1,6 @@
 <script lang="ts">
     import Editor from './Editor.svelte'
-    import { addWriteup, updateWriteup, deleteWriteup, getWriteup, loadWriteups } from '$lib/stores/writeups'
+    import { addWriteup, updateWriteup, deleteWriteup, getWriteup } from '$lib/stores/writeups'
     import { toast } from '$lib/utils/notification'
     import { createVoiceTypingController, getVoiceTypingSupport } from '$lib/features/voice'
     import { type EditorApi, type VoiceEngineState, type VoiceTypingController } from '$lib/features/voice/types'
@@ -8,13 +8,14 @@
     import DraftsPanel from './DraftsPanel.svelte'
     import { CloseButton } from '../shared'
     import { createMobileDrawer } from '$lib/utils/mobileDrawer.svelte'
+    import { focusTrap } from '$lib/utils/focusTrap'
     import { createClipboardCopy } from '$lib/utils/clipboard.svelte'
     import { formatAutosaveTime } from '$lib/utils/datetime'
     import { countWords } from '$lib/utils/writeup'
 
     let content = $state('# ')
     let currentWriteupId = $state<number | undefined>(undefined)
-    let createdTimeInNum = $state<number | undefined>(undefined)
+    let createdAt = $state<Date | undefined>(undefined)
     let autosavedAt = $state<Date | null>(null)
     let saving = $state(false)
     let dirty = $state(false)
@@ -33,6 +34,7 @@
     let skipNextEditorSync = $state(true)
     let onKeyboardShortcut: ((event: KeyboardEvent) => void) | null = null
     let drawerBreakpoint: MediaQueryList | null = null
+    let openDraftRequest = 0
 
     const AUTOSAVE_DELAY = 1200 // ms
     const VOICE_AUTOSAVE_DELAY = 2200 // ms
@@ -235,14 +237,23 @@
         return (event.ctrlKey || event.metaKey) && event.altKey && !event.shiftKey && key === 'v'
     }
 
+    /** True when a new draft has something worth storing (the default `# ` does not count). */
+    function hasDraftContent(markdown: string): boolean {
+        return markdown.replace(/^#\s*$/gm, '').trim().length > 0
+    }
+
     async function persistDraft(force = false) {
         if (!dirty && !force) return
+        if (currentWriteupId === undefined && !hasDraftContent(content)) {
+            dirty = false
+            return
+        }
 
         saving = true
         _saveShownSince = Date.now()
         const contentSnapshot = content
         const writeupIdSnapshot = currentWriteupId
-        const createdAtSnapshot = createdTimeInNum ?? Date.now()
+        const createdAtSnapshot = createdAt ?? new Date()
 
         try {
             if (typeof writeupIdSnapshot === 'number') {
@@ -251,7 +262,7 @@
                 const newId = await addWriteup(contentSnapshot, createdAtSnapshot)
                 if (currentWriteupId === writeupIdSnapshot) {
                     currentWriteupId = newId
-                    createdTimeInNum = createdAtSnapshot
+                    createdAt = createdAtSnapshot
                 }
             }
             autosavedAt = new Date()
@@ -281,6 +292,7 @@
 
     // choose a draft from panel
     async function openDraft(id: number) {
+        const request = ++openDraftRequest
         clearAutosaveTimer()
 
         if (isVoiceRunning || voiceController?.isActive()) {
@@ -291,20 +303,26 @@
             await saveDraftIfNeeded(true)
         }
 
-        const w = await getWriteup(id)
-        if (!w) return
-        content = w.content
+        const writeup = await getWriteup(id).catch((error) => {
+            console.error('Failed to open draft:', error)
+            toast.error('Could not open draft')
+            return undefined
+        })
+        if (request !== openDraftRequest || !writeup) return
+
+        content = writeup.content
         skipNextEditorSync = true
-        editorApi?.setContent(w.content)
-        currentWriteupId = w.id
-        createdTimeInNum = w.createdAt ?? new Date(w.updatedAt).getTime()
+        editorApi?.setContent(writeup.content)
+        currentWriteupId = writeup.id
+        createdAt = writeup.createdAt
         dirty = false
-        autosavedAt = w.updatedAt ? new Date(w.updatedAt) : null
+        autosavedAt = writeup.updatedAt ? new Date(writeup.updatedAt) : null
         editorApi?.focus()
     }
 
     // create new draft
     async function createNewDraft({ persistCurrent = true }: { persistCurrent?: boolean } = {}) {
+        openDraftRequest += 1
         clearAutosaveTimer()
 
         if (isVoiceRunning || voiceController?.isActive()) {
@@ -316,7 +334,7 @@
         }
 
         currentWriteupId = undefined
-        createdTimeInNum = Date.now()
+        createdAt = new Date()
         content = '# '
         skipNextEditorSync = true
         editorApi?.setContent('# ')
@@ -326,8 +344,8 @@
     }
 
     async function removeDraft(id: number) {
-        await deleteWriteup(id)
-        if (id === currentWriteupId) {
+        const removed = await deleteWriteup(id)
+        if (removed && id === currentWriteupId) {
             await createNewDraft({ persistCurrent: false })
         }
     }
@@ -372,36 +390,9 @@
         if (restoreFocus) draftsButtonEl?.focus()
     }
 
-    function onWindowDrawerKeydown(event: KeyboardEvent) {
-        if (!drawer.open || event.key !== 'Escape') return
-        event.preventDefault()
-        closeDraftsDrawer()
-    }
-
-    /** Keep Tab focus inside the drafts drawer while it is open. */
-    function onDrawerPanelKeydown(event: KeyboardEvent) {
-        if (event.key !== 'Tab') return
-        const focusables = drawerPanelEl?.querySelectorAll<HTMLElement>(
-            'button:not([disabled]), a[href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
-        )
-        if (!focusables || focusables.length === 0) return
-        const first = focusables[0]
-        const last = focusables[focusables.length - 1]
-        const active = document.activeElement
-        if (event.shiftKey && (active === first || active === drawerPanelEl)) {
-            event.preventDefault()
-            last.focus()
-        } else if (!event.shiftKey && active === last) {
-            event.preventDefault()
-            first.focus()
-        }
-    }
-
     // lifecycle hooks
     onMount(async () => {
-        loading = true
-        await loadWriteups()
-
+        // The layout's liveQuery already keeps appState.writeups in sync.
         refreshVoiceSupport()
         if (!voiceSupported) {
             voiceError = buildVoiceUnavailableMessage()
@@ -454,8 +445,6 @@
     // Mobile sidebar state
     const drawer = createMobileDrawer()
 </script>
-
-<svelte:window onkeydown={onWindowDrawerKeydown} />
 
 <div class="container mx-auto p-3 sm:p-4 md:p-6 transition-all duration-300 ease-in-out">
     <p class="sr-only" aria-live="polite">{voiceStatusText}</p>
@@ -715,7 +704,7 @@
                     aria-label="Drafts"
                     tabindex="-1"
                     bind:this={drawerPanelEl}
-                    onkeydown={onDrawerPanelKeydown}
+                    use:focusTrap
                 >
                     <div
                         class="sticky top-0 bg-bg/95 backdrop-blur-sm border-b border-line px-3 sm:px-4 py-3 sm:py-3.5 flex justify-between items-center z-10"

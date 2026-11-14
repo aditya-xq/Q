@@ -30,11 +30,35 @@ export function isExtensionContext(): boolean {
     return window.location.protocol === 'chrome-extension:' || window.location.protocol === 'moz-extension:'
 }
 
+function normalizeTopSite(site: BrowserSite): BrowserSite | null {
+    if (!site || typeof site.url !== 'string') return null
+    const url = site.url.trim()
+    if (!/^https?:\/\//i.test(url)) return null
+    try {
+        const parsed = new URL(url)
+        const fallbackTitle = parsed.hostname.replace(/^www\./, '')
+        const title = typeof site.title === 'string' && site.title.trim() ? site.title.trim() : fallbackTitle
+        return { url: parsed.href, title }
+    } catch {
+        return null
+    }
+}
+
 export function getTopSites(): Promise<BrowserSite[]> {
     const topSites = getChromeApi()?.topSites
     if (!topSites?.get) return Promise.resolve([])
     return new Promise((resolve) => {
-        topSites.get!((sites) => resolve(sites ?? []))
+        topSites.get!((sites) => {
+            const seen = new Set<string>()
+            const normalized: BrowserSite[] = []
+            for (const site of sites ?? []) {
+                const next = normalizeTopSite(site)
+                if (!next || seen.has(next.url)) continue
+                seen.add(next.url)
+                normalized.push(next)
+            }
+            resolve(normalized)
+        })
     })
 }
 

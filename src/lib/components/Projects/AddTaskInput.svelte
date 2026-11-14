@@ -5,11 +5,10 @@
 
     let newTaskText = $state('')
 
-    function addNewTask() {
-        if (newTaskText.trim() !== '') {
-            addTask(projectId, newTaskText)
-            newTaskText = ''
-        }
+    async function addNewTask() {
+        if (newTaskText.trim() === '') return
+        const id = await addTask(projectId, newTaskText)
+        if (id !== undefined) newTaskText = ''
     }
 </script>
 
@@ -22,7 +21,7 @@
         class="w-full pl-4 pr-12 py-2 rounded-lg text-fg placeholder:text-fg-subtle
             transition-all duration-200 border-0 focus:border-0 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent/20 text-base"
         onkeydown={(e) => {
-            if (e.key === 'Enter') addNewTask()
+            if (e.key === 'Enter') void addNewTask()
         }}
     />
     <button

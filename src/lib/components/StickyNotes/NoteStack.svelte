@@ -1,12 +1,14 @@
 <script lang="ts">
-    import { onMount, tick } from 'svelte'
+    import { tick } from 'svelte'
     import { cubicOut } from 'svelte/easing'
     import { fade, fly } from 'svelte/transition'
     import { appState } from '$lib/state.svelte'
+    import { createMediaQuery } from '$lib/utils/mediaQuery.svelte'
     import { createNote } from '$lib/stores/notes'
     import type { Note } from '$lib/utils/db'
     import StickyNote from './StickyNote.svelte'
     import { CloseButton } from '../shared'
+    import { focusTrap } from '$lib/utils/focusTrap'
 
     interface Props {
         onDeleted?: (note: Note) => void
@@ -15,18 +17,14 @@
     let { onDeleted }: Props = $props()
 
     let open = $state(false)
-    let reduceMotion = $state(false)
+    const reduceMotion = createMediaQuery('(prefers-reduced-motion: reduce)')
     let fabEl = $state<HTMLButtonElement | undefined>(undefined)
     let panelEl = $state<HTMLElement | undefined>(undefined)
 
     // Newest first, so a freshly jotted note lands on top of the pile.
     let notes = $derived([...appState.notes].reverse())
     let noteCount = $derived(appState.notes.length)
-    let duration = $derived(reduceMotion ? 0 : 240)
-
-    onMount(() => {
-        reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    })
+    let duration = $derived(reduceMotion.matches ? 0 : 240)
 
     async function openSheet() {
         if (open) return
@@ -58,23 +56,6 @@
         if (event.key === 'Escape' && open) {
             event.preventDefault()
             closeSheet()
-        }
-    }
-
-    /** Keep Tab focus inside the sheet while it is open. */
-    function onPanelKeydown(event: KeyboardEvent) {
-        if (event.key !== 'Tab') return
-        const focusables = panelEl?.querySelectorAll<HTMLElement>('button:not([disabled]), textarea, input, [href]')
-        if (!focusables || focusables.length === 0) return
-        const first = focusables[0]
-        const last = focusables[focusables.length - 1]
-        const active = document.activeElement
-        if (event.shiftKey && (active === first || active === panelEl)) {
-            event.preventDefault()
-            last.focus()
-        } else if (!event.shiftKey && active === last) {
-            event.preventDefault()
-            first.focus()
         }
     }
 </script>
@@ -134,7 +115,7 @@
             tabindex="-1"
             id="notes-sheet"
             data-testid="notes-sheet"
-            onkeydown={onPanelKeydown}
+            use:focusTrap
             transition:fly={{ y: 48, duration, easing: cubicOut }}
         >
             <div class="flex justify-center pt-2.5" aria-hidden="true">

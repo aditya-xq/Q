@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onDestroy, onMount } from 'svelte'
     import { appState } from '$lib/state.svelte'
+    import { createMediaQuery } from '$lib/utils/mediaQuery.svelte'
     import type { Note } from '$lib/utils/db'
     import { addNote, isStagedNote } from '$lib/stores/notes'
     import StickyNote from './StickyNote.svelte'
@@ -13,11 +14,8 @@
 
     let undoStack = $state<UndoEntry[]>([])
     let mounted = $state(false)
-    let isMobile = $state(false)
-
-    function checkMobile() {
-        isMobile = window.innerWidth < 768 // md breakpoint
-    }
+    const mobile = createMediaQuery('(max-width: 767.98px)')
+    const isMobile = $derived(mobile.matches)
 
     function handleDeleted(note: Note) {
         const timer = setTimeout(() => {
@@ -53,9 +51,6 @@
         // Defer the responsive branch until after hydration so the server-rendered
         // markup always matches; notes arrive from Dexie at the same time anyway.
         mounted = true
-        checkMobile()
-        window.addEventListener('resize', checkMobile)
-        return () => window.removeEventListener('resize', checkMobile)
     })
 
     onDestroy(() => {

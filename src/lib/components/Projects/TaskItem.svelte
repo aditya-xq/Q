@@ -6,7 +6,7 @@
 
     interface Props {
         task: Task
-        onToggleComplete: () => void
+        onToggleComplete: (completed: boolean) => void
     }
 
     let { task, onToggleComplete }: Props = $props()
@@ -29,8 +29,9 @@
     })
 
     function toggleComplete() {
-        updateTask(task.id as number, task.text, !task.completed)
-        onToggleComplete()
+        const nextCompleted = !task.completed
+        updateTask(task.id as number, task.text, nextCompleted)
+        onToggleComplete(nextCompleted)
     }
 
     function saveEdit() {
