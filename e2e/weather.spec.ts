@@ -39,15 +39,15 @@ test.describe('Weather widget', () => {
     })
 
     test('shows a card-shaped skeleton while loading', async ({ page }) => {
-        await page.route(GEOCODE_URL, async (route) => {
+        await page.route(GEOCODE_URL, (route) =>
+            route.fulfill({ json: { city: 'Testville', locality: 'Testville', countryName: 'Testland' } })
+        )
+        await page.route(FORECAST_URL, async (route) => {
             await new Promise((resolve) => setTimeout(resolve, 800))
-            return route.fulfill({ json: { city: 'Testville', locality: 'Testville', countryName: 'Testland' } })
-        })
-        await page.route(FORECAST_URL, (route) =>
-            route.fulfill({
+            return route.fulfill({
                 json: { current: { temperature_2m: 27.6, relative_humidity_2m: 55.4, weather_code: 3 } },
             })
-        )
+        })
         await page.route(AIR_QUALITY_URL, (route) => route.fulfill({ json: { current: { us_aqi: 42.7 } } }))
 
         await enableWeather(page)
@@ -60,6 +60,79 @@ test.describe('Weather widget', () => {
 
         await expect(page.getByText('Testville').last()).toBeVisible()
         await expect(skeleton).toHaveCount(0)
+    })
+
+    test('still renders conditions when the air-quality feed is down', async ({ page }) => {
+        await page.route(GEOCODE_URL, (route) => route.fulfill({ json: { city: 'Testville' } }))
+        await page.route(FORECAST_URL, (route) =>
+            route.fulfill({
+                json: { current: { temperature_2m: 27.6, relative_humidity_2m: 55.4, weather_code: 3 } },
+            })
+        )
+        await page.route(AIR_QUALITY_URL, (route) => route.fulfill({ status: 500, body: 'nope' }))
+
+        await enableWeather(page)
+
+        await expect(page.getByText('Testville').last()).toBeVisible()
+        // Air quality is omitted rather than reported as a healthy "AQI 0".
+        await expect(page.getByTestId('weather-aqi')).toHaveCount(0)
+        await expect(page.getByTestId('weather-error')).toHaveCount(0)
+    })
+
+    test('retries a failed place name instead of caching "Unknown"', async ({ page }) => {
+        let geocodeRequests = 0
+        await page.route(GEOCODE_URL, (route) => {
+            geocodeRequests += 1
+            return route.fulfill({ status: 500, body: 'nope' })
+        })
+        await page.route(FORECAST_URL, (route) =>
+            route.fulfill({
+                json: { current: { temperature_2m: 27.6, relative_humidity_2m: 55.4, weather_code: 3 } },
+            })
+        )
+        await page.route(AIR_QUALITY_URL, (route) => route.fulfill({ json: { current: { us_aqi: 42.7 } } }))
+
+        await enableWeather(page)
+
+        await expect(page.getByTestId('weather-card')).toBeVisible()
+        await expect(page.getByText('Unknown').last()).toBeVisible()
+        expect(geocodeRequests).toBe(1)
+
+        // The unresolved name is not written to the cache, so a reload asks again.
+        await page.reload()
+        await expect(page.getByTestId('weather-card')).toBeVisible()
+        await expect.poll(() => geocodeRequests).toBe(2)
+    })
+
+    test('reuses the cached reading instead of refetching', async ({ page }) => {
+        let requests = 0
+        page.on('request', (request) => {
+            if (request.url().includes('open-meteo.com') || request.url().includes('api-bdc.io')) requests += 1
+        })
+        await page.route(GEOCODE_URL, (route) => route.fulfill({ json: { city: 'Testville' } }))
+        await page.route(FORECAST_URL, (route) =>
+            route.fulfill({
+                json: { current: { temperature_2m: 27.6, relative_humidity_2m: 55.4, weather_code: 3 } },
+            })
+        )
+        await page.route(AIR_QUALITY_URL, (route) => route.fulfill({ json: { current: { us_aqi: 42.7 } } }))
+
+        await enableWeather(page)
+        const card = page.getByTestId('weather-card')
+        await expect(card).toBeVisible()
+        const initial = requests
+        expect(initial).toBe(3)
+
+        // Leaving and returning to Home remounts the widget but must not refetch.
+        await page.getByRole('button', { name: 'Projects (Alt + P)' }).click()
+        await page.getByRole('button', { name: 'Home' }).click()
+        await expect(card).toBeVisible()
+        expect(requests).toBe(initial)
+
+        // The session cache (including the geocoded place name) survives a reload.
+        await page.reload()
+        await expect(page.getByText('Testville').last()).toBeVisible()
+        expect(requests).toBe(initial)
     })
 
     test('keeps the desktop card inside its bounds with long content', async ({ page }) => {
