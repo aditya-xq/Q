@@ -224,9 +224,19 @@ body {
 }
 
 [data-tooltip]:hover::before,
-[data-tooltip]:hover::after {
+[data-tooltip]:hover::after,
+[data-tooltip]:focus-visible::before,
+[data-tooltip]:focus-visible::after {
     opacity: 1;
     visibility: visible;
+}
+
+/* Long labels (page titles, etc.) wrap into a bounded bubble instead of one line. */
+[data-tooltip][data-tooltip-wrap]::before {
+    max-width: 12rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
 }
 
 /* Tooltip positioning variants */

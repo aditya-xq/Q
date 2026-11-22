@@ -40,6 +40,94 @@ test.describe('Home', () => {
     })
 })
 
+test.describe('Frequent sites tooltips', () => {
+    const LONG_TITLE = 'An exceptionally long page title that is truncated in the tile label'
+
+    /** Chrome-only topSites API: seed eight long-titled tiles so the outer columns are exercised. */
+    async function seedTopSites(page: import('@playwright/test').Page): Promise<void> {
+        await page.addInitScript((title: string) => {
+            Object.defineProperty(window, 'chrome', {
+                configurable: true,
+                value: {
+                    topSites: {
+                        get: (callback: (sites: { url: string; title: string }[]) => void) =>
+                            callback(
+                                Array.from({ length: 8 }, (_, index) => ({
+                                    url: `https://site-${index}.example.com/`,
+                                    title,
+                                }))
+                            ),
+                    },
+                },
+            })
+        }, LONG_TITLE)
+    }
+
+    async function tooltipState(locator: import('@playwright/test').Locator) {
+        return locator.evaluate((element) => {
+            const style = getComputedStyle(element, '::before')
+            return { opacity: style.opacity, visibility: style.visibility, content: style.content }
+        })
+    }
+
+    test('reveals the full site title on hover', async ({ page }) => {
+        await seedTopSites(page)
+        await openHome(page)
+
+        const link = page.getByRole('link', { name: new RegExp(LONG_TITLE) }).first()
+        await expect(link).toBeVisible()
+        // aria-label keeps the generated tooltip text out of the accessible name.
+        await expect(link).toHaveAccessibleName(LONG_TITLE)
+        expect((await tooltipState(link)).opacity).toBe('0')
+
+        await link.hover()
+
+        // The bubble fades in over 150ms.
+        await expect.poll(async () => (await tooltipState(link)).opacity).toBe('1')
+        const revealed = await tooltipState(link)
+        expect(revealed.visibility).toBe('visible')
+        expect(revealed.content).toContain(LONG_TITLE)
+    })
+
+    test('reveals the tooltip for keyboard focus', async ({ page }) => {
+        await seedTopSites(page)
+        await openHome(page)
+
+        const link = page.getByRole('link', { name: new RegExp(LONG_TITLE) }).first()
+
+        // Tab until the tile owns focus, so :focus-visible matches (not just :focus).
+        const isFocused = () => link.evaluate((element) => element === document.activeElement)
+        for (let step = 0; step < 30 && !(await isFocused()); step += 1) {
+            await page.keyboard.press('Tab')
+        }
+        expect(await isFocused()).toBe(true)
+
+        await expect.poll(async () => (await tooltipState(link)).opacity).toBe('1')
+    })
+
+    test('keeps a long tooltip inside the viewport at every layout width', async ({ page }) => {
+        await seedTopSites(page)
+        await openHome(page)
+
+        const links = page.getByRole('link', { name: new RegExp(LONG_TITLE) })
+        await expect(links).toHaveCount(8)
+
+        for (const width of [390, 768, 1024]) {
+            await page.setViewportSize({ width, height: 720 })
+            for (const link of [links.first(), links.last()]) {
+                await link.hover()
+                const overflow = await page.evaluate(() => ({
+                    scrollWidth: document.documentElement.scrollWidth,
+                    clientWidth: document.documentElement.clientWidth,
+                }))
+                expect(overflow.scrollWidth, `horizontal overflow at ${width}px`).toBeLessThanOrEqual(
+                    overflow.clientWidth
+                )
+            }
+        }
+    })
+})
+
 test.describe('Home mobile layout', () => {
     test.use({ viewport: { width: 390, height: 844 } })
 

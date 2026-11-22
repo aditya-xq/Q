@@ -35,6 +35,10 @@
             <a
                 href={site.url}
                 class="flex flex-col items-center justify-center p-2 md:p-3 rounded-lg hover:bg-surface-2 transition-colors duration-200"
+                aria-label={site.title}
+                data-tooltip={site.title}
+                data-tooltip-position="top"
+                data-tooltip-wrap
                 rel="external noopener noreferrer"
             >
                 <div
@@ -61,5 +65,40 @@
     a:hover {
         transform: translateY(-2px);
         transition: transform 0.2s ease;
+    }
+
+    /* The outer columns open their tooltip inwards, so a long page title can
+       never push the bubble past the viewport edge. The breakpoints use rem so
+       they track the grid's Tailwind `md` (48rem) at any default font size. */
+    @media (max-width: 47.99rem) {
+        a[data-tooltip]:nth-child(4n + 1)::before,
+        a[data-tooltip]:nth-child(4n + 1)::after {
+            left: 0;
+            right: auto;
+            transform: none;
+        }
+
+        a[data-tooltip]:nth-child(4n)::before,
+        a[data-tooltip]:nth-child(4n)::after {
+            left: auto;
+            right: 0;
+            transform: none;
+        }
+    }
+
+    @media (min-width: 48rem) {
+        a[data-tooltip]:nth-child(8n + 1)::before,
+        a[data-tooltip]:nth-child(8n + 1)::after {
+            left: 0;
+            right: auto;
+            transform: none;
+        }
+
+        a[data-tooltip]:nth-child(8n)::before,
+        a[data-tooltip]:nth-child(8n)::after {
+            left: auto;
+            right: 0;
+            transform: none;
+        }
     }
 </style>
