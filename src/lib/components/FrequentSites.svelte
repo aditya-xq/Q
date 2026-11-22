@@ -67,17 +67,21 @@
         transition: transform 0.2s ease;
     }
 
-    /* The outer columns open their tooltip inwards, so a long page title can
-       never push the bubble past the viewport edge. The breakpoints use rem so
-       they track the grid's Tailwind `md` (48rem) at any default font size. */
+    /* Each half of a row opens its tooltip inwards, so a wide bubble never
+       pushes past the viewport edge. The breakpoints use rem so they track the
+       grid's Tailwind `md` (48rem) at any default font size. */
     @media (max-width: 47.99rem) {
         a[data-tooltip]:nth-child(4n + 1)::before,
-        a[data-tooltip]:nth-child(4n + 1)::after {
+        a[data-tooltip]:nth-child(4n + 1)::after,
+        a[data-tooltip]:nth-child(4n + 2)::before,
+        a[data-tooltip]:nth-child(4n + 2)::after {
             left: 0;
             right: auto;
             transform: none;
         }
 
+        a[data-tooltip]:nth-child(4n + 3)::before,
+        a[data-tooltip]:nth-child(4n + 3)::after,
         a[data-tooltip]:nth-child(4n)::before,
         a[data-tooltip]:nth-child(4n)::after {
             left: auto;
@@ -88,12 +92,24 @@
 
     @media (min-width: 48rem) {
         a[data-tooltip]:nth-child(8n + 1)::before,
-        a[data-tooltip]:nth-child(8n + 1)::after {
+        a[data-tooltip]:nth-child(8n + 1)::after,
+        a[data-tooltip]:nth-child(8n + 2)::before,
+        a[data-tooltip]:nth-child(8n + 2)::after,
+        a[data-tooltip]:nth-child(8n + 3)::before,
+        a[data-tooltip]:nth-child(8n + 3)::after,
+        a[data-tooltip]:nth-child(8n + 4)::before,
+        a[data-tooltip]:nth-child(8n + 4)::after {
             left: 0;
             right: auto;
             transform: none;
         }
 
+        a[data-tooltip]:nth-child(8n + 5)::before,
+        a[data-tooltip]:nth-child(8n + 5)::after,
+        a[data-tooltip]:nth-child(8n + 6)::before,
+        a[data-tooltip]:nth-child(8n + 6)::after,
+        a[data-tooltip]:nth-child(8n + 7)::before,
+        a[data-tooltip]:nth-child(8n + 7)::after,
         a[data-tooltip]:nth-child(8n)::before,
         a[data-tooltip]:nth-child(8n)::after {
             left: auto;

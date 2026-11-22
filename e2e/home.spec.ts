@@ -32,6 +32,42 @@ test.describe('Home', () => {
         await expect(page.locator('blockquote')).toHaveCount(1)
     })
 
+    test('shows an attribution line', async ({ page }) => {
+        await openHome(page)
+        const cite = page.locator('blockquote cite')
+        await expect(cite).toBeVisible()
+        await expect(cite).toContainText('—')
+        await expect(cite).toHaveText(/—\s+\S+/)
+    })
+
+    test('announces a new entry to assistive technology', async ({ page }) => {
+        await openHome(page)
+        await expect(page.locator('blockquote p')).toHaveAttribute('aria-live', 'polite')
+    })
+
+    test('cycles to a different entry without repeating', async ({ page }) => {
+        await openHome(page)
+        const text = page.locator('blockquote p')
+        const first = await text.innerText()
+
+        await page.getByRole('button', { name: 'Show another quote or fact' }).click()
+        await expect.poll(() => text.innerText()).not.toBe(first)
+    })
+
+    test('keeps the current entry when switching views', async ({ page }) => {
+        await openHome(page)
+        const text = page.locator('blockquote p')
+        const first = await text.innerText()
+
+        await page.getByRole('button', { name: 'Show another quote or fact' }).click()
+        await expect.poll(() => text.innerText()).not.toBe(first)
+        const chosen = await text.innerText()
+
+        await page.getByRole('button', { name: 'Projects (Alt + P)' }).click()
+        await page.getByRole('button', { name: 'Home' }).click()
+        await expect(page.locator('blockquote p')).toHaveText(chosen)
+    })
+
     test('hides the quote immediately when disabled in settings', async ({ page }) => {
         await openHome(page)
         await page.getByRole('button', { name: 'Settings (Alt + S)' }).click()
@@ -87,6 +123,12 @@ test.describe('Frequent sites tooltips', () => {
         const revealed = await tooltipState(link)
         expect(revealed.visibility).toBe('visible')
         expect(revealed.content).toContain(LONG_TITLE)
+        // It sizes to its content and wraps at max-width, not at the tile width.
+        const widths = await link.evaluate((element) => ({
+            bubble: Number.parseFloat(getComputedStyle(element, '::before').width),
+            tile: element.getBoundingClientRect().width,
+        }))
+        expect(widths.bubble).toBeGreaterThan(widths.tile * 2)
     })
 
     test('reveals the tooltip for keyboard focus', async ({ page }) => {
@@ -112,17 +154,19 @@ test.describe('Frequent sites tooltips', () => {
         const links = page.getByRole('link', { name: new RegExp(LONG_TITLE) })
         await expect(links).toHaveCount(8)
 
-        for (const width of [390, 768, 1024]) {
+        for (const width of [320, 390, 768, 1024]) {
             await page.setViewportSize({ width, height: 720 })
-            for (const link of [links.first(), links.last()]) {
-                await link.hover()
+            // Every column, so a centred bubble in an inner column is caught too.
+            for (let index = 0; index < 8; index += 1) {
+                await links.nth(index).hover()
                 const overflow = await page.evaluate(() => ({
                     scrollWidth: document.documentElement.scrollWidth,
                     clientWidth: document.documentElement.clientWidth,
                 }))
-                expect(overflow.scrollWidth, `horizontal overflow at ${width}px`).toBeLessThanOrEqual(
-                    overflow.clientWidth
-                )
+                expect(
+                    overflow.scrollWidth,
+                    `horizontal overflow at ${width}px, tile ${index + 1}`
+                ).toBeLessThanOrEqual(overflow.clientWidth)
             }
         }
     })

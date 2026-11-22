@@ -231,9 +231,12 @@ body {
     visibility: visible;
 }
 
-/* Long labels (page titles, etc.) wrap into a bounded bubble instead of one line. */
+/* Long labels (page titles, etc.) wrap into a bounded bubble instead of one line.
+   `width: max-content` is required: without it the absolutely positioned bubble
+   shrink-to-fits to the tile, which squeezes the text into one word per line. */
 [data-tooltip][data-tooltip-wrap]::before {
-    max-width: 12rem;
+    width: max-content;
+    max-width: min(22rem, 70vw);
     white-space: normal;
     overflow-wrap: anywhere;
     text-align: center;
